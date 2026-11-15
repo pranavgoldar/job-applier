@@ -1,0 +1,8 @@
+{
+  "manifest_version": 3,
+  "name": "Career OS · Application Handoff",
+  "version": "1.0.0",
+  "description": "Fill supported employer fields from your reviewed Career OS packet. Never submits.",
+  "permissions": ["activeTab", "scripting"],
+  "action": { "default_popup": "popup.html" }
+}

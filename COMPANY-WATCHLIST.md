@@ -1,0 +1,52 @@
+# Company watchlist — 15 November 2026
+
+Both Product and Founder’s Office have equal coverage. Prefer fintech, YC-backed early-stage / Series A or B firms, and dated evidence of India hiring or expansion. Named firms remain included even when these additional preferences are unknown. Company signals do not waive job eligibility.
+
+Scheduled means an ATS source is configured, not verified healthy or hiring for this candidate. Company funding and expansion observations are research notes, not a recurring company-news feed.
+
+## Your target
+
+- **[Dozee](https://www.dozeehealth.ai/careers)** — Scheduled ATS collection. YC backing not verified. Unknown — latest funding round not verified. India headquarters and hiring shown; expansion plans require separate evidence. 
+- **[Wise](https://wise.jobs/)** — Manual review — collector not connected. YC backing not verified. Unknown — latest funding round not verified. Unknown — expansion plans not verified. SmartRecruiters career site; a collector is not connected in this version.
+- **[Revolut](https://www.revolut.com/careers/)** — Manual review — collector not connected. YC backing not verified. Unknown — latest funding round not verified. India roles require individual verification. Custom careers site; manual vacancy review.
+- **[Remitly](https://careers.remitly.com/)** — Manual review — collector not connected. YC backing not verified. Unknown — latest funding round not verified. Unknown — expansion plans not verified. Employer careers site; a collector is not connected.
+- **[NephroPlus](https://nephroplus.com/careers/)** — Manual review — collector not connected. YC backing not verified. Unknown — latest funding round not verified. India operations confirmed; do not infer a suitable opening. Include product, corporate strategy and business operations when responsibilities fit.
+- **[Aspora](https://jobs.ashbyhq.com/Aspora)** — Scheduled ATS collection. [YC evidence](https://www.ycombinator.com/companies/aspora). Unknown — latest funding round not verified. Unknown — expansion plans not verified. 
+- **[Nium](https://jobs.lever.co/nium)** — Scheduled ATS collection. YC backing not verified. Unknown — latest funding round not verified. Unknown — expansion plans not verified. 
+- **[Airwallex](https://careers.airwallex.com/)** — Scheduled ATS collection. YC backing not verified. Unknown — latest funding round not verified. Unknown — expansion plans not verified. 
+- **[Monee](https://careers.monee.com/jobs)** — Manual review — collector not connected. YC backing not verified. Unknown — latest funding round not verified. Unknown — expansion plans not verified. Custom employer site. Graduate intake and employment metadata must be checked per vacancy.
+- **[Flagright](https://jobs.ashbyhq.com/flagright.com)** — Scheduled ATS collection. YC backing not verified. Unknown — latest funding round not verified. Unknown — expansion plans not verified. 
+- **[OKX](https://www.okx.com/join-us)** — Scheduled ATS collection. YC backing not verified. Unknown — latest funding round not verified. Unknown — expansion plans not verified. 
+- **[Careem](https://jobs.careem.com/)** — Scheduled ATS collection. YC backing not verified. Unknown — latest funding round not verified. Unknown — expansion plans not verified. Include Careem Pay and suitable marketplace Product or business operations roles.
+- **[Different AI](https://www.different.ai/careers)** — Manual review — collector not connected. YC backing not verified. Unknown — latest funding round not verified. Employer careers page lists Bengaluru roles. User-confirmed LinkedIn identity: https://www.linkedin.com/company/differentai/. Manual vacancy review.
+- **[HitPay](https://hitpayapp.com/careers)** — Manual review — collector not connected. YC backing not verified. Unknown — latest funding round not verified. Unknown — expansion plans not verified. Public employer careers page; collector not connected.
+- **[XPay Checkout](https://www.ycombinator.com/companies/xpay/jobs)** — Manual review — collector not connected. [YC evidence](https://www.ycombinator.com/companies/xpay). Unknown — latest funding round not verified. YC profile describes an Indian payment processor based in Bengaluru. User confirmed https://www.linkedin.com/company/xpay-checkout/. Website: https://www.xpaycheckout.com/.
+- **[Navi](https://navi.com/careers)** — Manual review — collector not connected. YC backing not verified. Unknown — latest funding round not verified. Unknown — expansion plans not verified. Employer career site; collector not connected.
+- **[Ziina](https://ziina.com/careers)** — Scheduled ATS collection. YC backing not verified. Unknown — latest funding round not verified. Unknown — expansion plans not verified. 
+- **[Fasset](https://fasset.bamboohr.com/careers)** — Manual review — collector not connected. YC backing not verified. Unknown — latest funding round not verified. Unknown — expansion plans not verified. BambooHR career board; collector not connected.
+- **[Sarwa](https://careers.sarwa.co/)** — Manual review — collector not connected. YC backing not verified. Unknown — latest funding round not verified. Unknown — expansion plans not verified. Use careers.sarwa.co, the employer official careers site. Collector not connected.
+- **[Tabby](https://tabby.ai/careers)** — Manual review — collector not connected. YC backing not verified. Unknown — latest funding round not verified. Unknown — expansion plans not verified. Pinpoint employer recruiting system; collector not connected.
+- **[Alaan](https://www.alaan.com/careers)** — Manual review — collector not connected. [YC evidence](https://www.ycombinator.com/companies/alaan). Series A reported by company; latest round unverified. Bengaluru office and India engineering hiring shown; expansion timing unverified. User confirmed https://www.linkedin.com/company/alaanpay/. Rippling collector not connected.
+- **[Brex](https://www.brex.com/careers)** — Scheduled ATS collection. YC backing not verified. Unknown — latest funding round not verified. Unknown — expansion plans not verified. Country and work-authorization restrictions must be checked; do not assume India remote.
+
+## Similar firm
+
+- **[Razorpay](https://razorpay.com/jobs/)** — Scheduled ATS collection. YC backing not verified. Unknown — latest funding round not verified. Unknown — expansion plans not verified. 
+- **[Stripe](https://stripe.com/careers)** — Manual review — collector not connected. YC backing not verified. Unknown — latest funding round not verified. Unknown — expansion plans not verified. Broad comparison target; latest funding stage not checked. Collector not connected.
+- **[Adyen](https://careers.adyen.com/)** — Manual review — collector not connected. YC backing not verified. Unknown — latest funding round not verified. Unknown — expansion plans not verified. Broad comparison target; not represented as an early-stage startup. Collector not connected.
+- **[Ramp](https://ramp.com/careers)** — Manual review — collector not connected. YC backing not verified. Unknown — latest funding round not verified. Unknown — expansion plans not verified. Broad comparison target; latest funding stage not checked. Collector not connected.
+- **[Juspay](https://juspay.io/careers)** — Manual review — collector not connected. YC backing not verified. Unknown — latest funding round not verified. Unknown — expansion plans not verified. Collector not connected.
+- **[Cashfree Payments](https://www.cashfree.com/careers/)** — Manual review — collector not connected. [YC evidence](https://www.ycombinator.com/companies/industry/fintech/india/hiring). Unknown — latest funding round not verified. Unknown — expansion plans not verified. Collector not connected; current stage not verified.
+
+## YC / India research
+
+- **[Decentro](https://www.ycombinator.com/companies/decentro/jobs)** — Manual review — collector not connected. [YC evidence](https://www.ycombinator.com/companies/decentro). Unknown — latest funding round not verified. Employer YC profile describes Indian banking infrastructure and a GIFT-based cross-border launch. Latest funding round and suitable vacancies remain unverified; collector not connected.
+- **[Volopay](https://www.ycombinator.com/companies/volopay/jobs)** — Manual review — collector not connected. [YC evidence](https://www.ycombinator.com/companies/volopay). Unknown — latest funding round not verified. Bengaluru location shown; fresh expansion plans unknown. Latest funding round not verified; collector not connected.
+- **[Karbon Card](https://www.ycombinator.com/companies/karbon-card/jobs)** — Manual review — collector not connected. [YC evidence](https://www.ycombinator.com/companies/karbon-card). Unknown — latest funding round not verified. YC profile describes products for Indian businesses and Bengaluru location. Latest funding round not verified; collector not connected.
+- **[GoSats](https://www.ycombinator.com/companies/gosats/jobs)** — Manual review — collector not connected. [YC evidence](https://www.ycombinator.com/companies/gosats/jobs/0TZL6W7-senior-product-manager-cards-payments). Series A reported in employer posting; latest round unverified. Employer posting describes scaling in India. The referenced Senior PM role is not a candidate match; watch the company for future junior roles. Collector not connected.
+- **[GroMo](https://www.ycombinator.com/companies/gromo/jobs)** — Manual review — collector not connected. [YC evidence](https://www.ycombinator.com/companies/gromo/jobs). Series A reported by company; latest round unverified. Unknown — expansion plans not verified. India market/hiring details need a dated review; collector not connected.
+- **[Infinity](https://www.ycombinator.com/companies/location/india)** — Manual review — collector not connected. [YC evidence](https://www.ycombinator.com/companies/location/india). Unknown — latest funding round not verified. YC directory describes banking and payments for cross-border Indian businesses. Identity is from the YC India directory; direct career board and latest funding round still need verification.
+
+## Updating your Windows copy
+
+Use the source-only `career-os-update.zip` and preserve your existing `data/` folder. Close the launcher, extract the update into the same app folder replacing code files, and restart. The startup migration only adds company preferences and sources; it preserves your profile, resumes, applications, notes and paused sources.

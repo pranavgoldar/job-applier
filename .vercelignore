@@ -1,0 +1,9 @@
+data
+work
+.git
+.env*
+!.env.example
+*.zip
+attachments
+src/import-leads.mjs
+SEARCH-RESULTS.md

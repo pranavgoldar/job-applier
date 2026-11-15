@@ -1,0 +1,4 @@
+{$CAREER_DOMAIN} {
+    reverse_proxy app:4173
+    header Strict-Transport-Security "max-age=31536000"
+}

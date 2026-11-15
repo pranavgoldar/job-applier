@@ -1,0 +1,18 @@
+# Private records, generated archives, local credentials and task scratch files
+data/
+work/
+node_modules/
+.env*
+!.env.example
+.dev.vars*
+.vercel/
+output/
+attachments/
+*.sqlite
+*.sqlite-*
+*.db
+*.zip
+*.pdf
+*.docx
+SEARCH-RESULTS.md
+src/import-leads.mjs

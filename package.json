@@ -1,0 +1,26 @@
+{
+  "name": "career-os",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "start": "node src/server.mjs",
+    "dev": "node src/server.mjs",
+    "worker": "node src/worker.mjs",
+    "test": "node --test test/*.test.mjs",
+    "build": "node scripts/vercel-build.mjs",
+    "migrate:cloud": "node scripts/migrate-to-cloud.mjs"
+  },
+  "devDependencies": {
+    "linkedom": "^0.18.15",
+    "prettier": "^3.10.1"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.18.0",
+    "@vercel/blob": "^2.9.0",
+    "@vercel/functions": "^3.11.3"
+  }
+}

@@ -1,0 +1,31 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      APP_PASSWORD: ${APP_PASSWORD:?Set APP_PASSWORD to a long unique password}
+      COOKIE_SECURE: "1"
+      EMBEDDED_WORKER: "1"
+    volumes:
+      - career-data:/app/data
+    expose:
+      - "4173"
+    init: true
+  proxy:
+    image: caddy:2
+    restart: unless-stopped
+    environment:
+      CAREER_DOMAIN: ${CAREER_DOMAIN:?Set CAREER_DOMAIN to your domain}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - app
+volumes:
+  career-data:
+  caddy-data:
+  caddy-config:

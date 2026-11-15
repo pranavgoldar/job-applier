@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Career OS handoff</title>
+    <style>
+      body {
+        font: 13px system-ui;
+        padding: 18px;
+        width: 340px;
+        color: #1b302b;
+      }
+      button {
+        background: #164f40;
+        color: white;
+        padding: 11px 14px;
+        border: 0;
+        border-radius: 7px;
+        margin: 12px 0;
+      }
+      p {
+        line-height: 1.7;
+        color: #63776a;
+      }
+      pre {
+        white-space: pre-wrap;
+        line-height: 1.7;
+        font: 12px system-ui;
+      }
+      input {
+        max-width: 100%;
+      }
+      .note {
+        background: #f1f5ed;
+        padding: 12px;
+        border-radius: 7px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Application handoff</h2>
+    <p>
+      Import a packet exported from Career OS. This extension can fill basic
+      text fields and attach the exact resume on Greenhouse, Lever or Ashby.
+      Review every field.
+    </p>
+    <input type="file" id="packet" accept=".json" />
+    <p id="selection"></p>
+    <button id="fill" disabled>Fill supported fields</button>
+    <pre id="result" aria-live="polite"></pre>
+    <p class="note">
+      It never signs in, solves verification, answers declarations, or clicks
+      Submit. Your employer session stays in your browser.
+    </p>
+    <script src="popup.js"></script>
+  </body>
+</html>
