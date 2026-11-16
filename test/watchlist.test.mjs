@@ -55,11 +55,28 @@ test(
       c.find((x) => x.id === "wise").connector.kind,
       "smartrecruiters",
     );
-    assert(
-      c
-        .find((x) => x.id === "alaan")
-        .fundingStage.includes("latest round unverified"),
-    );
+    // Evidence is only recorded with a source; unknowns stay unknown.
+    const alaan = c.find((x) => x.id === "alaan");
+    assert.match(alaan.fundingStage, /Series A/);
+    assert.match(alaan.fundingEvidenceUrl, /^https:\/\//);
+    assert.equal(alaan.ycBacked, true);
+    assert.equal(alaan.connector.kind, "ycombinator");
+    assert.equal(c.find((x) => x.id === "tabby").connector.kind, "pinpoint");
+    assert(c.find((x) => x.id === "remitly").coverage.startsWith("Manual"));
+    for (const x of c.filter((x) => x.ycBacked === true)) {
+      assert.match(
+        x.ycEvidenceUrl,
+        /^https:\/\/www\.ycombinator\.com\/companies\//,
+        x.name,
+      );
+      assert(x.ycBatch, x.name);
+    }
+    for (const x of c)
+      assert(
+        !x.fundingEvidenceUrl === /^(Unknown|Not )/.test(x.fundingStage),
+        x.name + ": a funding claim needs a source, and a source needs a claim",
+      );
+    assert(c.filter((x) => x.sourceId).length >= 70);
   }),
 );
 test(

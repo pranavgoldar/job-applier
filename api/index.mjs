@@ -3,6 +3,12 @@ import { createStore } from "../src/create-store.mjs";
 import { seed } from "../src/seed.mjs";
 import { createHandler } from "../src/http.mjs";
 import {
+  configChecks,
+  explainFailure,
+  safeMessage,
+  StartupError,
+} from "../src/diagnostics.mjs";
+import {
   enqueueCloudDiscovery,
   runCloudQueue,
   nextCloudRun,
@@ -10,12 +16,39 @@ import {
 } from "../src/cloud-worker.mjs";
 let initialized;
 async function initialize() {
-  if (!process.env.APP_PASSWORD || process.env.APP_PASSWORD.length < 16)
-    throw new Error("Configure APP_PASSWORD with at least 16 characters");
-  if (!process.env.CRON_SECRET || process.env.CRON_SECRET.length < 16)
-    throw new Error("Configure CRON_SECRET with at least 16 characters");
-  const store = await createStore({ cloud: true });
-  await seed(store);
+  // Each step names what failed, so the error page can say what to fix.
+  const checks = configChecks();
+  if (checks.some((c) => !c.ok))
+    throw new StartupError(
+      "Some settings are missing or not valid: " +
+        checks
+          .filter((c) => !c.ok)
+          .map((c) => c.check)
+          .join(", ") +
+        ".",
+      checks,
+    );
+  let store;
+  try {
+    store = await createStore({ cloud: true });
+  } catch (e) {
+    const stage = /blob/i.test(String(e?.message)) ? "storage" : "database";
+    throw new StartupError(
+      stage === "storage"
+        ? "File storage could not be opened."
+        : "The database could not be opened.",
+      [...checks, explainFailure(stage, e)],
+    );
+  }
+  try {
+    await seed(store);
+  } catch (e) {
+    throw new StartupError("First-time setup did not finish.", [
+      ...checks,
+      { check: "Database (Turso)", ok: true, detail: "Connected" },
+      explainFailure("setup", e),
+    ]);
+  }
   const kick = async () => {
     const ids = await enqueueCloudDiscovery(store);
     waitUntil(
@@ -73,6 +106,7 @@ export default async function handler(req, res) {
         return res.end(JSON.stringify({ paused: true }));
       }
       await store.set("nextDiscovery", nextCloudRun());
+      await store.set("scanStarted", new Date().toISOString());
       await enqueueCloudDiscovery(store);
       const result = await runCloudQueue(store);
       res.writeHead(200, {
@@ -82,7 +116,8 @@ export default async function handler(req, res) {
       return res.end(JSON.stringify(result));
     }
     return handler(req, res);
-  } catch {
+  } catch (e) {
+    // Safe to show: setting names, yes/no results and hints. Never values.
     res.writeHead(503, {
       "Content-Type": "application/json",
       "Cache-Control": "no-store",
@@ -90,7 +125,10 @@ export default async function handler(req, res) {
     res.end(
       JSON.stringify({
         error:
-          "Hosted services are not ready. Check APP_PASSWORD, CRON_SECRET, Turso and private Blob settings in Vercel.",
+          e instanceof StartupError
+            ? e.message
+            : "The app could not start. " + safeMessage(e),
+        diagnostics: e instanceof StartupError ? e.diagnostics : [],
       }),
     );
   }

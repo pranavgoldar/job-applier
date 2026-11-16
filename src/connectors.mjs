@@ -1,11 +1,19 @@
 import { uuid, now } from "./ids.mjs";
-import { assess, geo, initialProfile, isTargetRole } from "./matching.mjs";
+import {
+  assess,
+  geo,
+  initialProfile,
+  isTargetRole,
+  blockedTitle,
+} from "./matching.mjs";
 export const docs = {
   greenhouse: "https://docs.greenhouse.io/job-board.html",
   lever: "https://github.com/lever/postings-api",
   ashby: "https://developers.ashbyhq.com/docs/public-job-posting-api",
   smartrecruiters: "https://developers.smartrecruiters.com/docs/posting-api",
   workable: "https://workable.readme.io/reference/jobs",
+  pinpoint: "https://developers.pinpointhq.com/docs/job-postings",
+  ycombinator: "https://www.ycombinator.com/companies",
 };
 // Company boards a user can add by name.
 export const kinds = Object.keys(docs);
@@ -24,7 +32,9 @@ export function sourceURL(source) {
   const validBoard =
     source.kind === "ashby"
       ? /^[a-zA-Z0-9_.-]{1,100}$/
-      : /^[a-zA-Z0-9_-]{1,100}$/;
+      : source.kind === "pinpoint" || source.kind === "ycombinator"
+        ? /^[a-z0-9-]{1,80}$/
+        : /^[a-zA-Z0-9_-]{1,100}$/;
   if (
     typeof source.board !== "string" ||
     source.board.includes("..") ||
@@ -43,6 +53,10 @@ export function sourceURL(source) {
       return `https://api.smartrecruiters.com/v1/companies/${b}/postings?limit=100&offset=0`;
     case "workable":
       return `https://apply.workable.com/api/v1/widget/accounts/${b}?details=true`;
+    case "pinpoint":
+      return `https://${b}.pinpointhq.com/postings.json`;
+    case "ycombinator":
+      return `https://www.ycombinator.com/companies/${b}`;
     case "himalayas":
       // Remote roles open to people based in India, searched by keyword.
       return `https://himalayas.app/jobs/api/search?q=${b}&country=IN&limit=20&page=1`;
@@ -136,19 +150,31 @@ function normalizeWorkable(source, body) {
     compensation: null,
   }));
 }
+// Where a remote role may be done from, as the feed states it.
+export function remoteLocation(countries = []) {
+  const list = [...new Set(countries.map((c) => String(c).trim()))].filter(
+    Boolean,
+  );
+  if (!list.length) return "Remote · Worldwide";
+  // Lead with India when it is genuinely on the list; never add it otherwise.
+  const india = list.includes("India"),
+    shown = [...(india ? ["India"] : []), ...list.filter((c) => c !== "India")],
+    head = shown.slice(0, 3).join(", "),
+    more = shown.length - 3;
+  return `Remote · ${head}${more > 0 ? ` + ${more} more countries` : ""}`;
+}
 function normalizeHimalayas(source, body) {
   if (!Array.isArray(body?.jobs))
     throw new Error("Unexpected source schema; jobs were not changed");
   return body.jobs.map((j) => {
-    const countries = j.locationRestrictions || [],
-      others = countries.filter((c) => c !== "India").length;
+    const countries = (j.locationRestrictions || []).map(String);
     return {
       ...base(source),
       company: j.companyName,
       title: j.title,
-      location: !countries.length
-        ? "Remote · Worldwide"
-        : "Remote · India" + (others ? ` + ${others} more countries` : ""),
+      location: remoteLocation(countries),
+      remoteCountries: countries,
+      indiaEligible: !countries.length || countries.includes("India"),
       description: plain(j.description || j.excerpt || "").slice(0, 8000),
       employmentType:
         j.employmentType === "Intern"
@@ -165,7 +191,84 @@ function normalizeHimalayas(source, body) {
     };
   });
 }
+function normalizePinpoint(source, body) {
+  if (!Array.isArray(body?.data))
+    throw new Error("Unexpected source schema; jobs were not changed");
+  return body.data.map((j) => {
+    const l = j.location || {},
+      remote = j.workplace_type === "remote";
+    return {
+      ...base(source),
+      title: j.title,
+      location: joined([l.city, l.name], remote ? "Remote" : "") || "Unknown",
+      description: plain(
+        [j.description, j.key_responsibilities, j.skills_knowledge_expertise]
+          .filter(Boolean)
+          .join(" "),
+      ).slice(0, 12000),
+      employmentType: j.employment_type_text || "Unknown",
+      isRemote: remote,
+      originalUrl: j.url,
+      applyUrl: j.url || null,
+      sourceId: String(j.id),
+      postedAt: null,
+      compensation: null,
+    };
+  });
+}
+// A YC company page carries its data, including open roles, as JSON in the HTML.
+export function ycPage(htmlText) {
+  const m = String(htmlText).match(/data-page="([^"]+)"/);
+  if (!m) throw new Error("Unexpected source schema; jobs were not changed");
+  const props = JSON.parse(plainEntities(m[1])).props || {};
+  if (!props.company)
+    throw new Error("Unexpected source schema; jobs were not changed");
+  return props;
+}
+const plainEntities = (s) =>
+  s
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&#x27;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&");
+function normalizeYC(source, props) {
+  return (props.jobPostings || []).map((j) => ({
+    ...base(source),
+    title: j.title,
+    location: String(j.location || "Unknown").split(" / ")[0],
+    // The listing page gives facts, not the full write-up.
+    description: plain(
+      [
+        j.prettyRole && "Role: " + j.prettyRole + ".",
+        j.minExperience && "Minimum experience: " + j.minExperience + ".",
+        j.salaryRange && "Salary: " + j.salaryRange + ".",
+        props.company.one_liner,
+      ]
+        .filter(Boolean)
+        .join(" "),
+    ),
+    descriptionPartial: true,
+    employmentType: j.type || "Unknown",
+    isRemote: /remote/i.test(j.location || ""),
+    originalUrl: "https://www.ycombinator.com" + j.url,
+    applyUrl: null,
+    sourceId: String(j.id),
+    postedAt: null,
+    compensation: j.salaryRange || null,
+    activeEvidence: "Listed on the company’s Y Combinator page",
+  }));
+}
 export function normalize(source, body) {
+  if (source.kind === "pinpoint")
+    return normalizePinpoint(source, body).filter(
+      (j) => j.title && j.originalUrl,
+    );
+  if (source.kind === "ycombinator")
+    return normalizeYC(
+      source,
+      typeof body === "string" ? ycPage(body) : body,
+    ).filter((j) => j.title);
   if (source.kind === "himalayas")
     return normalizeHimalayas(source, body).filter(
       (j) => j.title && j.originalUrl && j.company,
@@ -244,7 +347,14 @@ export async function upsertJobs(store, jobs, profile) {
       previous = old ? JSON.parse(old.data) : {},
       data = {
         ...job,
+        // What the person did with this job survives every re-scan.
         ...(previous.collection ? { collection: previous.collection } : {}),
+        ...(previous.applyOpened ? { applyOpened: previous.applyOpened } : {}),
+        ...(previous.closed || previous.unsuitable
+          ? { reopenedAt: now() }
+          : previous.reopenedAt
+            ? { reopenedAt: previous.reopenedAt }
+            : {}),
         assessment: assess(job, profile),
       };
     statements.push({
@@ -289,7 +399,7 @@ export function isTargetLocation(job) {
 export async function fetchJSON(
   url,
   fetcher = fetch,
-  { deadline = Infinity, headers = {} } = {},
+  { deadline = Infinity, headers = {}, text = false } = {},
 ) {
   let error;
   for (let n = 0; n < 3; n++) {
@@ -305,7 +415,7 @@ export async function fetchJSON(
         ),
         redirect: "error",
         headers: {
-          Accept: "application/json",
+          Accept: text ? "text/html" : "application/json",
           "User-Agent": "CareerDesk/1.0 public-job-discovery",
           ...headers,
         },
@@ -318,10 +428,10 @@ export async function fetchJSON(
         }
         throw e;
       }
-      const text = await r.text();
-      if (text.length > 12_000_000)
+      const body = await r.text();
+      if (body.length > 12_000_000)
         throw new Error("Source response too large");
-      return JSON.parse(text);
+      return text ? body : JSON.parse(body);
     } catch (e) {
       error = e;
       if (e.permanent || deadline - Date.now() < 1000) break;
@@ -329,6 +439,59 @@ export async function fetchJSON(
     }
   }
   throw error;
+}
+// The SmartRecruiters list only carries a summary. Read the full description for
+// postings that could plausibly fit, so they are judged on their real content.
+// Descriptions already stored are reused; at most `limit` are fetched per scan.
+export async function addSmartRecruitersDescriptions(
+  store,
+  source,
+  jobs,
+  fetcher = fetch,
+  deadline = Infinity,
+  limit = 40,
+) {
+  const stored = new Map(
+    (
+      await store.all(
+        "SELECT source_id,data FROM jobs WHERE source='smartrecruiters'",
+      )
+    ).map((r) => [r.source_id, JSON.parse(r.data)]),
+  );
+  let fetched = 0;
+  for (const job of jobs) {
+    if (!isTargetLocation(job) || blockedTitle(job)) continue;
+    const old = stored.get(job.sourceId);
+    if (old && !old.descriptionPartial && old.description) {
+      job.description = old.description;
+      job.descriptionPartial = false;
+      continue;
+    }
+    if (fetched >= limit) continue;
+    fetched++;
+    try {
+      const detail = await fetchJSON(
+          `https://api.smartrecruiters.com/v1/companies/${encodeURIComponent(source.board)}/postings/${encodeURIComponent(job.sourceId)}`,
+          fetcher,
+          { deadline },
+        ),
+        sections = detail?.jobAd?.sections || {},
+        text = plain(
+          ["jobDescription", "qualifications", "additionalInformation"]
+            .map((k) => sections[k]?.text || "")
+            .join(" "),
+        );
+      if (text) {
+        job.description = text.slice(0, 12000);
+        job.descriptionPartial = false;
+        if (detail.applyUrl) job.applyUrl = detail.applyUrl;
+      }
+    } catch {
+      // Keep the summary; the job stays marked as partially described.
+    }
+    await new Promise((r) => setTimeout(r, 120));
+  }
+  return fetched;
 }
 export async function discover(
   store,
@@ -349,7 +512,9 @@ export async function discover(
     };
     try {
       let jobs = [],
-        partial = false;
+        // False when the board could not be read to the end, so absence of a
+        // posting proves nothing.
+        complete = true;
       if (s.kind === "lever") {
         for (let skip = 0; skip < 2000; skip += 100) {
           const body = await fetchJSON(
@@ -381,15 +546,21 @@ export async function discover(
             );
           } catch (e) {
             if (!jobs.length) throw e;
-            partial = true;
+            complete = false;
             break;
           }
           const rows = normalize(s, body);
           jobs.push(...rows);
           if (!(page * 20 < Number(body.totalCount)) || !body.jobs.length)
             break;
+          if (page === 10) complete = false;
           await new Promise((r) => setTimeout(r, 1200));
         }
+      } else if (s.kind === "ycombinator") {
+        jobs = normalize(
+          s,
+          await fetchJSON(sourceURL(s), fetcher, { deadline, text: true }),
+        );
       } else if (s.kind === "smartrecruiters") {
         // Ask the board only for the three target countries instead of every posting.
         for (const country of ["in", "ae", "sg"])
@@ -403,6 +574,7 @@ export async function discover(
             );
             jobs.push(...normalize(s, body));
             if (!(offset + 100 < Number(body.totalFound))) break;
+            if (offset === 900) complete = false;
             await new Promise((r) => setTimeout(r, 250));
           }
       } else
@@ -410,46 +582,88 @@ export async function discover(
           s,
           await fetchJSON(sourceURL(s), fetcher, { deadline }),
         );
-      const relevant = jobs.filter(
-        (job) =>
-          isTargetRole(job) &&
-          isTargetLocation(job) &&
-          !assess(job, profile).blocked.some((x) =>
+      for (const job of jobs) job.sourceRef = s.id;
+      if (s.kind === "smartrecruiters")
+        await addSmartRecruitersDescriptions(store, s, jobs, fetcher, deadline);
+      const unsuitable = (job) => {
+        if (!isTargetRole(job))
+          return "The role no longer matches your target roles.";
+        if (!isTargetLocation(job))
+          return "The location is now outside your target locations.";
+        if (job.indiaEligible === false)
+          return "This remote role is not open to people based in India.";
+        return (
+          assess(job, profile).blocked.find((x) =>
             /Experience requirement|Seniority|mid-senior|restriction excludes India/.test(
               x,
             ),
-          ),
-      );
+          ) || null
+        );
+      };
+      const relevant = jobs.filter((job) => !unsuitable(job));
       const kept = new Set(await upsertJobs(store, relevant, profile));
-      // The board answered in full, so anything it no longer lists has closed.
-      // Untouched matches are removed; ones you saved or applied to are kept and marked.
-      let closed = 0;
-      const feed = feeds.includes(s.kind);
-      for (const row of partial
-        ? []
-        : await store.all("SELECT id,data FROM jobs WHERE source=?", s.kind)) {
+      // Two separate questions for every job stored from this source:
+      //   1. Is the posting still on the board?  (presence, from ALL postings)
+      //   2. Does it still fit the search?       (suitability)
+      // Nothing is deleted. A job is only called "no longer listed" when a
+      // complete read of the board did not contain it.
+      const listed = new Map();
+      for (const job of jobs) {
+        listed.set("id:" + job.sourceId, job);
+        try {
+          listed.set("url:" + canonical(job.originalUrl), job);
+        } catch {}
+      }
+      const feed = feeds.includes(s.kind),
+        updates = [];
+      let closed = 0,
+        dropped = 0;
+      for (const row of await store.all(
+        "SELECT id,canonical,source_id,data FROM jobs WHERE source=?",
+        s.kind,
+      )) {
         if (kept.has(row.id)) continue;
         const data = JSON.parse(row.data);
-        if ((!feed && data.company !== s.company) || data.closed) continue;
-        const used =
-          ["Saved", "Shortlisted"].includes(data.collection) ||
-          (await store.get(
-            "SELECT id FROM applications WHERE job_id=?",
-            row.id,
-          ));
-        if (used)
-          await store.run(
-            "UPDATE jobs SET data=? WHERE id=?",
-            JSON.stringify({
-              ...data,
-              closed: true,
-              active: "No longer listed on the source board",
-            }),
-            row.id,
-          );
-        else await store.run("DELETE FROM jobs WHERE id=?", row.id);
-        closed++;
+        if (
+          data.sourceRef
+            ? data.sourceRef !== s.id
+            : !feed && data.company !== s.company
+        )
+          continue;
+        const posting =
+          listed.get("id:" + row.source_id) ||
+          listed.get("url:" + row.canonical);
+        let next = null;
+        if (posting) {
+          // Still advertised, but it has changed and no longer fits.
+          const reason = unsuitable(posting);
+          next = {
+            ...data,
+            ...posting,
+            assessment: assess(posting, profile),
+            unsuitable: reason,
+            unsuitableSince: data.unsuitableSince || now(),
+            closed: false,
+            active: "Still listed on the source board",
+          };
+          delete next.closedAt;
+          if (!data.unsuitable) dropped++;
+        } else if (complete && !data.closed) {
+          next = {
+            ...data,
+            closed: true,
+            closedAt: now(),
+            active: "No longer listed on the source board",
+          };
+          closed++;
+        }
+        if (next)
+          updates.push({
+            sql: "UPDATE jobs SET data=?,last_checked=? WHERE id=?",
+            args: [JSON.stringify(next), now(), row.id],
+          });
       }
+      if (updates.length) await store.batch(updates);
       const matches = relevant.length;
       await store.run(
         "UPDATE sources SET health=?,last_run=?,error=NULL,count=? WHERE id=?",
@@ -462,7 +676,7 @@ export async function discover(
       await store.event(
         null,
         "discovery",
-        `${s.company}: scanned ${jobs.length} postings, kept ${matches} matching roles${closed ? `, cleared ${closed} no longer listed` : ""}.`,
+        `${s.company}: read ${jobs.length} postings${complete ? "" : " (partial read)"}, ${matches} match${matches === 1 ? "" : "es"}${dropped ? `, ${dropped} still listed but no longer matching` : ""}${closed ? `, ${closed} no longer listed` : ""}.`,
       );
     } catch (e) {
       await store.run(

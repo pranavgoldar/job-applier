@@ -18,7 +18,7 @@ To update later, download the zip again, replace the folder, and click the reloa
 3. It fills your name, email, phone, saved answers (Settings → Application answers) and attaches the resume for that kind of role.
 4. A panel in the corner lists what is left for you, for example "Why do you want to work here?". Click an item to jump to it.
 5. You check everything and press the page's Submit button.
-6. When the employer's confirmation page appears, the dashboard marks the job as Applied. If that is not detected, the dashboard asks "did you submit?" next time you look.
+6. When the employer's confirmation page appears, the dashboard records the job as Applied, labelled "browser-detected", with the exact resume the extension attached. If the page is not detected, or the extension attached no resume, the dashboard asks you to record the submission yourself with the resume you used.
 
 ## What it will and will not do
 

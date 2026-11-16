@@ -36,7 +36,7 @@ async function patchJob(jobId, patch) {
   jobs[jobId] = { ...jobs[jobId], ...patch };
   await session.set({ jobs });
 }
-async function recordSubmitted(jobId) {
+async function recordSubmitted(jobId, url) {
   const jobs = await read(session, "jobs", {}),
     job = jobs[jobId];
   if (!job || job.submitted) return;
@@ -46,6 +46,9 @@ async function recordSubmitted(jobId) {
       jobId,
       company: job.company,
       title: job.title,
+      // Only claim a resume when this extension attached it itself.
+      resumeId: job.report?.resume === "attached" ? job.resumeId : null,
+      url: String(url || "").slice(0, 300),
       at: new Date().toISOString(),
     });
   await local.set({ results });
@@ -81,7 +84,7 @@ const handlers = {
   },
   submitted: async (m, sender) => {
     const jobId = await jobIdForTab(sender.tab?.id);
-    if (jobId) await recordSubmitted(jobId);
+    if (jobId) await recordSubmitted(jobId, m.url);
     return { ok: true };
   },
   // From the popup

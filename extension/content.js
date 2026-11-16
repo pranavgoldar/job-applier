@@ -17,7 +17,7 @@
   const checkSubmitted = () => {
     if (reported || !Fill.detectSubmitted(document)) return false;
     reported = true;
-    send({ type: "submitted" });
+    send({ type: "submitted", url: location.origin + location.pathname });
     panel({ done: true });
     return true;
   };
@@ -46,7 +46,7 @@
       .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
     </style><div class="box">${
       done
-        ? `<b class="ok">Application sent</b><p>Career OS has marked ${esc(packet.company)} as applied. You can close this tab.</p>`
+        ? `<b class="ok">Application sent</b><p>Career OS is recording ${esc(packet.company)} as applied, with the resume attached here. You can close this tab.</p>`
         : waiting
           ? `<b>Career OS</b><p>Looking for the application form…</p>`
           : `<div class="row"><b>Career OS filled ${report.filled.length} field${report.filled.length === 1 ? "" : "s"}</b><button id="x">Hide</button></div>

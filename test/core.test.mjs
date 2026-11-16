@@ -16,7 +16,6 @@ import {
 } from "../src/connectors.mjs";
 import {
   trackFromName,
-  quickTrack,
   untrack,
   addResume,
   prepare,
@@ -438,22 +437,20 @@ test(
   }),
 );
 test(
-  "one click marks a job applied, moves it through stages and removes it again",
+  "an unsubmitted packet can be removed; a submitted application is kept as history",
   fixture(async (s) => {
-    await resume(s);
+    const r = await resume(s);
     const id = await upsertJob(s, job());
-    const a = await quickTrack(s, id, "Applied");
-    assert.equal(a.status, "Applied");
-    assert.equal(a.confirmation.type, "user-confirmed");
-    assert.equal(a.resumeSnapshot.track, "Product");
-    assert.equal(
-      (await quickTrack(s, id, "Assessment / Interview")).status,
-      "Assessment / Interview",
-    );
-    assert.equal((await s.apps()).length, 1);
-    await assert.rejects(async () => await quickTrack(s, id, "Hired"));
+    await prepare(s, id);
     await untrack(s, id);
     assert.equal((await s.apps()).length, 0);
+    const a = await prepare(s, id);
+    await confirmManual(s, a.id, {
+      resumeId: r,
+      evidence: "TEST ONLY: confirmation email received",
+    });
+    await assert.rejects(async () => await untrack(s, id), /history/);
+    assert.equal((await s.apps()).length, 1);
   }),
 );
 test("only early-career Product and Founder’s Office titles are targeted", () => {
@@ -581,7 +578,7 @@ test("SmartRecruiters and Workable boards are normalized", () => {
   assert.throws(() => sourceURL({ kind: "workday", board: "x" }));
 });
 test(
-  "a scan keeps only matching roles and clears ones the board no longer lists",
+  "a scan keeps only matching roles and marks ones the board no longer lists, without deleting them",
   fixture(async (s) => {
     await s.run(
       "INSERT INTO sources(id,kind,company,board) VALUES ('t','greenhouse','TEST','test')",
@@ -622,9 +619,10 @@ test(
     );
     await discover(s, board([]));
     jobs = await s.jobs();
-    assert.equal(jobs.length, 1);
-    assert.equal(jobs[0].sourceId, "2");
-    assert.equal(jobs[0].closed, true);
+    // Nothing is deleted: both are kept as history and marked no longer listed.
+    assert.equal(jobs.length, 2);
+    assert(jobs.every((j) => j.closed === true && j.closedAt));
+    assert.equal(jobs.find((j) => j.sourceId === "2").collection, "Saved");
   }),
 );
 

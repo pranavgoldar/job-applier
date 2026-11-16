@@ -93,8 +93,36 @@ function logo(name) {
 }
 const jobFor = (id) => state.jobs.find((j) => j.id === id),
   appFor = (id) => state.applications.find((a) => a.jobId === id);
-const isApplied = (a) => a && (a.confirmation || !preStages.includes(a.status));
-const preStages = ["Preparing", "Needs my input", "Ready for final step"];
+// Statuses after a submission has been recorded.
+const submittedStatuses = [
+  "Applied",
+  "Assessment / Interview",
+  "Offer",
+  "Rejected",
+  "Withdrawn",
+  "Closed",
+];
+const isApplied = (a) => !!a && submittedStatuses.includes(a.status);
+// A packet that exists but is not submitted yet, or whose submission is unclear.
+// Anything unrecognised lands here too, so no application can drop out of view.
+const inProgress = (a) => !!a && !isApplied(a);
+const statusClass = (s) =>
+  s === "Submission uncertain" || s === "Rejected"
+    ? "warn"
+    : ["Applied", "Offer", "Ready for final step"].includes(s)
+      ? "fintech"
+      : s === "Assessment / Interview"
+        ? "product"
+        : ["Needs my input", "Preparing", "Submitting"].includes(s)
+          ? "founders"
+          : "";
+const statusTag = (a) =>
+  `<span class="tag ${statusClass(a.status)}">${e(a.status)}</span>`;
+const nextStep = (a) =>
+  (a.remaining || []).filter((_, i) => !(a.checks || []).includes(i))[0] ||
+  (a.status === "Submission uncertain"
+    ? "Check the employer’s email or your account, then record what you find."
+    : "Open the application, submit it, then record the confirmation.");
 const isSaved = (j) => ["Saved", "Shortlisted"].includes(j.collection);
 const isNew = (j) => Date.now() - new Date(j.firstSeen).getTime() < 2 * DAY;
 const jobType = (j) =>
@@ -145,7 +173,9 @@ async function api(path, body) {
   const j = await r.json();
   if (!r.ok) {
     if (r.status === 401) login();
-    throw new Error(j.error || "Request failed");
+    throw Object.assign(new Error(j.error || "Request failed"), {
+      diagnostics: j.diagnostics,
+    });
   }
   return j;
 }
@@ -155,8 +185,13 @@ async function refresh(draw = true) {
     if (draw) render();
   } catch (err) {
     if (!state && err.message !== "Sign in required")
-      $("#app").innerHTML = `<div class="loading">${e(err.message)}</div>`;
+      $("#app").innerHTML = startupProblem(err);
   }
+}
+// The app could not start: say which setting or service is the problem.
+function startupProblem(err) {
+  const list = err.diagnostics || [];
+  return `<main class="login"><div class="card login-card" style="width:min(560px,100%)"><div class="brand"><span class="brand-mark">c</span>Career OS</div><h1>The app could not start</h1><p class="muted">${e(err.message)}</p>${list.length ? `<ul class="checks" style="margin-top:18px">${list.map((d) => `<li class="${d.ok ? "ok" : "block"}"><b>${e(d.check)}</b>: ${e(d.detail)}</li>`).join("")}</ul><p class="muted small" style="margin-top:16px">Fix the items marked ✕ in your hosting settings, then redeploy. Secret values are never shown here.</p>` : ""}</div></main>`;
 }
 // Redraw the page, keeping an open job drawer (and its scroll position) in place.
 function redraw() {
@@ -201,47 +236,9 @@ function act(send, { local, done, after } = {}) {
   return run;
 }
 const stamp = () => new Date().toISOString();
-function putApp(app) {
-  if (!app?.id) return;
-  const i = state.applications.findIndex((a) => a.jobId === app.jobId);
-  if (i < 0) state.applications.unshift(app);
-  else state.applications[i] = app;
-}
-// Show a job as tracked straight away; the server's copy replaces this one.
-function trackLocally(jobId, status) {
-  const old = appFor(jobId);
-  if (status === "Not applied") {
-    state.applications = state.applications.filter((a) => a.jobId !== jobId);
-    return;
-  }
-  if (old) {
-    old.status = status;
-    old.confirmation ||= { type: "user-confirmed", time: stamp() };
-    old.updated = stamp();
-    return;
-  }
-  const r = resumeFor(jobFor(jobId).assessment.track);
-  state.applications.unshift({
-    id: "pending-" + jobId,
-    jobId,
-    status,
-    confirmation: { type: "user-confirmed", time: stamp() },
-    notes: "",
-    followUp: null,
-    created: stamp(),
-    updated: stamp(),
-    resumeId: r?.id || null,
-    resumeSnapshot: r
-      ? { id: r.id, track: r.track, version: r.version, name: r.name }
-      : null,
-  });
-}
-const track = (jobId, status, done) =>
-  act(() => api(`jobs/${jobId}/track`, { status }), {
-    local: () => trackLocally(jobId, status),
-    after: putApp,
-    done,
-  });
+// Actions the server must accept first (it enforces the workflow rules).
+const appAction = (jobId, body, done) =>
+  act(() => api("applications/" + appFor(jobId).id, body), { done });
 
 // ---------- login ----------
 function login() {
@@ -274,7 +271,7 @@ function render() {
     companies: companiesPage,
     settings: settingsPage,
   };
-  const applied = state.applications.filter(isApplied).length;
+  const applied = attention().length;
   $("#app").innerHTML =
     `<header class="topbar"><div class="topbar-inner"><div class="brand"><span class="brand-mark">c</span>Career OS</div><nav class="nav" aria-label="Main">${nav
       .map(
@@ -283,7 +280,7 @@ function render() {
       )
       .join(
         "",
-      )}</nav><div class="topbar-actions"><button class="btn sm" data-action="discover" ${scanning ? "disabled" : ""}>${icon("refresh", 15, scanning ? "spin" : "")}<span class="hide-sm">${scanning ? "Checking job boards…" : "Refresh jobs"}</span></button><button class="icon-btn ${view === "settings" ? "on" : ""}" data-view="settings" aria-label="Settings">${icon("settings", 19)}</button></div></div></header><main class="page">${pages[view]()}</main>`;
+      )}</nav><div class="topbar-actions"><button class="btn sm" data-action="discover" ${scanning ? "disabled" : ""}>${icon("refresh", 15, scanning ? "spin" : "")}<span class="hide-sm">${scanning ? (state.scan?.startedAt ? `Checking… ${state.scan.done + state.scan.failed}/${state.scan.total}` : "Checking job boards…") : "Refresh jobs"}</span></button><button class="icon-btn ${view === "settings" ? "on" : ""}" data-view="settings" aria-label="Settings">${icon("settings", 19)}</button></div></div></header><main class="page">${pages[view]()}</main>`;
 }
 function head(title, sub, actions = "") {
   return `<div class="page-head"><div><h1>${title}</h1><p>${sub}</p></div><div class="head-actions">${actions}</div></div>`;
@@ -295,9 +292,11 @@ function visibleJobs() {
   return state.jobs
     .filter((j) => {
       const a = appFor(j.id);
-      if (filters.tab === "open") {
-        if (j.collection === "Dismissed" || isApplied(a) || j.closed)
-          return false;
+      const gone = j.closed || j.unsuitable;
+      if (filters.tab === "closed") {
+        if (!gone) return false;
+      } else if (filters.tab === "open") {
+        if (j.collection === "Dismissed" || isApplied(a) || gone) return false;
       } else if (filters.tab === "saved") {
         if (!isSaved(j)) return false;
       } else if (filters.tab === "dismissed" && j.collection !== "Dismissed")
@@ -334,7 +333,7 @@ function jobCard(j) {
     [, ring] = fit(m.score),
     a = appFor(j.id),
     sector = sectorOf(j);
-  return `<article class="card job" data-job="${j.id}" tabindex="0" role="button" aria-label="${e(j.title)} at ${e(j.company)}">${logo(j.company)}<div class="job-main"><div class="job-title"><span>${e(j.title)}</span>${isNew(j) ? '<span class="tag new">New</span>' : ""}</div><div class="job-meta">${e(j.company)} · ${e(j.location)}${j.postedAt ? " · posted " + ago(j.postedAt) : ""}</div><div class="tags">${sector !== "Other" ? `<span class="tag ${sector.toLowerCase()}">${sector}</span>` : ""}<span class="tag ${m.track === PRODUCT ? "product" : "founders"}">${trackLabel(m.track)}</span><span class="tag">${e(experience(j))}</span>${isApplied(a) ? `<span class="tag fintech">${e(stageLabel(a.status))}</span>` : ""}${j.closed ? '<span class="tag warn">No longer listed</span>' : ""}</div></div><div class="job-side"><div class="score" style="--p:${m.score};--ring:${ring}" title="Match score ${m.score} of 100"><span>${m.score}</span></div><button class="icon-btn ${isSaved(j) ? "on" : ""}" data-save="${j.id}" aria-label="${isSaved(j) ? "Remove from saved" : "Save for later"}" title="${isSaved(j) ? "Saved" : "Save for later"}">${icon("bookmark", 18)}</button>${j.collection === "Dismissed" ? `<button class="icon-btn" data-restore="${j.id}" aria-label="Restore" title="Restore">${icon("undo", 18)}</button>` : `<button class="icon-btn hide-sm" data-dismiss="${j.id}" aria-label="Not interested" title="Not interested">${icon("x", 18)}</button>`}</div></article>`;
+  return `<article class="card job" data-job="${j.id}" tabindex="0" role="button" aria-label="${e(j.title)} at ${e(j.company)}">${logo(j.company)}<div class="job-main"><div class="job-title"><span>${e(j.title)}</span>${isNew(j) ? '<span class="tag new">New</span>' : ""}</div><div class="job-meta">${e(j.company)} · ${e(j.location)}${j.postedAt ? " · posted " + ago(j.postedAt) : ""}</div><div class="tags">${sector !== "Other" ? `<span class="tag ${sector.toLowerCase()}">${sector}</span>` : ""}<span class="tag ${m.track === PRODUCT ? "product" : "founders"}">${trackLabel(m.track)}</span><span class="tag">${e(experience(j))}</span>${a ? statusTag(a) : ""}${j.closed ? '<span class="tag warn">No longer listed</span>' : j.unsuitable ? '<span class="tag warn">No longer matches</span>' : ""}</div></div><div class="job-side"><div class="score" style="--p:${m.score};--ring:${ring}" title="Match score ${m.score} of 100"><span>${m.score}</span></div><button class="icon-btn ${isSaved(j) ? "on" : ""}" data-save="${j.id}" aria-label="${isSaved(j) ? "Remove from saved" : "Save for later"}" title="${isSaved(j) ? "Saved" : "Save for later"}">${icon("bookmark", 18)}</button>${j.collection === "Dismissed" ? `<button class="icon-btn" data-restore="${j.id}" aria-label="Restore" title="Restore">${icon("undo", 18)}</button>` : `<button class="icon-btn hide-sm" data-dismiss="${j.id}" aria-label="Not interested" title="Not interested">${icon("x", 18)}</button>`}</div></article>`;
 }
 function setupBanner() {
   const missing = [PRODUCT, FOUNDERS].filter((t) => !resumeFor(t));
@@ -347,7 +346,10 @@ function setupBanner() {
 function jobsPage() {
   const open = state.jobs.filter(
       (j) =>
-        j.collection !== "Dismissed" && !isApplied(appFor(j.id)) && !j.closed,
+        j.collection !== "Dismissed" &&
+        !isApplied(appFor(j.id)) &&
+        !j.closed &&
+        !j.unsuitable,
     ),
     list = visibleJobs(),
     name = (state.profile.name || "").trim().split(/\s+/)[0],
@@ -370,6 +372,7 @@ function jobsPage() {
       `<button class="btn" data-action="add-job">${icon("plus", 15)}Add a job</button>`,
     ) +
     setupBanner() +
+    scanBanner() +
     `<div class="stats">${[
       ["open", open.length, "Open matches"],
       ["new", open.filter(isNew).length, "New in last 2 days"],
@@ -386,6 +389,7 @@ function jobsPage() {
       ["open", "Open"],
       ["saved", "Saved"],
       ["dismissed", "Hidden"],
+      ["closed", "Closed"],
     ]
       .map(
         ([v, l]) =>
@@ -417,21 +421,27 @@ function jobList(list) {
 }
 
 // ---------- applications ----------
-const stageLabel = (s) =>
-  s === "Assessment / Interview"
-    ? "Interviewing"
-    : preStages.includes(s)
-      ? "To apply"
-      : s;
 function miniCard(j, a) {
-  return `<div class="card mini" data-job="${j.id}" tabindex="0" role="button"><b>${e(j.title)}</b><small>${e(j.company)} · ${e(a && isApplied(a) ? "updated " + ago(a.updated) : regionOf(j))}</small>${a && ["Rejected", "Withdrawn", "Closed"].includes(a.status) ? `<div class="tags"><span class="tag">${e(a.status)}</span></div>` : ""}${a?.followUp ? `<div class="tags"><span class="tag founders">Follow up ${e(a.followUp)}</span></div>` : ""}</div>`;
+  return `<div class="card mini" data-job="${j.id}" tabindex="0" role="button"><b>${e(j.title)}</b><small>${e(j.company)} · updated ${ago(a.updated)}</small><div class="tags">${statusTag(a)}${a.resumeSnapshot ? `<span class="tag">${e(a.resumeSnapshot.track)} v${a.resumeSnapshot.version}</span>` : '<span class="tag warn">No resume recorded</span>'}${a.followUp ? `<span class="tag founders">Follow up ${e(a.followUp)}</span>` : ""}</div></div>`;
+}
+function attentionCard(a) {
+  const j = jobFor(a.jobId),
+    r = a.resumeSnapshot,
+    locked = ["Submitting", "Submission uncertain"].includes(a.status);
+  return `<article class="card attention"><div class="spread"><div class="row" style="flex-wrap:nowrap;min-width:0">${logo(j.company)}<div style="min-width:0"><h3>${e(j.title)}</h3><div class="muted small">${e(j.company)} · ${e(j.location)}</div></div></div>${statusTag(a)}</div><p><b>What’s left:</b> ${e(nextStep(a))}</p>${a.pauseReason ? `<p class="muted small">${e(a.pauseReason)}</p>` : ""}<div class="spread"><span class="muted small">${r ? `${e(r.track)} resume · version ${r.version}` : "No resume selected"} · last activity ${ago(a.updated)}</span><div class="row"><button class="btn primary sm" data-job="${j.id}">Review &amp; finish</button>${locked ? "" : `<button class="btn sm" data-apply="${j.id}">${icon("external", 14)}Open application</button>`}${a.resumeId ? `<a class="btn sm" href="/api/resumes/${a.resumeId}">${icon("download", 14)}Resume</a>` : ""}</div></div></article>`;
 }
 let appTab = "todo";
+// Jobs with nothing started yet.
 const openJobs = () =>
   state.jobs.filter(
     (j) =>
-      j.collection !== "Dismissed" && !isApplied(appFor(j.id)) && !j.closed,
+      j.collection !== "Dismissed" &&
+      !appFor(j.id) &&
+      !j.closed &&
+      !j.unsuitable,
   );
+const attention = () =>
+  state.applications.filter((a) => inProgress(a) && jobFor(a.jobId));
 function extensionCard() {
   if (extVersion())
     return `<div class="callout row"><span class="dot live"></span><span><b>Autofill is connected.</b> Press Apply on a job: the form opens in a new tab, filled in, with your resume attached. Check it and press Submit there.</span></div>`;
@@ -440,25 +450,32 @@ function extensionCard() {
 function applyRow(j) {
   const m = j.assessment,
     sector = sectorOf(j),
-    asked = j.applyOpened && !isApplied(appFor(j.id));
-  return `<article class="card job" data-job="${j.id}" tabindex="0" role="button" aria-label="${e(j.title)} at ${e(j.company)}">${logo(j.company)}<div class="job-main"><div class="job-title"><span>${e(j.title)}</span>${isSaved(j) ? '<span class="tag founders">Saved</span>' : ""}</div><div class="job-meta">${e(j.company)} · ${e(j.location)}</div><div class="tags">${sector !== "Other" ? `<span class="tag ${sector.toLowerCase()}">${sector}</span>` : ""}<span class="tag ${m.track === PRODUCT ? "product" : "founders"}">${trackLabel(m.track)} resume</span><span class="tag">${m.score}/100 match</span>${asked ? `<span class="tag warn">Opened ${ago(j.applyOpened)} · did you submit?</span>` : ""}</div></div><div class="job-side">${asked ? `<button class="btn sm" data-mark-applied="${j.id}">${icon("check", 14)}Yes, applied</button><button class="btn ghost sm" data-not-yet="${j.id}">Not yet</button>` : ""}<button class="btn accent sm" data-apply="${j.id}">${icon("external", 14)}${asked ? "Open again" : "Apply"}</button><button class="icon-btn hide-sm" data-dismiss="${j.id}" aria-label="Not interested" title="Not interested">${icon("x", 18)}</button></div></article>`;
+    asked = !!j.applyOpened;
+  return `<article class="card job" data-job="${j.id}" tabindex="0" role="button" aria-label="${e(j.title)} at ${e(j.company)}">${logo(j.company)}<div class="job-main"><div class="job-title"><span>${e(j.title)}</span>${isSaved(j) ? '<span class="tag founders">Saved</span>' : ""}</div><div class="job-meta">${e(j.company)} · ${e(j.location)}</div><div class="tags">${sector !== "Other" ? `<span class="tag ${sector.toLowerCase()}">${sector}</span>` : ""}<span class="tag ${m.track === PRODUCT ? "product" : "founders"}">${trackLabel(m.track)} resume</span><span class="tag">${m.score}/100 match</span>${asked ? `<span class="tag warn">Opened ${ago(j.applyOpened)} · did you submit?</span>` : ""}</div></div><div class="job-side">${asked ? `<button class="btn sm" data-mark-applied="${j.id}">${icon("check", 14)}Yes, record it</button><button class="btn ghost sm" data-not-yet="${j.id}">Not yet</button>` : ""}<button class="btn accent sm" data-apply="${j.id}">${icon("external", 14)}${asked ? "Open again" : "Apply"}</button><button class="icon-btn hide-sm" data-dismiss="${j.id}" aria-label="Not interested" title="Not interested">${icon("x", 18)}</button></div></article>`;
 }
 function applicationsPage() {
   const apps = state.applications
       .map((a) => [jobFor(a.jobId), a])
-      .filter(([j, a]) => j && isApplied(a)),
+      .filter(([j]) => j),
     todo = openJobs().sort(
       (a, b) =>
         !!b.applyOpened - !!a.applyOpened ||
         isSaved(b) - isSaved(a) ||
         b.assessment.score - a.assessment.score,
     ),
+    waiting = attention(),
     missing = ["name", "email", "phone"].filter((k) => !state.profile[k]),
+    // Every application sits in exactly one column, with its exact status shown.
     cols = [
+      [
+        "In progress",
+        apps.filter(([, a]) => inProgress(a)),
+        "Prepared packets and unclear submissions.",
+      ],
       [
         "Applied",
         apps.filter(([, a]) => a.status === "Applied"),
-        "Jobs you have applied to land here.",
+        "Recorded submissions land here.",
       ],
       [
         "Interviewing",
@@ -476,12 +493,13 @@ function applicationsPage() {
   return (
     head(
       "Applications",
-      "Apply from the To apply list. Each job moves to Applied once it is submitted.",
+      "Apply from To apply. Anything waiting on you is under Needs my attention. Every application and its exact status is under All applications.",
       `<a class="btn" href="/api/export">${icon("download", 15)}Export CSV</a>`,
     ) +
     `<div class="toolbar"><div class="seg" role="tablist">${[
       ["todo", `To apply <i>${todo.length}</i>`],
-      ["done", `Applied <i>${apps.length}</i>`],
+      ["attention", `Needs my attention <i>${waiting.length}</i>`],
+      ["all", `All applications <i>${apps.length}</i>`],
     ]
       .map(
         ([v, l]) =>
@@ -494,7 +512,9 @@ function applicationsPage() {
           ? `<div class="callout spread" style="margin-top:12px"><span>Add your ${missing.join(", ")} so forms can be filled in.</span><button class="btn sm" data-view="settings">Open Settings</button></div>`
           : "") +
         `<div class="jobs" style="margin-top:16px">${todo.map(applyRow).join("") || `<div class="card empty"><h3>Nothing waiting</h3><p>New matches show up here after each scan.</p></div>`}</div>`
-      : `<div class="board three">${cols.map(([t, rows, hint]) => `<section class="col"><div class="col-head">${t}<span>${rows.length}</span></div>${rows.map(([j, a]) => miniCard(j, a)).join("") || `<div class="col-empty">${hint}</div>`}</section>`).join("")}</div>`)
+      : appTab === "attention"
+        ? `<div class="jobs">${waiting.map(attentionCard).join("") || `<div class="card empty"><h3>You’re all caught up</h3><p>When an application needs a decision, a check or its final submission, its packet appears here with what is left to do.</p></div>`}</div>`
+        : `<div class="board">${cols.map(([t, rows, hint]) => `<section class="col"><div class="col-head">${t}<span>${rows.length}</span></div>${rows.map(([j, a]) => miniCard(j, a)).join("") || `<div class="col-empty">${hint}</div>`}</section>`).join("")}</div>`)
   );
 }
 
@@ -522,13 +542,29 @@ function ext(message) {
     }, 8000);
   });
 }
-// Jobs the extension saw you submit: move them to Applied, then tell it we know.
+// Jobs the extension saw you submit. Recorded as "browser-detected", with the
+// resume the extension attached. If it attached none, you confirm it yourself.
 function collectResults(results = []) {
   if (!state || !results.length) return;
   for (const r of results) {
     const j = jobFor(r.jobId);
-    if (j && !isApplied(appFor(j.id)))
-      track(j.id, "Applied", `Applied to ${j.company}. Moved to Applied.`);
+    if (!j || isApplied(appFor(j.id))) continue;
+    if (r.resumeId)
+      act(
+        () =>
+          api(`jobs/${j.id}/confirm`, {
+            detected: true,
+            resumeId: r.resumeId,
+            url: r.url,
+          }),
+        {
+          done: `Applied to ${j.company}. Recorded with the resume that was attached.`,
+        },
+      );
+    else
+      toast(
+        `It looks like you applied to ${j.company}. Record it under Applications so the resume you sent is saved.`,
+      );
   }
   ext({ type: "ack", jobIds: results.map((r) => r.jobId) }).catch(() => {});
 }
@@ -684,6 +720,26 @@ function companyStatus(c) {
   return ["", "Waiting for first scan", ""];
 }
 let companyFilter = "All";
+// Number of companies with at least one open role on a track.
+const matches2 = (all, state, t) =>
+  all.filter((c) =>
+    state.jobs.some(
+      (j) =>
+        j.company === c.name &&
+        j.assessment.track === t &&
+        j.collection !== "Dismissed" &&
+        !j.closed &&
+        !j.unsuitable,
+    ),
+  ).length;
+// Sourced facts about a company. Anything without a source is shown as not verified.
+function evidence(c) {
+  const known = (s) => s && !/^(Unknown|Not )/.test(s),
+    row = (label, text, url) =>
+      `<div class="evidence-row"><span>${label}</span><span>${e(text)}${url ? ` <a href="${e(url)}" target="_blank" rel="noopener noreferrer">source ↗</a>` : ""}</span></div>`;
+  if (!c.fundingStage && !c.indiaSignal && !c.note) return "";
+  return `<details class="evidence"><summary>Evidence</summary>${row("Funding", known(c.fundingStage) ? c.fundingStage : "Not verified", c.fundingEvidenceUrl)}${row("India", known(c.indiaSignal) ? c.indiaSignal : "Not verified", c.indiaEvidenceUrl)}${row("YC", c.ycBacked === true ? `Yes, ${c.ycBatch || "batch not recorded"}` : "Not verified", c.ycBacked === true ? c.ycEvidenceUrl : null)}${c.note ? row("Note", c.note) : ""}${c.checkedOn ? row("Checked", c.checkedOn) : ""}</details>`;
+}
 function companiesPage() {
   const watched = state.companyWatchlist || [],
     known = new Set(watched.map((c) => c.sourceId).filter(Boolean)),
@@ -712,11 +768,17 @@ function companiesPage() {
       .filter((c) =>
         companyFilter === "All"
           ? true
-          : companyFilter === "Manual"
-            ? !c.sourceId
-            : companyFilter === "Auto"
-              ? !!c.sourceId
-              : sector(c) === companyFilter,
+          : companyFilter === "HasProduct"
+            ? matches(c, PRODUCT) > 0
+            : companyFilter === "HasFounders"
+              ? matches(c, FOUNDERS) > 0
+              : companyFilter === "YC"
+                ? c.ycBacked === true
+                : companyFilter === "Manual"
+                  ? !c.sourceId
+                  : companyFilter === "Auto"
+                    ? !!c.sourceId
+                    : sector(c) === companyFilter,
       )
       .sort(
         (a, b) =>
@@ -724,19 +786,37 @@ function companiesPage() {
           (b.sourceCount || 0) - (a.sourceCount || 0) ||
           a.name.localeCompare(b.name),
       ),
-    auto = all.filter((c) => c.sourceId).length;
+    auto = all.filter((c) => c.sourceId).length,
+    // Open matches per company and track, so each track's coverage is visible.
+    matches = (c, t) =>
+      state.jobs.filter(
+        (j) =>
+          j.company === c.name &&
+          j.assessment.track === t &&
+          j.collection !== "Dismissed" &&
+          !j.closed &&
+          !j.unsuitable,
+      ).length,
+    coverage = (t) => {
+      const rows = all.map((c) => matches(c, t)).filter(Boolean);
+      return `${rows.reduce((a, b) => a + b, 0)} open role${rows.reduce((a, b) => a + b, 0) === 1 ? "" : "s"} at ${rows.length} compan${rows.length === 1 ? "y" : "ies"}`;
+    };
   return (
     head(
       "Companies",
       `${auto} companies are checked automatically. ${all.length - auto} more have no public job feed and need a manual look.`,
       `<button class="btn primary" data-action="add-source">${icon("plus", 15)}Add company</button>`,
     ) +
+    `<div class="stats" style="grid-template-columns:repeat(2,1fr)"><div class="stat" style="cursor:default"><b>${matches2(all, state, PRODUCT)}</b><span>Product / APM: ${coverage(PRODUCT)}</span></div><div class="stat" style="cursor:default"><b>${matches2(all, state, FOUNDERS)}</b><span>Founder’s Office: ${coverage(FOUNDERS)}</span></div></div>` +
     `<div class="chips">${[
       ["All", "All"],
       ["Fintech", "Fintech"],
       ["Consumer", "Consumer"],
       ["Auto", "Checked automatically"],
       ["Manual", "Check manually"],
+      ["HasProduct", "Has Product roles"],
+      ["HasFounders", "Has Founder’s Office roles"],
+      ["YC", "YC-backed"],
     ]
       .map(
         ([v, l]) =>
@@ -745,7 +825,7 @@ function companiesPage() {
       .join("")}</div><div class="company-grid">${shown
       .map((c) => {
         const [dot, label, err] = companyStatus(c);
-        return `<div class="card company"><div class="company-top">${logo(c.name)}<div style="flex:1;min-width:0"><div class="company-name">${e(c.name)}</div><div class="muted small">${e(String(c.industry || "").replace(/^(Fintech|Consumer|Software|Job feed)\s*\/\s*/i, ""))}</div></div>${c.sourceId ? `<button class="switch ${c.sourceEnabled ? "on" : ""}" data-source="${e(c.sourceId)}" data-enabled="${c.sourceEnabled ? "0" : "1"}" role="switch" aria-checked="${!!c.sourceEnabled}" aria-label="Check ${e(c.name)} automatically"></button>` : ""}</div><span class="status" title="${e(err)}"><span class="dot ${dot}"></span>${e(label)}</span><div class="company-links">${c.sourceCount ? `<button class="link" data-company-jobs="${e(c.name)}">View ${c.sourceCount} job${c.sourceCount === 1 ? "" : "s"}</button>` : ""}${c.careersUrl ? `<a class="link" href="${e(c.careersUrl)}" target="_blank" rel="noopener noreferrer">Careers page ↗</a>` : ""}</div></div>`;
+        return `<div class="card company"><div class="company-top">${logo(c.name)}<div style="flex:1;min-width:0"><div class="company-name">${e(c.name)}</div><div class="muted small">${e(String(c.industry || "").replace(/^(Fintech|Consumer|Software|Job feed)\s*\/\s*/i, ""))}</div></div>${c.sourceId ? `<button class="switch ${c.sourceEnabled ? "on" : ""}" data-source="${e(c.sourceId)}" data-enabled="${c.sourceEnabled ? "0" : "1"}" role="switch" aria-checked="${!!c.sourceEnabled}" aria-label="Check ${e(c.name)} automatically"></button>` : ""}</div><span class="status" title="${e(err)}"><span class="dot ${dot}"></span>${e(label)}</span><div class="tags"><span class="tag ${matches(c, PRODUCT) ? "product" : ""}">Product ${matches(c, PRODUCT)}</span><span class="tag ${matches(c, FOUNDERS) ? "founders" : ""}">Founder’s Office ${matches(c, FOUNDERS)}</span>${c.ycBacked === true ? `<a class="tag fintech" href="${e(c.ycEvidenceUrl)}" target="_blank" rel="noopener noreferrer" title="Listed in the YC directory">YC ${e((c.ycBatch || "").replace(/^(Winter|Summer|Fall|Spring) 20/, (m) => m[0]))}</a>` : ""}</div>${evidence(c)}<div class="company-links">${c.sourceCount ? `<button class="link" data-company-jobs="${e(c.name)}">View ${c.sourceCount} job${c.sourceCount === 1 ? "" : "s"}</button>` : ""}${c.careersUrl ? `<a class="link" href="${e(c.careersUrl)}" target="_blank" rel="noopener noreferrer">Careers page ↗</a>` : ""}</div></div>`;
       })
       .join("")}</div>`
   );
@@ -808,6 +888,62 @@ const partNames = {
   evidence: ["Job details", 10],
   skills: ["Skills", 15],
 };
+// The full application packet: what stands between this job and a recorded submission.
+function packetSections(j, a) {
+  const m = j.assessment,
+    locked =
+      isApplied(a) || ["Submitting", "Submission uncertain"].includes(a.status),
+    c = a.confirmation,
+    remaining = a.remaining || [],
+    timeline = state.events.filter((ev) => ev.app_id === a.id);
+  return `${a.status === "Submission uncertain" ? '<div class="banner">This submission may or may not have gone through. Do not send it again. Check the employer’s email or your account, then record what you find below.</div>' : ""}<section><div class="spread"><h3>Application status</h3>${statusTag(a)}</div>${a.pauseReason && !isApplied(a) ? `<div class="callout"><b>Why this is waiting:</b> ${e(a.pauseReason)}</div>` : ""}</section><section><h3>${locked ? "Resume sent" : "Resume to send"}</h3>${
+    a.resumeSnapshot
+      ? `<div class="file"><div class="file-icon">${/\.docx$/i.test(a.resumeSnapshot.name) ? "DOCX" : "PDF"}</div><div style="flex:1;min-width:0"><div class="file-name">${e(a.resumeSnapshot.name)}</div><div class="muted small">${trackLabel(a.resumeSnapshot.track)} · version ${a.resumeSnapshot.version}</div></div><a class="btn sm" href="/api/resumes/${a.resumeSnapshot.id}">${icon("download", 14)}Download</a></div>`
+      : `<div class="callout spread"><span>No resume is selected for this application.</span><button class="btn sm" data-view="resumes">Upload</button></div>`
+  }<p class="muted small" style="margin-top:8px">${e(a.resumeReason || m.reason || "")}</p>${
+    !locked && state.resumes.length
+      ? `<div class="row" style="margin-top:8px"><select id="resume-override" aria-label="Choose resume version" style="flex:1">${state.resumes
+          .slice()
+          .sort(
+            (x, y) => x.track.localeCompare(y.track) || y.version - x.version,
+          )
+          .map(
+            (r) =>
+              `<option value="${r.id}" ${a.resumeId === r.id ? "selected" : ""}>${e(trackLabel(r.track))} · v${r.version} · ${e(r.name)}</option>`,
+          )
+          .join(
+            "",
+          )}</select><button class="btn sm" id="save-resume">Use this resume</button></div>`
+      : ""
+  }</section>${
+    isApplied(a)
+      ? ""
+      : `<section><h3>What’s left</h3>${remaining.length ? remaining.map((t, i) => `<label class="check"><input type="checkbox" data-check="${i}" ${(a.checks || []).includes(i) ? "checked" : ""}><span>${e(t)}</span></label>`).join("") : '<p class="muted small">No remaining steps recorded.</p>'}${(a.completed || []).length ? `<details style="margin-top:10px"><summary>Already done (${a.completed.length})</summary><ul class="checks">${a.completed.map((t) => `<li class="ok">${e(t)}</li>`).join("")}</ul></details>` : ""}${
+          !a.eligibilityReviewed && !locked
+            ? `<div class="field" style="margin-top:14px"><label for="eligibility-notes">Eligibility review</label><textarea id="eligibility-notes" placeholder="Note what you confirmed: work authorisation, joining date or hours, anything the posting left unclear."></textarea><button class="btn sm" id="approve-eligibility" style="margin-top:8px">Record review and mark ready</button></div>`
+            : a.eligibilityNotes
+              ? `<div class="callout" style="margin-top:12px"><b>Your eligibility review:</b> ${e(a.eligibilityNotes)}</div>`
+              : ""
+        }</section>`
+  }<section><div class="spread"><h3>Prepared answers</h3>${locked ? "" : '<button class="btn ghost sm" id="edit-answers">Edit or add</button>'}</div>${(a.answers || []).map((x) => `<div class="answer"><div class="spread"><b>${e(x.question)}</b><button class="btn sm" data-copy="${e(x.answer)}">Copy</button></div><span class="tag ${x.verified ? "fintech" : "founders"}">${x.verified ? "From your profile" : "Draft: check before use"}</span><p>${e(x.answer)}</p></div>`).join("") || '<p class="muted small">No answers prepared.</p>'}</section><section><h3>Submission record</h3>${
+    c
+      ? `<div class="callout"><div class="row"><span class="tag ${c.type === "user-confirmed" ? "product" : "fintech"}">${e(c.type)}</span>${c.submittedAt ? `<span class="muted small">Submitted ${e(c.submittedAt)}</span>` : ""}</div><p style="margin-top:8px">${e(c.evidence)}</p><p class="muted small">Recorded ${e(when(c.time))}${a.resumeSnapshot ? ` · ${e(a.resumeSnapshot.track)} resume v${a.resumeSnapshot.version}` : ""}</p>${c.fileId ? `<a class="btn sm" style="margin-top:8px" href="/api/evidence/${c.fileId}">${icon("download", 14)}Confirmation file</a>` : ""}</div>`
+      : `<p class="muted small">Nothing is recorded as sent yet. After you submit on the employer’s site, record it here with the resume you used.</p><button class="btn primary" data-mark-applied="${j.id}" style="margin-top:8px">${icon("check", 15)}${a.status === "Submission uncertain" ? "Record what you found" : "Record submission"}</button>`
+  }</section><section><h3>Stage, notes and follow-up</h3><div class="stack"><div class="row"><select id="app-stage" aria-label="Stage" style="flex:1">${[
+    ...new Set([
+      a.status,
+      ...(isApplied(a)
+        ? ["Assessment / Interview", "Offer", "Rejected", "Withdrawn", "Closed"]
+        : a.status === "Submission uncertain"
+          ? ["Withdrawn", "Closed"]
+          : ["Needs my input", "Ready for final step", "Withdrawn", "Closed"]),
+    ]),
+  ]
+    .map((v) => `<option ${a.status === v ? "selected" : ""}>${e(v)}</option>`)
+    .join(
+      "",
+    )}</select><button class="btn sm" id="save-stage">Update stage</button></div><div class="field"><label for="app-notes">Notes</label><textarea id="app-notes" placeholder="Referral, recruiter name, what you were asked…">${e(a.notes)}</textarea></div><div class="row"><div class="field" style="flex:1"><label for="follow-up">Follow up on</label><input type="date" id="follow-up" value="${e(a.followUp || "")}"></div><button class="btn" id="save-notes" style="align-self:flex-end">Save</button></div>${!c && !["Submitting", "Submission uncertain"].includes(a.status) ? `<button class="btn ghost sm" id="remove-packet">Remove this packet</button>` : ""}</div></section>${timeline.length ? `<section><h3>History</h3>${timeline.map((ev) => `<div class="log-row"><span>${e(ev.message)}</span><time>${e(when(ev.created))}</time></div>`).join("")}</section>` : ""}`;
+}
 function openJob(id) {
   const j = jobFor(id);
   if (!j) return;
@@ -818,41 +954,28 @@ function openJob(id) {
     applied = isApplied(a),
     [fitLabel, fitColor] = fit(m.score),
     sector = sectorOf(j),
-    resume = a?.resumeSnapshot || resumeFor(m.track),
-    applyUrl = j.applyUrl || j.originalUrl,
+    resume = resumeFor(m.track),
     description = j.description || "",
     checks = [
       ...m.blocked.map((t) => ["block", t]),
       ...m.review
         .filter((t) => !/Overlapping responsibilities/.test(t))
         .map((t) => ["", t]),
-    ];
+    ],
+    canApply =
+      !applied && !["Submitting", "Submission uncertain"].includes(a?.status);
   sheet(
     "drawer",
     j.title,
-    `<header class="sheet-head"><div class="spread" style="margin-bottom:12px"><span class="tag" style="color:${fitColor}">${fitLabel} · ${m.score}/100</span><button class="icon-btn" data-close aria-label="Close">${icon("x")}</button></div><div class="hero">${logo(j.company)}<div><h2>${e(j.title)}</h2><div class="muted" style="margin-top:3px">${e(j.company)} · ${e(j.location)}</div></div></div><div class="tags" style="margin-top:12px">${sector !== "Other" ? `<span class="tag ${sector.toLowerCase()}">${sector}</span>` : ""}<span class="tag">${jobType(j)}</span><span class="tag">${e(experience(j))}</span>${isRemote(j) ? '<span class="tag">Remote</span>' : ""}${j.postedAt ? `<span class="tag">Posted ${ago(j.postedAt)}</span>` : ""}${j.closed ? '<span class="tag warn">No longer listed</span>' : ""}</div><div class="row" style="margin-top:16px"><button class="btn accent" style="flex:1" data-apply="${id}">${icon("external", 15)}${extVersion() ? "Apply with autofill" : "Apply on company site"}</button>${applied ? "" : `<button class="btn" data-mark-applied="${id}">${icon("check", 15)}I applied</button>`}<button class="icon-btn ${isSaved(j) ? "on" : ""}" data-save="${id}" aria-label="${isSaved(j) ? "Remove from saved" : "Save for later"}">${icon("bookmark", 18)}</button></div></header><div class="sheet-body">${
-      applied
-        ? `<section><h3>Your application</h3><div class="stack"><div class="field"><label for="app-stage">Status</label><select id="app-stage" style="width:100%">${[
-            ["Applied", "Applied"],
-            ["Assessment / Interview", "Interviewing"],
-            ["Offer", "Offer"],
-            ["Rejected", "Rejected"],
-            ["Withdrawn", "Withdrawn"],
-            ["Not applied", "Remove from tracker"],
-          ]
-            .map(
-              ([v, l]) =>
-                `<option value="${v}" ${a.status === v ? "selected" : ""}>${l}</option>`,
-            )
-            .join(
-              "",
-            )}</select></div><div class="field"><label for="app-notes">Notes</label><textarea id="app-notes" placeholder="Referral, recruiter name, what you were asked…">${e(a.notes)}</textarea></div><div class="row"><div class="field" style="flex:1"><label for="follow-up">Follow up on</label><input type="date" id="follow-up" value="${e(a.followUp || "")}"></div><button class="btn" id="save-notes" style="align-self:flex-end">Save</button></div></div></section>`
-        : ""
-    }<section><h3>Resume to send</h3>${
-      resume
-        ? `<div class="file"><div class="file-icon">${/\.docx$/i.test(resume.name) ? "DOCX" : "PDF"}</div><div style="flex:1;min-width:0"><div class="file-name">${e(resume.name)}</div><div class="muted small">${trackLabel(resume.track)} · version ${resume.version}</div></div><a class="btn sm" href="/api/resumes/${resume.id}">${icon("download", 14)}Download</a></div>`
-        : `<div class="callout spread"><span>No ${trackLabel(m.track)} resume uploaded yet.</span><button class="btn sm" data-view="resumes">Upload</button></div>`
-    }<p class="muted small" style="margin-top:8px">${m.track === PRODUCT ? "This reads as a product role." : "This reads as a strategy and operations role."}${m.ambiguous ? " It has a bit of both, so either resume could work." : ""}</p></section><section><h3>Why it matched</h3><div class="bars">${Object.entries(
+    `<header class="sheet-head"><div class="spread" style="margin-bottom:12px"><span class="tag" style="color:${fitColor}">${fitLabel} · ${m.score}/100</span><button class="icon-btn" data-close aria-label="Close">${icon("x")}</button></div><div class="hero">${logo(j.company)}<div><h2>${e(j.title)}</h2><div class="muted" style="margin-top:3px">${e(j.company)} · ${e(j.location)}</div></div></div><div class="tags" style="margin-top:12px">${a ? statusTag(a) : ""}${sector !== "Other" ? `<span class="tag ${sector.toLowerCase()}">${sector}</span>` : ""}<span class="tag">${jobType(j)}</span><span class="tag">${e(experience(j))}</span>${isRemote(j) ? '<span class="tag">Remote</span>' : ""}${j.postedAt ? `<span class="tag">Posted ${ago(j.postedAt)}</span>` : ""}${j.closed ? '<span class="tag warn">No longer listed</span>' : j.unsuitable ? '<span class="tag warn">No longer matches</span>' : ""}</div><div class="row" style="margin-top:16px">${canApply ? `<button class="btn accent" style="flex:1" data-apply="${id}">${icon("external", 15)}${extVersion() ? "Apply with autofill" : "Apply on company site"}</button>` : `<a class="btn" style="flex:1" href="${e(j.applyUrl || j.originalUrl)}" target="_blank" rel="noopener noreferrer">${icon("external", 15)}Open job page</a>`}${a ? "" : `<button class="btn" data-prepare="${id}">Prepare packet</button><button class="btn" data-mark-applied="${id}">${icon("check", 15)}I applied</button>`}<button class="icon-btn ${isSaved(j) ? "on" : ""}" data-save="${id}" aria-label="${isSaved(j) ? "Remove from saved" : "Save for later"}">${icon("bookmark", 18)}</button></div></header><div class="sheet-body">${j.unsuitable ? `<div class="callout" style="margin-bottom:18px">Still listed, but it changed: ${e(j.unsuitable)}</div>` : ""}${
+      a
+        ? packetSections(j, a)
+        : `<section><h3>Resume to send</h3>${
+            resume
+              ? `<div class="file"><div class="file-icon">${/\.docx$/i.test(resume.name) ? "DOCX" : "PDF"}</div><div style="flex:1;min-width:0"><div class="file-name">${e(resume.name)}</div><div class="muted small">${trackLabel(resume.track)} · version ${resume.version}</div></div><a class="btn sm" href="/api/resumes/${resume.id}">${icon("download", 14)}Download</a></div>`
+              : `<div class="callout spread"><span>No ${trackLabel(m.track)} resume uploaded yet.</span><button class="btn sm" data-view="resumes">Upload</button></div>`
+          }<p class="muted small" style="margin-top:8px">${e(m.reason || "")}</p><p class="muted small">Prepare packet gathers your answers, the exact resume version and a checklist for this job.</p></section>`
+    }<section><h3>Why it matched</h3>${m.matchedBy === "responsibilities" ? '<p class="muted small" style="margin-bottom:8px">Matched on the work described, not the job title.</p>' : ""}<div class="bars">${Object.entries(
       m.parts,
     )
       .filter(([k]) => partNames[k])
@@ -862,33 +985,134 @@ function openJob(id) {
       )
       .join(
         "",
-      )}</div></section>${checks.length ? `<section><h3>Check before you apply</h3><ul class="checks">${checks.map(([c, t]) => `<li class="${c}">${e(t)}</li>`).join("")}</ul></section>` : ""}<section><h3>About the role</h3>${j.descriptionPartial || !description ? `<div class="callout">This job board only shares a summary. Open the company page for the full description.</div>` : `<p class="desc" id="desc">${e(description.slice(0, 900))}${description.length > 900 ? "…" : ""}</p>${description.length > 900 ? '<button class="btn ghost sm" id="more-desc" style="margin-top:6px">Show full description</button>' : ""}`}<div class="row" style="margin-top:14px"><a class="btn sm" href="${e(j.originalUrl)}" target="_blank" rel="noopener noreferrer">${icon("external", 14)}Open job page</a>${j.collection === "Dismissed" ? `<button class="btn sm" data-restore="${id}">${icon("undo", 14)}Restore</button>` : applied ? "" : `<button class="btn ghost sm" data-dismiss="${id}">${icon("x", 14)}Not interested</button>`}</div></section></div>`,
+      )}</div></section>${checks.length ? `<section><h3>Check before you apply</h3><ul class="checks">${checks.map(([c, t]) => `<li class="${c}">${e(t)}</li>`).join("")}</ul></section>` : ""}<section><h3>About the role</h3>${j.descriptionPartial || !description ? `<div class="callout">Only a summary is available for this job. The resume suggestion is based on the title. Open the company page for the full description.</div>` : `<p class="desc" id="desc">${e(description.slice(0, 900))}${description.length > 900 ? "…" : ""}</p>${description.length > 900 ? '<button class="btn ghost sm" id="more-desc" style="margin-top:6px">Show full description</button>' : ""}`}<div class="row" style="margin-top:14px"><a class="btn sm" href="${e(j.originalUrl)}" target="_blank" rel="noopener noreferrer">${icon("external", 14)}Open job page</a>${j.collection === "Dismissed" ? `<button class="btn sm" data-restore="${id}">${icon("undo", 14)}Restore</button>` : a ? "" : `<button class="btn ghost sm" data-dismiss="${id}">${icon("x", 14)}Not interested</button>`}</div></section></div>`,
   );
-  if ($("#more-desc"))
-    $("#more-desc").onclick = () => {
-      $("#desc").textContent = description;
-      $("#more-desc").remove();
-    };
-  if ($("#app-stage"))
-    $("#app-stage").onchange = (ev) => track(id, ev.target.value);
-  if ($("#save-notes"))
-    $("#save-notes").onclick = () => {
-      const notes = $("#app-notes").value,
-        followUp = $("#follow-up").value;
+  const on = (sel, fn) => $(sel) && ($(sel).onclick = fn);
+  on("#more-desc", () => {
+    $("#desc").textContent = description;
+    $("#more-desc").remove();
+  });
+  if (!a) return;
+  on("#save-resume", () =>
+    appAction(
+      id,
+      { action: "resume", resumeId: $("#resume-override").value },
+      "Resume selected for this application",
+    ),
+  );
+  on("#approve-eligibility", () =>
+    appAction(
+      id,
+      { action: "eligibility", notes: $("#eligibility-notes").value },
+      "Review recorded",
+    ),
+  );
+  on("#edit-answers", () => editAnswers(a, id));
+  on("#save-stage", () =>
+    appAction(
+      id,
+      { action: "stage", status: $("#app-stage").value },
+      "Stage updated",
+    ),
+  );
+  on("#remove-packet", () =>
+    act(() => api(`jobs/${id}/untrack`, {}), { done: "Packet removed" }),
+  );
+  on("#save-notes", () => {
+    const notes = $("#app-notes").value,
+      followUp = $("#follow-up").value;
+    act(
+      () =>
+        api("applications/" + appFor(id).id, {
+          action: "notes",
+          notes,
+          followUp,
+        }),
+      {
+        local: () => Object.assign(appFor(id), { notes, followUp }),
+        done: "Notes saved",
+      },
+    );
+  });
+  for (const box of $$("[data-check]", $("#modal-root")))
+    box.onchange = () => {
+      const checks = $$("[data-check]", $("#modal-root"))
+        .filter((n) => n.checked)
+        .map((n) => Number(n.dataset.check));
       act(
-        // Looked up when sent, so a just-created application has its real id.
         () =>
-          api("applications/" + appFor(id).id, {
-            action: "notes",
-            notes,
-            followUp,
-          }),
-        {
-          local: () => Object.assign(appFor(id), { notes, followUp }),
-          done: "Notes saved",
-        },
+          api("applications/" + appFor(id).id, { action: "checks", checks }),
+        { local: () => (appFor(id).checks = checks) },
       );
     };
+}
+// Record a submission: the exact resume, the date and what confirms it.
+function confirmForm(jobId) {
+  const j = jobFor(jobId),
+    a = appFor(jobId),
+    chosen = a?.resumeId || resumeFor(j.assessment.track)?.id,
+    resumes = state.resumes
+      .slice()
+      .sort((x, y) => x.track.localeCompare(y.track) || y.version - x.version);
+  if (!resumes.length)
+    return modal(
+      "Upload a resume first",
+      `<div class="stack"><p class="muted">An application is recorded together with the exact resume you sent. Upload your resume, then come back and record this one.</p><button class="btn primary block" data-view="resumes">Go to Resumes</button></div>`,
+    );
+  modal(
+    a?.status === "Submission uncertain"
+      ? "Record what you found"
+      : "Record your application",
+    `<form id="confirm-form" class="stack"><p class="muted small">${e(j.title)} · ${e(j.company)}</p><div class="field"><label for="confirm-resume">Resume you sent</label><select id="confirm-resume" style="width:100%" required>${resumes.map((r) => `<option value="${r.id}" ${chosen === r.id ? "selected" : ""}>${e(trackLabel(r.track))} · version ${r.version} · ${e(r.name)}</option>`).join("")}</select></div><div class="field"><label for="confirm-date">Date submitted</label><input id="confirm-date" type="date" required value="${stamp().slice(0, 10)}" max="${stamp().slice(0, 10)}"></div><div class="field"><label for="confirm-text">What confirms it</label><textarea id="confirm-text" required minlength="8" placeholder="For example: confirmation email received from the employer, or the reference number shown after submitting."></textarea></div><div class="field"><label for="confirm-file">Attach the confirmation (optional, up to ${state.runtime === "vercel" ? 3 : 8} MB)</label><input id="confirm-file" type="file" accept=".pdf,.png,.jpg,.jpeg,.txt" style="height:auto;padding:8px"></div><p class="muted small">Saved as “user-confirmed”: your own record, not checked with the employer.</p><button class="btn primary block">Save record</button></form>`,
+  );
+  $("#confirm-form").onsubmit = async (ev) => {
+    ev.preventDefault();
+    const file = $("#confirm-file").files[0],
+      body = {
+        resumeId: $("#confirm-resume").value,
+        submittedAt: $("#confirm-date").value,
+        evidence: $("#confirm-text").value,
+      };
+    try {
+      if (file) body.attachment = await filePayload(file);
+      await api(`jobs/${jobId}/confirm`, body);
+      closeModal();
+      appTab = "all";
+      await refresh();
+      toast("Application recorded");
+    } catch (err) {
+      toast(err.message);
+    }
+  };
+}
+function editAnswers(a, jobId) {
+  modal(
+    "Edit prepared answers",
+    `<form id="answers-edit" class="stack">${(a.answers || []).map((x, i) => `<div class="field"><label for="answer-${i}">${e(x.question)}</label><textarea id="answer-${i}" name="answer-${i}">${e(x.answer)}</textarea></div>`).join("")}${field("custom-question", "Another question the employer asks", "")}${field("custom-answer", "Your answer", "", "textarea")}<button class="btn primary block">Save answers</button></form>`,
+  );
+  $("#answers-edit").onsubmit = async (ev) => {
+    ev.preventDefault();
+    const data = new FormData(ev.target),
+      answers = (a.answers || []).map((x, i) => {
+        const answer = data.get("answer-" + i);
+        // An answer you rewrote is your own text, no longer a profile fact.
+        return { ...x, answer, verified: x.verified && answer === x.answer };
+      });
+    if (data.get("custom-question"))
+      answers.push({
+        question: data.get("custom-question"),
+        answer: data.get("custom-answer"),
+        verified: false,
+      });
+    try {
+      await api("applications/" + a.id, { action: "answers", answers });
+      await refresh();
+      openJob(jobId);
+      toast("Answers saved");
+    } catch (err) {
+      toast(err.message);
+    }
+  };
 }
 function addJob() {
   modal(
@@ -926,6 +1150,23 @@ function addSource() {
 }
 
 // ---------- scanning ----------
+// Plain words for how far the scan has got. Never says "complete" while sources wait.
+function scanSummary(scan = state.scan) {
+  if (!scan?.startedAt) return "";
+  const parts = [`${scan.done} of ${scan.total} sources checked`];
+  if (scan.failed) parts.push(`${scan.failed} failed`);
+  if (scan.waiting) parts.push(`${scan.waiting} still waiting`);
+  return parts.join(" · ");
+}
+function scanBanner() {
+  const scan = state.scan;
+  if (!scan?.startedAt || scanning) return "";
+  if (scan.waiting)
+    return `<div class="setup"><div><h3>${scan.active ? "Scan in progress" : "Last scan did not finish"}</h3><p>${e(scanSummary())}. ${scan.active ? "It is still running in the background." : "The remaining sources were not checked, so some roles may be missing."}</p></div><button class="btn primary" data-action="discover">${icon("refresh", 15)}${scan.active ? "Check progress" : "Continue scan"}</button></div>`;
+  if (scan.failed)
+    return `<div class="callout spread" style="margin-bottom:20px"><span>Last scan: ${e(scanSummary())}. Failed sources keep their earlier roles.</span><button class="btn sm" data-view="companies">See which</button></div>`;
+  return "";
+}
 async function discover() {
   if (scanning) return;
   scanning = true;
@@ -934,17 +1175,19 @@ async function discover() {
     await api("discover", {});
     const before = state.jobs.length,
       started = Date.now();
-    // Poll until the queue drains (or four minutes pass).
+    // Follow the scan for up to four minutes, showing real counts as it goes.
     while (Date.now() - started < 240000) {
       await new Promise((r) => setTimeout(r, 2500));
       state = await api("state");
-      if (!state.pending) break;
+      if (!$('[role="dialog"]')) render();
+      if (state.scan.complete || !state.scan.active) break;
     }
-    const diff = state.jobs.length - before;
+    const diff = state.jobs.length - before,
+      scan = state.scan;
     toast(
-      diff > 0
-        ? `Scan complete. ${diff} new role${diff === 1 ? "" : "s"}.`
-        : "Scan complete. No new roles since last time.",
+      scan.complete
+        ? `Scan finished: ${scanSummary()}. ${diff > 0 ? `${diff} new role${diff === 1 ? "" : "s"}.` : "No new roles."}`
+        : `Scan not finished: ${scanSummary()}. ${scan.active ? "It continues in the background." : "Press Continue scan to check the rest."}`,
     );
   } catch (err) {
     toast(err.message);
@@ -980,6 +1223,19 @@ document.addEventListener("click", async (ev) => {
   if ((n = t("[data-restore]")))
     return setCollection(n.dataset.restore, "New", "Restored");
   if ((n = t("[data-apply]"))) return applyTo(n.dataset.apply);
+  if ((n = t("[data-prepare]")))
+    return act(() => api("prepare", { jobId: n.dataset.prepare }), {
+      done: "Packet prepared. See what is left below.",
+    });
+  if ((n = t("[data-copy]"))) {
+    try {
+      await navigator.clipboard.writeText(n.dataset.copy);
+      toast("Copied");
+    } catch {
+      toast("Could not copy. Select the text and copy it yourself.");
+    }
+    return;
+  }
   if ((n = t("[data-not-yet]"))) {
     const id = n.dataset.notYet;
     return act(() => api(`jobs/${id}/opened`, { clear: true }), {
@@ -990,8 +1246,7 @@ document.addEventListener("click", async (ev) => {
     appTab = n.dataset.appTab;
     return render();
   }
-  if ((n = t("[data-mark-applied]")))
-    return track(n.dataset.markApplied, "Applied", "Marked as applied");
+  if ((n = t("[data-mark-applied]"))) return confirmForm(n.dataset.markApplied);
   if ((n = t("[data-view]"))) {
     if ($('[role="dialog"]')) closeModal();
     view = n.dataset.view;
@@ -1080,7 +1335,7 @@ document.addEventListener("click", async (ev) => {
     const k = n.dataset.stat;
     if (k === "applied") {
       view = "applications";
-      appTab = "done";
+      appTab = "all";
     } else {
       filters.tab = k === "saved" ? "saved" : "open";
       filters.sort = k === "new" ? "newest" : "best";

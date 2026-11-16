@@ -93,18 +93,74 @@ const internArea =
   /product|strategy|business|operations|\bops\b|growth|analyst|analytics|research|program|project|marketing|community|partnership|commercial|founder|general|management|finance|consult/i;
 const internOther =
   /engineer|developer|software|\bsde\b|design|\bhr\b|human resources|talent|people|recruit|legal|counsel|compliance|security|animator|biomedical|content|social media|health|immigration|public affairs|audit|\bkyc\b|\baml\b|fraud|investigat|scientist|sales/i;
-export function isTargetRole(job) {
+const seniorTitle =
+  /\b(senior|sr|staff|director|head|vice president|vp|avp|principal|lead|group|general manager|ii|iii|iv|dgm|gm|agm|manager)\b/i;
+// Why a posting is (or is not) the kind of role being searched for.
+// "title" means the title itself says so. "responsibilities" means the title is
+// generic ("Associate", "Analyst") but the described work is clearly Product or
+// Founder's Office work.
+export function roleMatch(job) {
   const title = job.title || "";
   if (
     internWord.test(title + " " + (job.employmentType || "")) &&
     internArea.test(title) &&
     !internOther.test(title)
   )
-    return true;
+    return "title";
+  if (otherFamily.test(title)) return null;
+  if (productRole.test(title) || foundersRole.test(title)) return "title";
+  if (seniorTitle.test(title.replace(/chief of staff/gi, ""))) return null;
+  const { product, founders } = classify(job).responsibilitySignals;
+  return Math.max(product, founders) >= 3 ? "responsibilities" : null;
+}
+export function isTargetRole(job) {
+  return roleMatch(job) !== null;
+}
+// A title that rules a posting out before its description is even read.
+export function blockedTitle(job) {
+  const title = (job.title || "").replace(/chief of staff/gi, "");
   return (
-    (productRole.test(title) || foundersRole.test(title)) &&
-    !otherFamily.test(title)
+    (otherFamily.test(title) && !internWord.test(title)) ||
+    /\b(senior|sr|staff|director|head|vice president|vp|avp|principal|lead|group|general manager|iii|iv)\b/i.test(
+      title,
+    )
   );
+}
+
+// Years of experience the employer asks for, or null when none is stated.
+// "1-3 years" asks for at least 1 and "3+ years" for at least 3: the lower bound.
+// A number of years only counts when the wording around it is about the
+// candidate's experience, so "we have operated for 10 years" is ignored.
+const ABOUT_EXPERIENCE =
+  /^\s*(?:(?:are|is)\s+)?(?:required|needed|minimum|mandatory|preferred|or more)\b|^[^.;!?\n]{0,60}?\b(?:experience|exp\b|expertise|background|track record|working|worked|work\b|in (?:a |an |the )?(?:similar|relevant|product|consulting|strategy|business|start-?up|fintech|role))/;
+const LEAD_IN =
+  /(?:experience|exp|minimum|min|at least|atleast|requires?|required|must have|should have|you have|with|having|bring)\s*(?:of|:|-|–|is|\()?\s*(?:about|around|over|more than)?\s*$/;
+const COMPANY_HISTORY =
+  /(?:operat|founded|established|in business|serv(?:ed|ing)|history|heritage|for (?:over|more than|nearly|almost)?|since|past|last|over the|in the|within|every|per)\s*(?:the\s+)?$/;
+export function requiredExperience(title = "", description = "") {
+  const text = (String(title || "") + " . " + String(description || ""))
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+  const found = [];
+  for (const m of text.matchAll(
+    /(\d{1,2})\s*(?:\+|(?:[-–]|to)\s*\d{1,2})?\s*\+?\s*(?:years?|yrs?)\b/g,
+  )) {
+    const n = Number(m[1]);
+    if (n > 20) continue;
+    const before = text.slice(Math.max(0, m.index - 45), m.index),
+      after = text.slice(m.index + m[0].length, m.index + m[0].length + 90);
+    const lead = LEAD_IN.test(before),
+      about = ABOUT_EXPERIENCE.test(after);
+    if (!lead && !about) continue;
+    if (COMPANY_HISTORY.test(before) && !about) continue;
+    found.push(n);
+  }
+  if (found.length) return Math.max(...found);
+  return /\b(?:no|without|zero) (?:prior |previous |work )?experience (?:is )?(?:required|needed|necessary)|freshers? (?:welcome|can apply|are welcome)|no experience\b/.test(
+    text,
+  )
+    ? 0
+    : null;
 }
 
 const count = (s, terms) =>
@@ -171,16 +227,9 @@ export function assess(job, profile = initialProfile) {
   const blocked = [],
     review = [],
     evidence = [];
-  // "1-3 years" asks for at least 1; "3+ years" asks for at least 3. Use that lower bound.
-  const years = [
-    ...((job.title || "").toLowerCase() + " " + d).matchAll(
-      /(\d{1,2})\s*(?:\+|(?:[-–]|to)\s*\d{1,2})?\s*\+?\s*(?:years?|yrs?)/g,
-    ),
-  ]
-    .map((m) => Number(m[1]))
-    .filter((n) => n <= 20);
+  const stated = requiredExperience(job.title, job.description);
   const level = String(job.experienceLevel || "").toLowerCase();
-  let requiredYears = years.length ? Math.max(...years) : null;
+  let requiredYears = stated;
   if (/mid.?senior|director|executive/.test(level))
     blocked.push("Employer lists this as a mid-senior or higher level role.");
   if (requiredYears > 2)
@@ -289,8 +338,9 @@ export function assess(job, profile = initialProfile) {
   const sector = sectorOf(job, t),
     fintech = sector === "Fintech",
     place = geo(job);
+  const matchedBy = roleMatch(job);
   const relevant =
-    isTargetRole(job) ||
+    matchedBy !== null ||
     /product|apm|founder|business operations|strategy|strategic|chief of staff|special projects/.test(
       t,
     );
@@ -329,6 +379,7 @@ export function assess(job, profile = initialProfile) {
     review,
     evidence,
     requiredYears,
+    matchedBy,
     sector,
     region: place.region || (remote ? "Remote" : "Other"),
     remote,

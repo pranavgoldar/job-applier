@@ -283,7 +283,34 @@ export async function approveEligibility(store, id, notes) {
     status: "Ready for final step",
   });
 }
-export async function confirmManual(store, id, { evidence, attachment }) {
+async function resumeSnapshot(store, resumeId) {
+  const r =
+    resumeId && (await store.get("SELECT * FROM resumes WHERE id=?", resumeId));
+  if (!r) throw new Error("Choose the exact resume version you sent");
+  return {
+    id: r.id,
+    track: r.track,
+    version: r.version,
+    sha256: r.sha256,
+    name: r.name,
+  };
+}
+function submissionDate(value) {
+  const day = String(value || new Date().toISOString()).slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || Number.isNaN(Date.parse(day)))
+    throw new Error("Enter the date you submitted, as YYYY-MM-DD");
+  // One day of slack covers time zones ahead of the server.
+  if (Date.parse(day) > Date.now() + 86400000)
+    throw new Error("The submission date cannot be in the future");
+  return day;
+}
+// The person reports a submission: which exact resume went, when, and what
+// confirms it. This is also how an uncertain submission is reconciled.
+export async function confirmManual(
+  store,
+  id,
+  { evidence, attachment, resumeId, submittedAt } = {},
+) {
   const a = await store.app(id);
   if (!a) throw new Error("Application not found");
   if (
@@ -292,8 +319,8 @@ export async function confirmManual(store, id, { evidence, attachment }) {
     )
   )
     throw new Error("A submission is already recorded");
-  if (!a.resumeId)
-    throw new Error("Select the exact resume version used first");
+  const snapshot = await resumeSnapshot(store, resumeId || a.resumeId);
+  const day = submissionDate(submittedAt);
   if (typeof evidence !== "string" || evidence.trim().length < 8)
     throw new Error(
       "Provide confirmation text, email details or a reference (at least 8 characters)",
@@ -324,14 +351,56 @@ export async function confirmManual(store, id, { evidence, attachment }) {
   await store.event(
     id,
     "user_confirmation",
-    "User reported successful submission; employer confirmation was not independently verified.",
+    a.status === "Submission uncertain"
+      ? "Uncertain submission reconciled with the user’s evidence; employer confirmation was not independently verified."
+      : "User reported successful submission; employer confirmation was not independently verified.",
   );
   return await store.updateApp(id, {
     status: "Applied",
+    resumeId: snapshot.id,
+    resumeSnapshot: snapshot,
+    approvedResume: true,
     confirmation: {
       type: "user-confirmed",
       evidence: evidence.trim(),
       fileId,
+      submittedAt: day,
+      time: now(),
+    },
+    remaining: [],
+    checks: [],
+  });
+}
+// The browser extension saw the employer's confirmation page after the person
+// pressed Submit. Recorded as its own kind of evidence: stronger than a bare
+// claim, weaker than a receipt the system itself obtained.
+export async function confirmDetected(store, jobId, { resumeId, url } = {}) {
+  const a = await prepare(store, jobId);
+  if (a.confirmation) return a;
+  if (a.status === "Submission uncertain")
+    throw new Error(
+      "This submission is marked uncertain. Reconcile it with your own confirmation first.",
+    );
+  const snapshot = await resumeSnapshot(store, resumeId);
+  let host = "the employer’s site";
+  try {
+    host = new URL(url).hostname;
+  } catch {}
+  await store.event(
+    a.id,
+    "browser_confirmation",
+    `Confirmation page seen in the user’s browser on ${host}; resume ${snapshot.track} v${snapshot.version} was attached by the extension.`,
+  );
+  return await store.updateApp(a.id, {
+    status: "Applied",
+    resumeId: snapshot.id,
+    resumeSnapshot: snapshot,
+    approvedResume: true,
+    confirmation: {
+      type: "browser-detected",
+      evidence: `Employer confirmation page seen in your browser on ${host}.`,
+      fileId: null,
+      submittedAt: now().slice(0, 10),
       time: now(),
     },
     remaining: [],
@@ -367,40 +436,23 @@ export async function setStage(store, id, status) {
     status,
   });
 }
-// One-click tracking from the dashboard: the user says where an application stands.
-export const quickStages = [
-  "Applied",
-  "Assessment / Interview",
-  "Offer",
-  "Rejected",
-  "Withdrawn",
-];
-export async function quickTrack(store, jobId, status) {
-  if (!quickStages.includes(status)) throw new Error("Unknown status");
-  const a = await prepare(store, jobId);
-  const patch = { status };
-  if (!a.confirmation)
-    patch.confirmation = {
-      type: "user-confirmed",
-      evidence: "Marked as applied from the dashboard.",
-      fileId: null,
-      time: now(),
-    };
-  const [, updated] = await Promise.all([
-    store.event(a.id, "stage", `Marked as ${status}.`),
-    store.updateApp(a.id, patch),
-  ]);
-  return updated;
-}
+// Remove a packet that was never submitted. Submitted applications are history:
+// they are withdrawn or closed, never erased.
 export async function untrack(store, jobId) {
-  const a = await store.get(
-    "SELECT id FROM applications WHERE job_id=?",
-    jobId,
-  );
+  const a = await store.get("SELECT * FROM applications WHERE job_id=?", jobId);
   if (!a) return;
+  const app = appRow(a);
+  if (
+    app.confirmation ||
+    ["Submitting", "Submission uncertain"].includes(app.status)
+  )
+    throw new Error(
+      "A submitted or uncertain application is kept as history. Mark it Withdrawn or Closed instead.",
+    );
   await store.run("DELETE FROM files WHERE app_id=?", a.id);
+  await store.run("DELETE FROM events WHERE app_id=?", a.id);
   await store.run("DELETE FROM applications WHERE id=?", a.id);
-  await store.event(null, "stage", "Application removed from the tracker.");
+  await store.event(null, "stage", "Unsubmitted packet removed.");
 }
 // Deliberately restricted: the only submission adapter is an in-process test fixture.
 // External employer sites always hand off. No outgoing application POST is implemented.
