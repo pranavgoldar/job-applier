@@ -50,7 +50,11 @@ test(
       },
     );
     assert(c.every((x) => x.tracks.length === 2));
-    assert(c.find((x) => x.id === "wise").coverage.startsWith("Manual"));
+    assert(c.find((x) => x.id === "revolut").coverage.startsWith("Manual"));
+    assert.equal(
+      c.find((x) => x.id === "wise").connector.kind,
+      "smartrecruiters",
+    );
     assert(
       c
         .find((x) => x.id === "alaan")

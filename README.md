@@ -53,15 +53,22 @@ Open `http://127.0.0.1:4173`. Local development binds to loopback. Set `APP_PASS
 
 ## What works
 
-- Overview, job feed, attention queue, application tracker, resume library, profile and answers, company watchlist, source health, activity, follow-ups and CSV export.
-- PDF/DOCX resume versioning with exact files and checksums attached to each preparation/application. New defaults do not replace older application versions.
-- Responsibilities-based track classification, transparent relevance scores and mandatory eligibility review. Scores are not hiring probabilities. Internships are not counted as full-time tenure.
-- Copyable and editable answer packets, remaining-action checklists, pause reasons, original job/application links, notes, follow-up dates and user-confirmed evidence uploads.
-- Ordinary HTTP discovery from Greenhouse, Lever and Ashby. No AI key or chat session is required. Timeouts, retries, batching, deduplication, pagination and source health are included.
-- Durable per-source cloud tasks with atomic claims and recovery of stale discovery attempts. Manual Run discovery starts bounded work through Vercel's `waitUntil`; pending work can resume at the next trigger.
-- Optional user-triggered Chrome preparation extension. It never submits. See [extension/README.md](extension/README.md).
+- **Jobs:** one feed of matched roles with search, location chips (Bangalore, Mumbai, rest of India, Dubai, Singapore, remote) and filters for resume track, job or internship, and sector. Save, hide, or open a role to see why it matched.
+- **Applications:** a four-column board (To apply, Applied, Interviewing, Outcome). Mark a job applied in one click, then update its stage, notes and follow-up date.
+- **Resumes:** one slot each for Product / APM and Founder’s Office. Drag in a PDF or DOCX. A file named like `… APM resume.pdf` or `… founder office resume.pdf` is filed automatically. Old versions are kept.
+- **Companies:** every watched company with its scan status, an on/off switch and its matches. Add your own by job-board name.
+- **Discovery without AI:** ordinary HTTP reads of public job-board feeds from Greenhouse, Lever, Ashby, SmartRecruiters and Workable. No AI key, no paid API, no subscription.
 
-The watchlist includes 22 named firms and 12 similar/research targets, with ten configured ATS boards. Other companies remain clearly marked for manual checks. A configured source is not a successful live fetch or evidence of a suitable vacancy. Funding-stage and India-expansion notes are dated research, not an automatically refreshed company-news feed. See [COMPANY-WATCHLIST.md](COMPANY-WATCHLIST.md).
+### How discovery decides what to keep
+
+1. Read every posting from each enabled company board.
+2. Keep titles in the Product family (APM, Product Analyst, Product intern…) or Founder’s Office family (Chief of Staff, Strategy & Operations, BizOps, early-career programmes…). Engineering, design, sales, legal, compliance and HR titles are dropped.
+3. Keep locations in India, the UAE or Singapore, plus remote roles open to Asia or worldwide.
+4. Drop senior titles (Senior, Lead, Staff, level II and above) and roles asking for more than two years.
+5. Score what is left out of 100: role fit 30, experience 20, sector 20 (fintech highest, then consumer), location 20 (Bangalore highest, then Mumbai, rest of India, Dubai, Singapore), job detail 10.
+6. Roles a board stops listing are removed on the next successful scan. Ones you saved or applied to are kept and marked as no longer listed.
+
+The watchlist has 82 companies; 61 have a verified public board and are scanned automatically. The rest (for example Revolut, Remitly, Navi, Tabby) use careers sites without a public feed and are listed for manual checks. See [COMPANY-WATCHLIST.md](COMPANY-WATCHLIST.md). Workable rate-limits shared server addresses, so its two boards can show a temporary error.
 
 ## Application boundaries
 
@@ -86,7 +93,8 @@ See [TEST-RESULTS.md](TEST-RESULTS.md). Cloud integration tests use the real lib
 - `src/cloud-store.mjs`, `src/store.mjs`, `src/sql-model.mjs`: cloud/local persistent storage.
 - `src/files.mjs`: private Blob and local file adapters.
 - `src/connectors.mjs`, `src/cloud-worker.mjs`, `src/worker.mjs`: discovery and scheduling.
-- `src/applications.mjs`, `src/matching.mjs`, `src/watchlist.mjs`: preparation, eligibility and company targets.
+- `src/applications.mjs`, `src/matching.mjs`, `src/watchlist.mjs`: tracking, role/location/experience rules and scoring, company targets.
+- `src/target-companies.json`: the company list and each company’s job-board identifier.
 - `migrations/`: append-only schema migrations, recorded by checksum on startup.
 - `scripts/migrate-to-cloud.mjs`: private data transfer into an empty cloud app.
 - `public/`: responsive browser app.

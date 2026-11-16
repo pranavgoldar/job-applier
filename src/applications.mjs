@@ -1,7 +1,26 @@
 import path from "node:path";
 import { uuid, now, sha } from "./ids.mjs";
 import { initialProfile, statuses, assess } from "./matching.mjs";
+// "Pranav Goldar APM resume.pdf" -> Product, "... founder office resume.pdf" -> Founder’s Office.
+export function trackFromName(name = "") {
+  const n = String(name)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ");
+  const founders =
+      /founder|\bfo\b|chief of staff|\bcos\b|strategy|biz ?ops|business|generalist/.test(
+        n,
+      ),
+    product = /\bapm\b|\bpm\b|product/.test(n);
+  if (founders && !product) return "Founder’s Office";
+  if (product && !founders) return "Product";
+  return null;
+}
 export async function addResume(store, { track, name, bytes, mime }) {
+  track ||= trackFromName(name);
+  if (!track)
+    throw new Error(
+      "Could not tell which resume this is from the file name. Choose Product or Founder’s Office.",
+    );
   if (!["Product", "Founder’s Office"].includes(track))
     throw new Error("Unknown resume track");
   if (!bytes.length || bytes.length > 8 * 1024 * 1024)
@@ -345,6 +364,38 @@ export async function setStage(store, id, status) {
   return await store.updateApp(id, {
     status,
   });
+}
+// One-click tracking from the dashboard: the user says where an application stands.
+export const quickStages = [
+  "Applied",
+  "Assessment / Interview",
+  "Offer",
+  "Rejected",
+  "Withdrawn",
+];
+export async function quickTrack(store, jobId, status) {
+  if (!quickStages.includes(status)) throw new Error("Unknown status");
+  const a = await prepare(store, jobId);
+  const patch = { status };
+  if (!a.confirmation)
+    patch.confirmation = {
+      type: "user-confirmed",
+      evidence: "Marked as applied from the dashboard.",
+      fileId: null,
+      time: now(),
+    };
+  await store.event(a.id, "stage", `Marked as ${status}.`);
+  return await store.updateApp(a.id, patch);
+}
+export async function untrack(store, jobId) {
+  const a = await store.get(
+    "SELECT id FROM applications WHERE job_id=?",
+    jobId,
+  );
+  if (!a) return;
+  await store.run("DELETE FROM files WHERE app_id=?", a.id);
+  await store.run("DELETE FROM applications WHERE id=?", a.id);
+  await store.event(null, "stage", "Application removed from the tracker.");
 }
 // Deliberately restricted: the only submission adapter is an in-process test fixture.
 // External employer sites always hand off. No outgoing application POST is implemented.

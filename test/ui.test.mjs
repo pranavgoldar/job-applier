@@ -4,7 +4,7 @@ import fs from "node:fs";
 import vm from "node:vm";
 import { parseHTML } from "linkedom";
 import { assess, initialProfile } from "../src/matching.mjs";
-test("all dashboard views render and the attention packet exposes real remaining work", async () => {
+test("every dashboard view renders, the job drawer links the right resume, and resumes sort by file name", async () => {
   const j = {
     id: "job1",
     company: "TEST FIXTURE COMPANY",
@@ -102,22 +102,22 @@ test("all dashboard views render and the attention packet exposes real remaining
     FileReader: class {},
     setInterval: () => 0,
     setTimeout: () => 0,
+    Date,
+    location: { reload() {} },
     fetch: async () => ({ ok: true, json: async () => data }),
   });
   await vm.runInContext(
     "(async()=>{" +
       fs.readFileSync("public/app.js", "utf8") +
-      ";globalThis.ui={render,openJob,closeModal,addJob,uploadResume,addSource,setView:v=>{view=v;render()}}})()",
+      ";globalThis.ui={render,openJob,closeModal,addJob,uploadResume,addSource,guessTrack,setView:v=>{view=v;render()}}})()",
     context,
   );
+  const text = () => window.document.body.textContent;
   for (const view of [
-    "overview",
-    "attention",
     "jobs",
-    "tracker",
+    "applications",
     "resumes",
-    "profile",
-    "activity",
+    "companies",
     "settings",
   ]) {
     context.ui.setView(view);
@@ -127,33 +127,44 @@ test("all dashboard views render and the attention packet exposes real remaining
       view + " contains undefined data",
     );
   }
+  context.ui.setView("jobs");
+  assert(text().includes("Product Management Intern"));
+  assert(window.document.querySelector('[data-job="job1"]'));
+  context.ui.setView("companies");
+  assert(text().includes("TEST AUTO"));
+  assert(text().includes("TEST MANUAL"));
+  assert(text().includes("Check manually"));
+  context.ui.setView("resumes");
+  assert(text().includes("TEST.pdf"));
+  assert(text().includes("Drop your Founder’s Office resume here"));
   context.ui.setView("settings");
-  assert(window.document.body.textContent.includes("Company watchlist"));
-  assert(window.document.body.textContent.includes("TEST AUTO"));
-  assert(window.document.body.textContent.includes("TEST MANUAL"));
-  assert(
-    window.document.body.textContent.includes(
-      "Manual review — collector not connected",
-    ),
-  );
-  context.ui.setView("attention");
-  assert(window.document.body.textContent.includes("Confirm hours"));
+  assert(text().includes("No AI and no paid API"));
   context.ui.openJob("job1");
   assert(window.document.querySelector('[role="dialog"]'));
-  assert(window.document.querySelector("[data-copy]"));
   assert(window.document.querySelector('a[href="/api/resumes/resume1"]'));
-  assert(window.document.querySelector("#confirmation-file"));
-  assert(window.document.querySelector("#approve-eligibility"));
-  assert(window.document.querySelector("#edit-answers"));
   assert(
-    window.document.body.textContent.includes("No fields have been filled"),
+    window.document.querySelector('a[href="https://example.test/job/1/apply"]'),
   );
-  assert(window.document.body.textContent.includes("user-confirmed"));
+  assert(window.document.querySelector("[data-mark-applied]"));
+  assert(
+    !window.document
+      .querySelector("#modal-root")
+      .innerHTML.includes("undefined"),
+  );
   context.ui.closeModal();
   assert(!window.document.querySelector('[role="dialog"]'));
-  for (const fn of ["addJob", "uploadResume", "addSource"]) {
+  for (const fn of ["addJob", "addSource", "uploadResume"]) {
     context.ui[fn]();
-    assert(window.document.querySelector("form"));
+    assert(window.document.querySelector("form"), fn);
     context.ui.closeModal();
   }
+  assert.equal(
+    context.ui.guessTrack("Pranav Goldar APM resume.pdf"),
+    "Product",
+  );
+  assert.equal(
+    context.ui.guessTrack("Pranav Goldar founder office resume.pdf"),
+    "Founder’s Office",
+  );
+  assert.equal(context.ui.guessTrack("resume-final.pdf"), null);
 });
