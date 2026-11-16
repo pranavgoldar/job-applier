@@ -17,6 +17,9 @@ assert(
   config.crons.every((c) => c.schedule === "0 3 * * *"),
   "Default deployment uses one daily cron",
 );
+// Package the browser extension as one download for the dashboard.
+const { extensionZip } = await import("../src/zip.mjs");
+fs.writeFileSync("public/career-os-extension.zip", extensionZip());
 console.log(
   "Vercel assets and API source ready. No private data is included in the build.",
 );

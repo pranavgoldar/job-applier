@@ -614,6 +614,14 @@ textarea:focus {
   gap: 14px;
   align-items: start;
 }
+.board.three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.seg button i {
+  font-style: normal;
+  opacity: 0.55;
+  margin-left: 4px;
+}
 .col {
   background: var(--sunken);
   border-radius: var(--radius);
@@ -1143,6 +1151,7 @@ a.link {
     grid-template-columns: repeat(2, 1fr);
   }
   .board,
+  .board.three,
   .resume-grid,
   .settings-grid,
   .form-grid {

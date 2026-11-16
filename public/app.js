@@ -426,22 +426,39 @@ const stageLabel = (s) =>
 function miniCard(j, a) {
   return `<div class="card mini" data-job="${j.id}" tabindex="0" role="button"><b>${e(j.title)}</b><small>${e(j.company)} · ${e(a && isApplied(a) ? "updated " + ago(a.updated) : regionOf(j))}</small>${a && ["Rejected", "Withdrawn", "Closed"].includes(a.status) ? `<div class="tags"><span class="tag">${e(a.status)}</span></div>` : ""}${a?.followUp ? `<div class="tags"><span class="tag founders">Follow up ${e(a.followUp)}</span></div>` : ""}</div>`;
 }
+let appTab = "todo";
+const openJobs = () =>
+  state.jobs.filter(
+    (j) =>
+      j.collection !== "Dismissed" && !isApplied(appFor(j.id)) && !j.closed,
+  );
+function extensionCard() {
+  if (extVersion())
+    return `<div class="callout row"><span class="dot live"></span><span><b>Autofill is connected.</b> Press Apply on a job: the form opens in a new tab, filled in, with your resume attached. Check it and press Submit there.</span></div>`;
+  return `<div class="setup" style="align-items:flex-start"><div><h3>Turn on autofill (one-time, about 2 minutes)</h3><p>A small Chrome extension fills each application form for you: name, email, phone, resume and your saved answers. You check the form and press Submit. Until it is installed, Apply just opens the company page.</p><div class="steps" style="margin-top:14px"><div><b>Download and unzip</b>Save the file below and unzip it. You get a folder called career-os-extension.</div><div><b>Open Chrome’s extensions page</b>Type <b>chrome://extensions</b> in the address bar and switch on <b>Developer mode</b> (top right).</div><div><b>Load it</b>Click <b>Load unpacked</b> and choose the career-os-extension folder.</div><div><b>Refresh this page</b>This box turns green when the extension is connected.</div></div></div><a class="btn primary" href="/career-os-extension.zip" download>${icon("download", 15)}Download extension</a></div>`;
+}
+function applyRow(j) {
+  const m = j.assessment,
+    sector = sectorOf(j),
+    asked = j.applyOpened && !isApplied(appFor(j.id));
+  return `<article class="card job" data-job="${j.id}" tabindex="0" role="button" aria-label="${e(j.title)} at ${e(j.company)}">${logo(j.company)}<div class="job-main"><div class="job-title"><span>${e(j.title)}</span>${isSaved(j) ? '<span class="tag founders">Saved</span>' : ""}</div><div class="job-meta">${e(j.company)} · ${e(j.location)}</div><div class="tags">${sector !== "Other" ? `<span class="tag ${sector.toLowerCase()}">${sector}</span>` : ""}<span class="tag ${m.track === PRODUCT ? "product" : "founders"}">${trackLabel(m.track)} resume</span><span class="tag">${m.score}/100 match</span>${asked ? `<span class="tag warn">Opened ${ago(j.applyOpened)} · did you submit?</span>` : ""}</div></div><div class="job-side">${asked ? `<button class="btn sm" data-mark-applied="${j.id}">${icon("check", 14)}Yes, applied</button><button class="btn ghost sm" data-not-yet="${j.id}">Not yet</button>` : ""}<button class="btn accent sm" data-apply="${j.id}">${icon("external", 14)}${asked ? "Open again" : "Apply"}</button><button class="icon-btn hide-sm" data-dismiss="${j.id}" aria-label="Not interested" title="Not interested">${icon("x", 18)}</button></div></article>`;
+}
 function applicationsPage() {
   const apps = state.applications
       .map((a) => [jobFor(a.jobId), a])
-      .filter(([j]) => j),
-    toApply = [
-      ...state.jobs
-        .filter((j) => isSaved(j) && !appFor(j.id))
-        .map((j) => [j, null]),
-      ...apps.filter(([, a]) => !isApplied(a)),
-    ],
+      .filter(([j, a]) => j && isApplied(a)),
+    todo = openJobs().sort(
+      (a, b) =>
+        !!b.applyOpened - !!a.applyOpened ||
+        isSaved(b) - isSaved(a) ||
+        b.assessment.score - a.assessment.score,
+    ),
+    missing = ["name", "email", "phone"].filter((k) => !state.profile[k]),
     cols = [
-      ["To apply", toApply, "Save a job to queue it here."],
       [
         "Applied",
-        apps.filter(([, a]) => isApplied(a) && a.status === "Applied"),
-        "Mark a job as applied and it lands here.",
+        apps.filter(([, a]) => a.status === "Applied"),
+        "Jobs you have applied to land here.",
       ],
       [
         "Interviewing",
@@ -459,11 +476,99 @@ function applicationsPage() {
   return (
     head(
       "Applications",
-      "Everything you have saved or applied to, in one place.",
+      "Apply from the To apply list. Each job moves to Applied once it is submitted.",
       `<a class="btn" href="/api/export">${icon("download", 15)}Export CSV</a>`,
     ) +
-    `<div class="board">${cols.map(([t, rows, hint]) => `<section class="col"><div class="col-head">${t}<span>${rows.length}</span></div>${rows.map(([j, a]) => miniCard(j, a)).join("") || `<div class="col-empty">${hint}</div>`}</section>`).join("")}</div>`
+    `<div class="toolbar"><div class="seg" role="tablist">${[
+      ["todo", `To apply <i>${todo.length}</i>`],
+      ["done", `Applied <i>${apps.length}</i>`],
+    ]
+      .map(
+        ([v, l]) =>
+          `<button data-app-tab="${v}" class="${appTab === v ? "active" : ""}">${l}</button>`,
+      )
+      .join("")}</div></div>` +
+    (appTab === "todo"
+      ? extensionCard() +
+        (missing.length
+          ? `<div class="callout spread" style="margin-top:12px"><span>Add your ${missing.join(", ")} so forms can be filled in.</span><button class="btn sm" data-view="settings">Open Settings</button></div>`
+          : "") +
+        `<div class="jobs" style="margin-top:16px">${todo.map(applyRow).join("") || `<div class="card empty"><h3>Nothing waiting</h3><p>New matches show up here after each scan.</p></div>`}</div>`
+      : `<div class="board three">${cols.map(([t, rows, hint]) => `<section class="col"><div class="col-head">${t}<span>${rows.length}</span></div>${rows.map(([j, a]) => miniCard(j, a)).join("") || `<div class="col-empty">${hint}</div>`}</section>`).join("")}</div>`)
   );
+}
+
+// ---------- autofill extension ----------
+// The extension's bridge script marks the page and relays messages both ways.
+const extVersion = () =>
+  document.documentElement?.dataset?.careerOsExtension || null;
+let extSeq = 0;
+const extWaiting = new Map();
+function ext(message) {
+  return new Promise((resolve, reject) => {
+    const id = ++extSeq;
+    extWaiting.set(id, resolve);
+    window.postMessage(
+      { target: "career-os-extension", id, message },
+      location.origin,
+    );
+    setTimeout(() => {
+      if (extWaiting.delete(id))
+        reject(
+          new Error(
+            "The autofill extension did not answer. Refresh this page.",
+          ),
+        );
+    }, 8000);
+  });
+}
+// Jobs the extension saw you submit: move them to Applied, then tell it we know.
+function collectResults(results = []) {
+  if (!state || !results.length) return;
+  for (const r of results) {
+    const j = jobFor(r.jobId);
+    if (j && !isApplied(appFor(j.id)))
+      track(j.id, "Applied", `Applied to ${j.company}. Moved to Applied.`);
+  }
+  ext({ type: "ack", jobIds: results.map((r) => r.jobId) }).catch(() => {});
+}
+const askResults = () =>
+  extVersion() &&
+  ext({ type: "results" })
+    .then((r) => collectResults(r?.results))
+    .catch(() => {});
+window.addEventListener?.("message", (ev) => {
+  const d = ev.data;
+  if (ev.source !== window || d?.source !== "career-os-extension") return;
+  if (d.id && extWaiting.has(d.id)) {
+    extWaiting.get(d.id)(d.reply);
+    extWaiting.delete(d.id);
+  }
+  if (d.type === "results") collectResults(d.results);
+});
+window.addEventListener?.("focus", askResults);
+async function applyTo(id) {
+  const j = jobFor(id),
+    url = j.applyUrl || j.originalUrl,
+    opened = () =>
+      act(() => api(`jobs/${id}/opened`, {}), {
+        local: () => (j.applyOpened = stamp()),
+      });
+  if (!extVersion()) {
+    window.open(url, "_blank", "noopener");
+    return opened();
+  }
+  toast("Opening the form and filling it in…");
+  try {
+    const reply = await ext({
+      type: "apply",
+      packet: await api("autofill/" + id),
+    });
+    if (reply?.error) throw new Error(reply.error);
+    opened();
+  } catch (err) {
+    toast(err.message);
+  }
 }
 
 // ---------- resumes ----------
@@ -655,7 +760,7 @@ function settingsPage() {
     s = state.settings;
   return (
     head("Settings", "Your details, the daily scan and how it all works.") +
-    `<div class="settings-grid"><div class="stack"><form id="profile-form" class="card card-pad stack"><div class="spread"><h2>Your details</h2><button class="btn primary sm">Save</button></div><div class="form-grid">${field("name", "Full name", p.name)}${field("email", "Email", p.email, "email")}${field("phone", "Phone", p.phone)}${field("location", "Based in", p.location)}${field("education", "College and degree", p.education, "text", true)}${field("graduation", "Graduating (YYYY-MM)", p.graduation)}${field("fullTimeStart", "Can join full-time from", p.fullTimeStart, "date")}${field("experience", "Experience summary", p.experience, "textarea", true)}</div></form><section class="card card-pad"><h2 style="margin-bottom:10px">Recent activity</h2>${
+    `<div class="settings-grid"><div class="stack"><form id="profile-form" class="card card-pad stack"><div class="spread"><h2>Your details</h2><button class="btn primary sm">Save</button></div><div class="form-grid">${field("name", "Full name", p.name)}${field("email", "Email", p.email, "email")}${field("phone", "Phone", p.phone)}${field("location", "Based in", p.location)}${field("education", "College and degree", p.education, "text", true)}${field("graduation", "Graduating (YYYY-MM)", p.graduation)}${field("fullTimeStart", "Can join full-time from", p.fullTimeStart, "date")}${field("experience", "Experience summary", p.experience, "textarea", true)}</div></form><form id="answers-form" class="card card-pad stack"><div class="spread"><div><h2>Application answers</h2><p class="muted small">Forms keep asking these. Save them once and autofill uses them. Leave anything blank to answer it yourself each time.</p></div><button class="btn primary sm">Save</button></div><div class="form-grid">${(state.answerFields || []).map((f) => (f.type === "yesno" ? `<div class="field"><label for="ans-${f.id}">${e(f.label)}</label><select id="ans-${f.id}" name="${f.id}" style="width:100%">${["", "Yes", "No"].map((v) => `<option value="${v}" ${(state.answers?.[f.id] || "") === v ? "selected" : ""}>${v || "Ask me each time"}</option>`).join("")}</select></div>` : `<div class="field"><label for="ans-${f.id}">${e(f.label)}</label><input id="ans-${f.id}" name="${f.id}" type="text" placeholder="${e(f.hint || "")}" value="${e(state.answers?.[f.id] || "")}"></div>`)).join("")}</div></form><section class="card card-pad"><h2 style="margin-bottom:10px">Recent activity</h2>${
       state.events
         .filter((ev) => !["preparing", "handoff", "settings"].includes(ev.kind))
         .slice(0, 12)
@@ -664,7 +769,7 @@ function settingsPage() {
             `<div class="log-row"><span>${e(ev.message)}</span><time>${e(when(ev.created))}</time></div>`,
         )
         .join("") || '<p class="muted small">Nothing yet.</p>'
-    }</section></div><div class="stack"><section class="card card-pad stack"><h2>Daily scan</h2><div class="spread"><div><b>${s.paused ? "Paused" : "On"}</b><div class="muted small">${s.paused ? "Jobs only update when you press Refresh." : state.runtime === "vercel" ? "Runs every morning around 8:30 to 9:30 IST." : `Runs every ${s.intervalHours} hours while the server is on.`}</div></div><button class="switch ${s.paused ? "" : "on"}" data-action="toggle-pause" role="switch" aria-checked="${!s.paused}" aria-label="Daily scan"></button></div><div class="callout">Last scan ${e(when(state.lastDiscovery))}${s.paused ? "" : ` · next ${e(when(state.nextDiscovery))}`}</div></section><section class="card card-pad stack"><h2>How it works</h2><div class="steps"><div><b>Reads company job boards directly</b>Each company on your list publishes its openings through a public feed. The scan reads those feeds. No AI and no paid API.</div><div><b>Keeps only roles for you</b>Product and Founder’s Office titles plus business-side internships, in India, Dubai or Singapore or remote, that ask for two years of experience or less.</div><div><b>Scores and pairs a resume</b>Each role is scored on fit, sector and city, then paired with your Product or Founder’s Office resume.</div><div><b>You apply, it tracks</b>Open the company page, apply, then mark it applied. Closed roles are cleared on the next scan.</div></div></section><section class="card card-pad stack"><h2>Account</h2><div class="row"><a class="btn sm" href="/api/export">${icon("download", 14)}Export CSV</a>${state.authEnabled ? '<button class="btn sm" data-action="logout">Sign out</button>' : ""}</div><p class="muted small">Career OS ${e(state.version || "")}</p></section></div></div>`
+    }</section></div><div class="stack"><section class="card card-pad stack"><h2>Daily scan</h2><div class="spread"><div><b>${s.paused ? "Paused" : "On"}</b><div class="muted small">${s.paused ? "Jobs only update when you press Refresh." : state.runtime === "vercel" ? "Runs every morning around 8:30 to 9:30 IST." : `Runs every ${s.intervalHours} hours while the server is on.`}</div></div><button class="switch ${s.paused ? "" : "on"}" data-action="toggle-pause" role="switch" aria-checked="${!s.paused}" aria-label="Daily scan"></button></div><div class="callout">Last scan ${e(when(state.lastDiscovery))}${s.paused ? "" : ` · next ${e(when(state.nextDiscovery))}`}</div></section><section class="card card-pad stack"><h2>Autofill</h2>${extensionCard()}</section><section class="card card-pad stack"><h2>How it works</h2><div class="steps"><div><b>Reads company job boards directly</b>Each company on your list publishes its openings through a public feed. The scan reads those feeds. No AI and no paid API.</div><div><b>Keeps only roles for you</b>Product and Founder’s Office titles plus business-side internships, in India, Dubai or Singapore or remote, that ask for two years of experience or less.</div><div><b>Scores and pairs a resume</b>Each role is scored on fit, sector and city, then paired with your Product or Founder’s Office resume.</div><div><b>Autofill, you press Submit</b>With the Chrome extension, Apply opens the form already filled in with your resume attached. Job sites require a person to press Submit, so that part is yours. The job then moves to Applied by itself.</div></div></section><section class="card card-pad stack"><h2>Account</h2><div class="row"><a class="btn sm" href="/api/export">${icon("download", 14)}Export CSV</a>${state.authEnabled ? '<button class="btn sm" data-action="logout">Sign out</button>' : ""}</div><p class="muted small">Career OS ${e(state.version || "")}</p></section></div></div>`
   );
 }
 
@@ -725,7 +830,7 @@ function openJob(id) {
   sheet(
     "drawer",
     j.title,
-    `<header class="sheet-head"><div class="spread" style="margin-bottom:12px"><span class="tag" style="color:${fitColor}">${fitLabel} · ${m.score}/100</span><button class="icon-btn" data-close aria-label="Close">${icon("x")}</button></div><div class="hero">${logo(j.company)}<div><h2>${e(j.title)}</h2><div class="muted" style="margin-top:3px">${e(j.company)} · ${e(j.location)}</div></div></div><div class="tags" style="margin-top:12px">${sector !== "Other" ? `<span class="tag ${sector.toLowerCase()}">${sector}</span>` : ""}<span class="tag">${jobType(j)}</span><span class="tag">${e(experience(j))}</span>${isRemote(j) ? '<span class="tag">Remote</span>' : ""}${j.postedAt ? `<span class="tag">Posted ${ago(j.postedAt)}</span>` : ""}${j.closed ? '<span class="tag warn">No longer listed</span>' : ""}</div><div class="row" style="margin-top:16px"><a class="btn accent" style="flex:1" href="${e(applyUrl)}" target="_blank" rel="noopener noreferrer">${icon("external", 15)}Apply on company site</a>${applied ? "" : `<button class="btn" data-mark-applied="${id}">${icon("check", 15)}I applied</button>`}<button class="icon-btn ${isSaved(j) ? "on" : ""}" data-save="${id}" aria-label="${isSaved(j) ? "Remove from saved" : "Save for later"}">${icon("bookmark", 18)}</button></div></header><div class="sheet-body">${
+    `<header class="sheet-head"><div class="spread" style="margin-bottom:12px"><span class="tag" style="color:${fitColor}">${fitLabel} · ${m.score}/100</span><button class="icon-btn" data-close aria-label="Close">${icon("x")}</button></div><div class="hero">${logo(j.company)}<div><h2>${e(j.title)}</h2><div class="muted" style="margin-top:3px">${e(j.company)} · ${e(j.location)}</div></div></div><div class="tags" style="margin-top:12px">${sector !== "Other" ? `<span class="tag ${sector.toLowerCase()}">${sector}</span>` : ""}<span class="tag">${jobType(j)}</span><span class="tag">${e(experience(j))}</span>${isRemote(j) ? '<span class="tag">Remote</span>' : ""}${j.postedAt ? `<span class="tag">Posted ${ago(j.postedAt)}</span>` : ""}${j.closed ? '<span class="tag warn">No longer listed</span>' : ""}</div><div class="row" style="margin-top:16px"><button class="btn accent" style="flex:1" data-apply="${id}">${icon("external", 15)}${extVersion() ? "Apply with autofill" : "Apply on company site"}</button>${applied ? "" : `<button class="btn" data-mark-applied="${id}">${icon("check", 15)}I applied</button>`}<button class="icon-btn ${isSaved(j) ? "on" : ""}" data-save="${id}" aria-label="${isSaved(j) ? "Remove from saved" : "Save for later"}">${icon("bookmark", 18)}</button></div></header><div class="sheet-body">${
       applied
         ? `<section><h3>Your application</h3><div class="stack"><div class="field"><label for="app-stage">Status</label><select id="app-stage" style="width:100%">${[
             ["Applied", "Applied"],
@@ -874,6 +979,17 @@ document.addEventListener("click", async (ev) => {
     );
   if ((n = t("[data-restore]")))
     return setCollection(n.dataset.restore, "New", "Restored");
+  if ((n = t("[data-apply]"))) return applyTo(n.dataset.apply);
+  if ((n = t("[data-not-yet]"))) {
+    const id = n.dataset.notYet;
+    return act(() => api(`jobs/${id}/opened`, { clear: true }), {
+      local: () => delete jobFor(id).applyOpened,
+    });
+  }
+  if ((n = t("[data-app-tab]"))) {
+    appTab = n.dataset.appTab;
+    return render();
+  }
   if ((n = t("[data-mark-applied]")))
     return track(n.dataset.markApplied, "Applied", "Marked as applied");
   if ((n = t("[data-view]"))) {
@@ -962,8 +1078,10 @@ document.addEventListener("click", async (ev) => {
   }
   if ((n = t("[data-stat]"))) {
     const k = n.dataset.stat;
-    if (k === "applied") view = "applications";
-    else {
+    if (k === "applied") {
+      view = "applications";
+      appTab = "done";
+    } else {
       filters.tab = k === "saved" ? "saved" : "open";
       filters.sort = k === "new" ? "newest" : "best";
     }
@@ -1020,6 +1138,14 @@ document.addEventListener("change", (ev) => {
   }
 });
 document.addEventListener("submit", (ev) => {
+  if (ev.target.id === "answers-form") {
+    ev.preventDefault();
+    const answers = Object.fromEntries(new FormData(ev.target));
+    return act(() => api("answers", { answers }), {
+      local: () => (state.answers = answers),
+      done: "Answers saved",
+    });
+  }
   if (ev.target.id !== "profile-form") return;
   ev.preventDefault();
   const data = Object.fromEntries(new FormData(ev.target));
@@ -1042,6 +1168,7 @@ for (const type of ["dragover", "dragleave", "drop"])
   });
 
 await refresh();
+askResults();
 setInterval(async () => {
   if (!state || scanning || inflight || $('[role="dialog"]')) return;
   if (["settings", "resumes"].includes(view)) return;

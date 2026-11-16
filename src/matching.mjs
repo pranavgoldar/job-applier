@@ -85,7 +85,7 @@ const foundersRole =
   /founder|chief of staff|\bceo'?s? office|business operations|\bbiz\s?ops\b|strategy|strategic (?:initiatives|projects|insights)|special projects|new initiatives|business (?:analyst|associate)|management trainee|generalist|entrepreneur in residence|\beir\b|growth (?:analyst|associate|intern|management|operations)|program (?:associate|analyst)|(?:accelerator|builders|graduate|internship|rotational) program|apprentice|(?:intern|internship).*(?:business|growth|research|strategy)|(?:business|growth|research).*(?:intern\b|internship)/i;
 // Titles that mention "product" or "strategy" but belong to a different job family.
 const otherFamily =
-  /engineer|developer|\bsde\b|design|counsel|legal|security|support|sales|account (?:executive|manager)|marketing|compliance|scientist|architect|accountant|accounting|audit|\btax\b|recruit|talent|sourcer|production|content|risk strateg|warehouse|financial crime|investigat|\bkyc\b|\bkyb\b|\baml\b|\bhr\b|human resources|people op|public relations|\bkol\b|events|monitorship|business development|\bbd\b|tele ?caller|emirati|saudi national/i;
+  /engineer|developer|\bsde\b|design|counsel|legal|security|support|sales|account (?:executive|manager)|marketing|compliance|scientist|architect|accountant|accounting|audit|\btax\b|recruit|talent|sourcer|production|content|risk strateg|warehouse|financial crime|investigat|\bkyc\b|\bkyb\b|\baml\b|\bhr\b|human resources|people op|public relations|\bkol\b|events|monitorship|business development|\bbd\b|tele ?caller|emirati|(?:uae|saudi|ksa|qatari) nationals?/i;
 // Internships are judged more loosely: any business-side internship is worth a look.
 const internWord =
   /\bintern(?:ship)?s?\b|\btrainee\b|apprentice|working student|\bco-?op\b/i;

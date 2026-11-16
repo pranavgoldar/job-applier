@@ -87,6 +87,11 @@ test("every dashboard view renders, the job drawer links the right resume, and r
     events: [],
     queue: [],
     authEnabled: true,
+    answers: {},
+    answerFields: [
+      { id: "linkedin", label: "LinkedIn profile link", type: "url" },
+      { id: "relocate", label: "Willing to relocate", type: "yesno" },
+    ],
   };
   const { window } = parseHTML(fs.readFileSync("public/index.html", "utf8"));
   window.HTMLElement.prototype.focus = function () {};
@@ -127,6 +132,14 @@ test("every dashboard view renders, the job drawer links the right resume, and r
       view + " contains undefined data",
     );
   }
+  context.ui.setView("applications");
+  assert(text().includes("To apply"));
+  assert(text().includes("Turn on autofill"));
+  assert(window.document.querySelector('a[href="/career-os-extension.zip"]'));
+  assert(window.document.querySelector('[data-apply="job1"]'));
+  context.ui.setView("settings");
+  assert(window.document.querySelector("#answers-form"));
+  assert(text().includes("Application answers"));
   context.ui.setView("jobs");
   assert(text().includes("Product Management Intern"));
   assert(window.document.querySelector('[data-job="job1"]'));
@@ -142,9 +155,7 @@ test("every dashboard view renders, the job drawer links the right resume, and r
   context.ui.openJob("job1");
   assert(window.document.querySelector('[role="dialog"]'));
   assert(window.document.querySelector('a[href="/api/resumes/resume1"]'));
-  assert(
-    window.document.querySelector('a[href="https://example.test/job/1/apply"]'),
-  );
+  assert(window.document.querySelector('[data-apply="job1"]'));
   assert(window.document.querySelector("[data-mark-applied]"));
   assert(
     !window.document

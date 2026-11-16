@@ -75,11 +75,15 @@ Open `http://127.0.0.1:4173`. Local development binds to loopback. Set `APP_PASS
 
 The watchlist has 82 companies plus one remote-internship feed; 61 companies have a verified public board and are scanned automatically. The rest (for example Revolut, Remitly, Navi, Tabby) use careers sites without a public feed and are listed for manual checks. See [COMPANY-WATCHLIST.md](COMPANY-WATCHLIST.md). Workable rate-limits shared server addresses, so its two boards can show a temporary error.
 
-## Application boundaries
+## Applying
 
-Default mode is Prepare for review. Missing facts or overlapping responsibilities require input; the user can approve or override the recommended resume. Application packets preserve their selected version and factual answers. The app states when no employer fields have been filled.
+Job boards do not accept applications from a server: Greenhouse, Lever and Ashby only take submissions with the employer’s own key, and every public form carries a captcha. So applying happens in your browser, with a Chrome extension doing the typing.
 
-**Live automatic submission adapters are not implemented.** All employer final submissions, logins, verification, declarations, custom assessments and personal decisions remain human tasks. Automatic mode is reserved configuration and does not make unsupported sites submit. Manual confirmation is labeled user-confirmed. System-confirmed receipts exist only in isolated test fixtures. Uncertain submission results block retries until reconciled.
+- **Applications → To apply** lists every open match with an **Apply** button. **Applied** shows what has been submitted, then Interviewing and Outcome.
+- With the extension installed ([extension/README.md](extension/README.md)), Apply opens the form filled in: name, email, phone, saved answers and the right resume. You check it and press Submit. The job moves to Applied when the employer’s confirmation page appears.
+- **Settings → Application answers** holds the answers forms keep asking for (LinkedIn, notice period, CTC, relocation, and so on).
+- The extension never presses Submit, never ticks consent boxes and never answers demographic or free-text questions.
+- Without the extension, Apply opens the company page and the dashboard asks afterwards whether you submitted.
 
 ## Development
 
@@ -103,3 +107,4 @@ See [TEST-RESULTS.md](TEST-RESULTS.md). Cloud integration tests use the real lib
 - `migrations/`: append-only schema migrations, recorded by checksum on startup.
 - `scripts/migrate-to-cloud.mjs`: private data transfer into an empty cloud app.
 - `public/`: responsive browser app.
+- `extension/`: Chrome extension that fills application forms; `src/answers.mjs` lists the saved answers it can use.
