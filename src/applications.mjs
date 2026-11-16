@@ -1,6 +1,7 @@
 import path from "node:path";
 import { uuid, now, sha } from "./ids.mjs";
 import { initialProfile, statuses, assess } from "./matching.mjs";
+import { appRow } from "./sql-model.mjs";
 // "Pranav Goldar APM resume.pdf" -> Product, "... founder office resume.pdf" -> Founder’s Office.
 export function trackFromName(name = "") {
   const n = String(name)
@@ -37,50 +38,46 @@ export async function addResume(store, { track, name, bytes, mime }) {
     key = "resumes/" + id;
   await store.storage.write(key, bytes, mime);
   try {
-    await store.transaction(async (tx) => {
-      const version =
-        ((
-          await tx.get(
-            "SELECT MAX(version) AS n FROM resumes WHERE track=?",
-            track,
-          )
-        )?.n || 0) + 1;
-      await tx.run("UPDATE resumes SET is_default=0 WHERE track=?", track);
-      await tx.run(
-        "INSERT INTO resumes VALUES (?,?,?,?,?,?,?,?,1)",
-        id,
-        track,
-        version,
-        path.basename(name),
-        sha(bytes),
-        key,
-        mime,
-        now(),
-      );
-    });
+    // One atomic batch: retire the old default, add the next version, log it.
+    await store.batch([
+      { sql: "UPDATE resumes SET is_default=0 WHERE track=?", args: [track] },
+      {
+        sql: "INSERT INTO resumes SELECT ?,?,COALESCE(MAX(version),0)+1,?,?,?,?,?,1 FROM resumes WHERE track=?",
+        args: [
+          id,
+          track,
+          path.basename(name),
+          sha(bytes),
+          key,
+          mime,
+          now(),
+          track,
+        ],
+      },
+      {
+        sql: "INSERT INTO events(app_id,kind,message,created) SELECT NULL,'resume',? || version || ?,? FROM resumes WHERE id=?",
+        args: [
+          `${track} resume v`,
+          " added. Earlier application versions preserved.",
+          now(),
+          id,
+        ],
+      },
+    ]);
   } catch (e) {
     await store.storage.remove(key);
     throw e;
   }
-  const version = (
-    await store.get("SELECT version FROM resumes WHERE id=?", id)
-  ).version;
-  await store.event(
-    null,
-    "resume",
-    `${track} resume v${version} added. Earlier application versions preserved.`,
-  );
   return id;
 }
 export async function prepare(store, jobId) {
-  const old = await store.get(
-    "SELECT id FROM applications WHERE job_id=?",
-    jobId,
-  );
-  if (old) return await store.app(old.id);
-  const j = await store.job(jobId);
+  const [old, j, profile] = await Promise.all([
+    store.get("SELECT * FROM applications WHERE job_id=?", jobId),
+    store.job(jobId),
+    store.config("profile", initialProfile),
+  ]);
+  if (old) return appRow(old);
   if (!j) throw new Error("Job not found");
-  const profile = await store.config("profile", initialProfile);
   const a = assess(j, profile);
   if (!profile.name || !profile.email || !profile.education)
     a.review.push(
@@ -180,35 +177,40 @@ export async function prepare(store, jobId) {
     submissionAttempts: 0,
     formFilled: false,
   };
-  await store.run(
-    "INSERT INTO applications VALUES (?,?,?,?,?,?,?) ON CONFLICT(job_id) DO NOTHING",
-    id,
-    jobId,
-    resume?.id || null,
-    "Preparing",
-    JSON.stringify(data),
-    now(),
-    now(),
-  );
-  const created = await store.get(
-    "SELECT id FROM applications WHERE job_id=?",
-    jobId,
-  );
-  if (created.id !== id) return await store.app(created.id);
-  await store.event(
-    id,
-    "preparing",
-    "Preparation started; no employer site was modified.",
-  );
   const status =
     !resume || a.ambiguous || a.blocked.length || a.review.length
       ? "Needs my input"
       : "Ready for final step";
-  await store.updateApp(id, {
+  const created = await store.get(
+    "INSERT INTO applications VALUES (?,?,?,?,?,?,?) ON CONFLICT(job_id) DO NOTHING RETURNING *",
+    id,
+    jobId,
+    resume?.id || null,
     status,
-  });
-  await store.event(id, "handoff", data.pauseReason);
-  return await store.app(id);
+    JSON.stringify(data),
+    now(),
+    now(),
+  );
+  // Someone else created it between the check and the insert: return theirs.
+  if (!created)
+    return appRow(
+      await store.get("SELECT * FROM applications WHERE job_id=?", jobId),
+    );
+  const event =
+    "INSERT INTO events(app_id,kind,message,created) VALUES (?,?,?,?)";
+  await store.batch([
+    {
+      sql: event,
+      args: [
+        id,
+        "preparing",
+        "Preparation started; no employer site was modified.",
+        now(),
+      ],
+    },
+    { sql: event, args: [id, "handoff", data.pauseReason, now()] },
+  ]);
+  return appRow(created);
 }
 export async function overrideResume(store, id, resumeId) {
   const a = await store.app(id);
@@ -384,8 +386,11 @@ export async function quickTrack(store, jobId, status) {
       fileId: null,
       time: now(),
     };
-  await store.event(a.id, "stage", `Marked as ${status}.`);
-  return await store.updateApp(a.id, patch);
+  const [, updated] = await Promise.all([
+    store.event(a.id, "stage", `Marked as ${status}.`),
+    store.updateApp(a.id, patch),
+  ]);
+  return updated;
 }
 export async function untrack(store, jobId) {
   const a = await store.get(

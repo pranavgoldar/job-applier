@@ -1,5 +1,28 @@
 import { uuid, now } from "./ids.mjs";
+export const jobRow = (r) => ({
+  ...JSON.parse(r.data),
+  id: r.id,
+  firstSeen: r.first_seen,
+  lastChecked: r.last_checked,
+});
+export const appRow = (r) => ({
+  ...JSON.parse(r.data),
+  id: r.id,
+  jobId: r.job_id,
+  resumeId: r.resume_id,
+  status: r.status,
+  created: r.created,
+  updated: r.updated,
+});
 export class SqlModel {
+  // Several read-only queries answered together. The hosted store sends them in
+  // one network round trip, which matters when the database is far away.
+  async readMany(statements) {
+    const results = [];
+    for (const { sql, args = [] } of statements)
+      results.push(await this.all(sql, ...args));
+    return results;
+  }
   async config(key, fallback = null) {
     const r = await this.get("SELECT value FROM config WHERE key=?", key);
     return r ? JSON.parse(r.value) : fallback;

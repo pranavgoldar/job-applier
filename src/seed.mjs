@@ -1,6 +1,20 @@
-import { ensureWatchlist } from "./watchlist.mjs";
+import { ensureWatchlist, catalogVersion } from "./watchlist.mjs";
 import { initialProfile } from "./matching.mjs";
 export async function seed(store) {
+  // A settled installation needs nothing: answer that with one query.
+  const [rows] = await store.readMany([
+    {
+      sql: "SELECT key,value FROM config WHERE key IN ('profile','settings','sourcesInitialized','companyCatalogVersion')",
+    },
+  ]);
+  const have = new Map(rows.map((r) => [r.key, JSON.parse(r.value)]));
+  if (
+    have.has("profile") &&
+    have.has("settings") &&
+    have.get("sourcesInitialized") &&
+    have.get("companyCatalogVersion") === catalogVersion
+  )
+    return;
   await store.run(
     "INSERT OR IGNORE INTO config VALUES (?,?)",
     "profile",

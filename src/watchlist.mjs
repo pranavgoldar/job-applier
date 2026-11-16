@@ -20,7 +20,7 @@ export const defaultSearchPreferences = {
   fullTimeFrom: "2027-05-15",
   remoteInternshipsRequireIndiaEligibility: true,
 };
-export const catalogVersion = 2;
+export const catalogVersion = 3;
 export async function ensureWatchlist(store) {
   if ((await store.config("companyCatalogVersion")) === catalogVersion) return;
   const old = await store.config("companyWatchlist", []),
@@ -85,14 +85,17 @@ export async function ensureWatchlist(store) {
   });
   // Scoring rules changed with this catalog, so existing matches are re-scored once.
   const profile = await store.config("profile", initialProfile);
-  for (const row of await store.all("SELECT id,data FROM jobs")) {
+  const rescored = (await store.all("SELECT id,data FROM jobs")).map((row) => {
     const job = JSON.parse(row.data);
-    await store.run(
-      "UPDATE jobs SET data=? WHERE id=?",
-      JSON.stringify({ ...job, assessment: assess(job, profile) }),
-      row.id,
-    );
-  }
+    return {
+      sql: "UPDATE jobs SET data=? WHERE id=?",
+      args: [
+        JSON.stringify({ ...job, assessment: assess(job, profile) }),
+        row.id,
+      ],
+    };
+  });
+  if (rescored.length) await store.batch(rescored);
   await store.set("companyCatalogVersion", catalogVersion);
   await store.event(
     null,
@@ -100,9 +103,8 @@ export async function ensureWatchlist(store) {
     `${catalog.length} companies on the watchlist. ${newSources} new job boards connected.`,
   );
 }
-export async function watchlistState(store) {
-  const sources = await store.all("SELECT * FROM sources");
-  return (await store.config("companyWatchlist", [])).map((c) => {
+export function watchlistFrom(sources, watchlist) {
+  return watchlist.map((c) => {
     const s = sources.find((s) => s.id === c.sourceId);
     return {
       ...c,
@@ -118,4 +120,10 @@ export async function watchlistState(store) {
       sourceEnabled: !!s?.enabled,
     };
   });
+}
+export async function watchlistState(store) {
+  return watchlistFrom(
+    await store.all("SELECT * FROM sources"),
+    await store.config("companyWatchlist", []),
+  );
 }

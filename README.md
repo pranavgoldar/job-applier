@@ -17,6 +17,10 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for the complete instructions.
 
 The default Vercel schedule is daily at `03:00 UTC` (approximately `08:30–09:29 IST` on Hobby). Vercel currently restricts Hobby cron jobs to daily execution and approximate timing. Changing the dashboard's local interval does not change Vercel's schedule. More frequent supported schedules can be configured in `vercel.json` for an appropriate plan. See [Vercel's cron limits](https://vercel.com/docs/cron-jobs/usage-and-pricing).
 
+## Speed
+
+The hosted function runs in Mumbai (`bom1`, set in `vercel.json`). Keep the Turso database in a nearby region: every database round trip from a far region adds about 0.2 s. The dashboard loads with one batched read, and clicks update the screen immediately while the change is saved in the background.
+
 ## Storage and access
 
 - **Vercel:** API functions + Turso/libSQL database + private Vercel Blob files + authenticated daily cron. No writable deployment filesystem is used for private records or uploads.
@@ -58,17 +62,18 @@ Open `http://127.0.0.1:4173`. Local development binds to loopback. Set `APP_PASS
 - **Resumes:** one slot each for Product / APM and Founder’s Office. Drag in a PDF or DOCX. A file named like `… APM resume.pdf` or `… founder office resume.pdf` is filed automatically. Old versions are kept.
 - **Companies:** every watched company with its scan status, an on/off switch and its matches. Add your own by job-board name.
 - **Discovery without AI:** ordinary HTTP reads of public job-board feeds from Greenhouse, Lever, Ashby, SmartRecruiters and Workable. No AI key, no paid API, no subscription.
+- **Internships:** business-side internships (product, strategy, operations, analytics, growth, marketing) are kept from every company board, and the Himalayas feed adds remote internships open to India. That feed allows only a few requests a day without a key; setting the optional free `HIMALAYAS_API_KEY` environment variable in Vercel lifts the limit. Everything else works without it.
 
 ### How discovery decides what to keep
 
 1. Read every posting from each enabled company board.
-2. Keep titles in the Product family (APM, Product Analyst, Product intern…) or Founder’s Office family (Chief of Staff, Strategy & Operations, BizOps, early-career programmes…). Engineering, design, sales, legal, compliance and HR titles are dropped.
+2. Keep titles in the Product family (APM, Product Analyst, Product intern…) or Founder’s Office family (Chief of Staff, Strategy & Operations, BizOps, early-career programmes…). Engineering, design, sales, legal, compliance and HR titles are dropped. Internships are judged more loosely: any business-side internship is kept.
 3. Keep locations in India, the UAE or Singapore, plus remote roles open to Asia or worldwide.
 4. Drop senior titles (Senior, Lead, Staff, level II and above) and roles asking for more than two years.
 5. Score what is left out of 100: role fit 30, experience 20, sector 20 (fintech highest, then consumer), location 20 (Bangalore highest, then Mumbai, rest of India, Dubai, Singapore), job detail 10.
 6. Roles a board stops listing are removed on the next successful scan. Ones you saved or applied to are kept and marked as no longer listed.
 
-The watchlist has 82 companies; 61 have a verified public board and are scanned automatically. The rest (for example Revolut, Remitly, Navi, Tabby) use careers sites without a public feed and are listed for manual checks. See [COMPANY-WATCHLIST.md](COMPANY-WATCHLIST.md). Workable rate-limits shared server addresses, so its two boards can show a temporary error.
+The watchlist has 82 companies plus one remote-internship feed; 61 companies have a verified public board and are scanned automatically. The rest (for example Revolut, Remitly, Navi, Tabby) use careers sites without a public feed and are listed for manual checks. See [COMPANY-WATCHLIST.md](COMPANY-WATCHLIST.md). Workable rate-limits shared server addresses, so its two boards can show a temporary error.
 
 ## Application boundaries
 

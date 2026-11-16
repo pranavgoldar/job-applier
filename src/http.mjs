@@ -2,7 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { sha, uuid, now } from "./ids.mjs";
-import { watchlistState } from "./watchlist.mjs";
+import { watchlistFrom } from "./watchlist.mjs";
+import { jobRow, appRow } from "./sql-model.mjs";
 import {
   prepare,
   addResume,
@@ -61,6 +62,9 @@ export function createHandler(
     }
     return JSON.parse(Buffer.concat(chunks).toString() || "{}");
   }
+  // A session already checked on this server instance is trusted for two minutes,
+  // which saves a database round trip on almost every request.
+  const sessions = new Map();
   async function authenticated(req) {
     if (!password) return true;
     const token = (req.headers.cookie || "")
@@ -68,14 +72,18 @@ export function createHandler(
       .map((s) => s.trim())
       .find((s) => s.startsWith("career_session="))
       ?.split("=")[1];
-    return (
-      token &&
-      (await store.get(
-        "SELECT hash FROM sessions WHERE hash=? AND expires>?",
-        sha(token),
-        now(),
-      ))
+    if (!token) return false;
+    const hash = sha(token);
+    if (sessions.get(hash) > Date.now()) return true;
+    const row = await store.get(
+      "SELECT hash FROM sessions WHERE hash=? AND expires>?",
+      hash,
+      now(),
     );
+    if (!row) return false;
+    if (sessions.size > 500) sessions.clear();
+    sessions.set(hash, Date.now() + 120000);
+    return true;
   }
 
   const handler = async (req, res) => {
@@ -155,8 +163,10 @@ export function createHandler(
         const token = (req.headers.cookie || "").match(
           /career_session=([^;]+)/,
         )?.[1];
-        if (token)
+        if (token) {
+          sessions.delete(sha(token));
           await store.run("DELETE FROM sessions WHERE hash=?", sha(token));
+        }
         res.setHeader(
           "Set-Cookie",
           "career_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0",
@@ -165,41 +175,48 @@ export function createHandler(
           ok: true,
         });
       }
-      if (p === "/api/state" && req.method === "GET")
+      if (p === "/api/state" && req.method === "GET") {
+        const [config, jobs, apps, resumes, sources, events, queue, pending] =
+          await store.readMany([
+            {
+              sql: "SELECT key,value FROM config WHERE key IN ('profile','settings','companyWatchlist','companySearchPreferences','lastDiscovery','nextDiscovery','workerHeartbeat')",
+            },
+            { sql: "SELECT * FROM jobs ORDER BY first_seen DESC" },
+            { sql: "SELECT * FROM applications ORDER BY updated DESC" },
+            {
+              sql: "SELECT id,track,version,name,sha256,mime,created,is_default FROM resumes",
+            },
+            { sql: "SELECT * FROM sources" },
+            { sql: "SELECT * FROM events ORDER BY id DESC LIMIT 60" },
+            { sql: "SELECT * FROM queue ORDER BY created DESC LIMIT 30" },
+            {
+              sql: "SELECT COUNT(*) AS n FROM queue WHERE status IN ('queued','running')",
+            },
+          ]);
+        const c = Object.fromEntries(
+          config.map((r) => [r.key, JSON.parse(r.value)]),
+        );
         return json(res, 200, {
-          version: "3.0.0",
+          version: "3.1.0",
           runtime: hosted ? "vercel" : "local",
           maxUploadBytes: hosted ? 3 * 1024 * 1024 : 8 * 1024 * 1024,
-          profile: await store.config("profile"),
-          settings: await store.config("settings"),
-          jobs: await store.jobs(),
-          applications: await store.apps(),
-          resumes: await store.all(
-            "SELECT id,track,version,name,sha256,mime,created,is_default FROM resumes",
-          ),
-          sources: await store.all("SELECT * FROM sources"),
-          companyWatchlist: await watchlistState(store),
-          companySearchPreferences: await store.config(
-            "companySearchPreferences",
-          ),
-          events: await store.all(
-            "SELECT * FROM events ORDER BY id DESC LIMIT 200",
-          ),
-          queue: await store.all(
-            "SELECT * FROM queue ORDER BY created DESC LIMIT 30",
-          ),
-          pending: (
-            await store.get(
-              "SELECT COUNT(*) AS n FROM queue WHERE status IN ('queued','running')",
-            )
-          ).n,
-          lastDiscovery: await store.config("lastDiscovery"),
-          nextDiscovery: hosted
-            ? nextCloudRun()
-            : await store.config("nextDiscovery"),
-          workerHeartbeat: await store.config("workerHeartbeat"),
+          profile: c.profile ?? null,
+          settings: c.settings ?? null,
+          jobs: jobs.map(jobRow),
+          applications: apps.map(appRow),
+          resumes,
+          sources,
+          companyWatchlist: watchlistFrom(sources, c.companyWatchlist || []),
+          companySearchPreferences: c.companySearchPreferences ?? null,
+          events,
+          queue,
+          pending: pending[0].n,
+          lastDiscovery: c.lastDiscovery ?? null,
+          nextDiscovery: hosted ? nextCloudRun() : (c.nextDiscovery ?? null),
+          workerHeartbeat: c.workerHeartbeat ?? null,
           authEnabled: !!password,
         });
+      }
       if (p === "/api/jobs" && req.method === "POST") {
         const b = await body(req);
         if (!b.title || !b.company || !b.originalUrl)
@@ -230,26 +247,24 @@ export function createHandler(
       }
       if (p.match(/^\/api\/jobs\/[^/]+$/) && req.method === "POST") {
         const id = p.split("/").pop(),
-          j = await store.job(id),
           b = await body(req);
-        if (!j) throw new Error("Job not found");
         if (
           !["Saved", "Shortlisted", "Dismissed", "New"].includes(b.collection)
         )
           throw new Error("Unknown collection");
-        await store.run(
-          "UPDATE jobs SET data=? WHERE id=?",
-          JSON.stringify({
-            ...j,
-            collection: b.collection,
-          }),
-          id,
-        );
-        await store.event(
-          null,
-          "job_collection",
-          `${j.company}: opportunity ${b.collection.toLowerCase()}.`,
-        );
+        // Update and log together in one round trip.
+        const [updated] = await store.batch([
+          {
+            sql: "UPDATE jobs SET data=json_set(data,'$.collection',?) WHERE id=?",
+            args: [b.collection, id],
+          },
+          {
+            sql: "INSERT INTO events(app_id,kind,message,created) SELECT NULL,'job_collection',json_extract(data,'$.company') || ?,? FROM jobs WHERE id=?",
+            args: [`: opportunity ${b.collection.toLowerCase()}.`, now(), id],
+          },
+        ]);
+        if (!(updated.rowsAffected ?? updated.changes))
+          throw new Error("Job not found");
         return json(res, 200, {
           ok: true,
         });
@@ -257,7 +272,6 @@ export function createHandler(
       if (p.match(/^\/api\/jobs\/[^/]+\/track$/) && req.method === "POST") {
         const id = p.split("/")[3],
           b = await body(req);
-        if (!(await store.job(id))) throw new Error("Job not found");
         if (b.status === "Not applied") {
           await untrack(store, id);
           return json(res, 200, { ok: true });
@@ -437,15 +451,11 @@ export function createHandler(
         ])
           if (typeof b[k] === "string") profile[k] = b[k].slice(0, 20000);
         await store.set("profile", profile);
-        for (const j of await store.jobs())
-          await store.run(
-            "UPDATE jobs SET data=? WHERE id=?",
-            JSON.stringify({
-              ...j,
-              assessment: assess(j, profile),
-            }),
-            j.id,
-          );
+        const rescored = (await store.jobs()).map((j) => ({
+          sql: "UPDATE jobs SET data=json_set(data,'$.assessment',json(?)) WHERE id=?",
+          args: [JSON.stringify(assess(j, profile)), j.id],
+        }));
+        if (rescored.length) await store.batch(rescored);
         await store.event(
           null,
           "profile",

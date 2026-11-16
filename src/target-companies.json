@@ -1657,5 +1657,26 @@
     "indiaSignal": "Live postings seen in: Dubai",
     "indiaEvidenceUrl": null,
     "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "himalayas-internships",
+    "name": "Himalayas remote internships",
+    "group": "Job feed",
+    "industry": "Job feed / remote internships open to India",
+    "careersUrl": "https://himalayas.app/jobs/countries/india/internship",
+    "connector": {
+      "kind": "himalayas",
+      "board": "intern"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not applicable",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Remote roles open to India",
+    "indiaEvidenceUrl": null,
+    "note": "Many employers in one feed. Limited requests without a free API key (HIMALAYAS_API_KEY)."
   }
 ]

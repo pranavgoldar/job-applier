@@ -7,7 +7,10 @@ export const docs = {
   smartrecruiters: "https://developers.smartrecruiters.com/docs/posting-api",
   workable: "https://workable.readme.io/reference/jobs",
 };
+// Company boards a user can add by name.
 export const kinds = Object.keys(docs);
+// Multi-company feeds: one source returns postings from many employers.
+export const feeds = ["himalayas"];
 export function canonical(url) {
   const u = new URL(url);
   if (u.protocol !== "https:" && u.protocol !== "http:")
@@ -40,6 +43,9 @@ export function sourceURL(source) {
       return `https://api.smartrecruiters.com/v1/companies/${b}/postings?limit=100&offset=0`;
     case "workable":
       return `https://apply.workable.com/api/v1/widget/accounts/${b}?details=true`;
+    case "himalayas":
+      // Remote roles open to people based in India, searched by keyword.
+      return `https://himalayas.app/jobs/api/search?q=${b}&country=IN&limit=20&page=1`;
     default:
       throw new Error("Unsupported source");
   }
@@ -130,7 +136,40 @@ function normalizeWorkable(source, body) {
     compensation: null,
   }));
 }
+function normalizeHimalayas(source, body) {
+  if (!Array.isArray(body?.jobs))
+    throw new Error("Unexpected source schema; jobs were not changed");
+  return body.jobs.map((j) => {
+    const countries = j.locationRestrictions || [],
+      others = countries.filter((c) => c !== "India").length;
+    return {
+      ...base(source),
+      company: j.companyName,
+      title: j.title,
+      location: !countries.length
+        ? "Remote · Worldwide"
+        : "Remote · India" + (others ? ` + ${others} more countries` : ""),
+      description: plain(j.description || j.excerpt || "").slice(0, 8000),
+      employmentType:
+        j.employmentType === "Intern"
+          ? "Internship"
+          : j.employmentType || "Unknown",
+      experienceLevel: (j.seniority || []).join(", ") || null,
+      isRemote: true,
+      originalUrl: j.applicationLink || j.guid,
+      applyUrl: j.applicationLink || null,
+      sourceId: String(j.guid || j.applicationLink),
+      postedAt: j.pubDate ? new Date(j.pubDate * 1000).toISOString() : null,
+      compensation: null,
+      activeEvidence: "Listed on the Himalayas remote jobs feed",
+    };
+  });
+}
 export function normalize(source, body) {
+  if (source.kind === "himalayas")
+    return normalizeHimalayas(source, body).filter(
+      (j) => j.title && j.originalUrl && j.company,
+    );
   if (source.kind === "smartrecruiters")
     return normalizeSmartRecruiters(source, body).filter(
       (j) => j.title && j.originalUrl,
@@ -250,7 +289,7 @@ export function isTargetLocation(job) {
 export async function fetchJSON(
   url,
   fetcher = fetch,
-  { deadline = Infinity } = {},
+  { deadline = Infinity, headers = {} } = {},
 ) {
   let error;
   for (let n = 0; n < 3; n++) {
@@ -268,6 +307,7 @@ export async function fetchJSON(
         headers: {
           Accept: "application/json",
           "User-Agent": "CareerDesk/1.0 public-job-discovery",
+          ...headers,
         },
       });
       if (!r.ok) {
@@ -308,7 +348,8 @@ export async function discover(
       industry: target?.industry || "Unknown",
     };
     try {
-      let jobs = [];
+      let jobs = [],
+        partial = false;
       if (s.kind === "lever") {
         for (let skip = 0; skip < 2000; skip += 100) {
           const body = await fetchJSON(
@@ -322,6 +363,32 @@ export async function discover(
           if (skip === 1900)
             throw new Error("Pagination safety limit; board incomplete");
           await new Promise((r) => setTimeout(r, 250));
+        }
+      } else if (s.kind === "himalayas") {
+        // The feed allows few requests without a key. A free key (optional,
+        // HIMALAYAS_API_KEY) raises the limit. If the limit is hit part-way,
+        // keep the pages already read instead of failing the whole source.
+        const headers = process.env.HIMALAYAS_API_KEY
+          ? { Authorization: "Bearer " + process.env.HIMALAYAS_API_KEY }
+          : {};
+        for (let page = 1; page <= 10; page++) {
+          let body;
+          try {
+            body = await fetchJSON(
+              sourceURL(s).replace("page=1", "page=" + page),
+              fetcher,
+              { deadline, headers },
+            );
+          } catch (e) {
+            if (!jobs.length) throw e;
+            partial = true;
+            break;
+          }
+          const rows = normalize(s, body);
+          jobs.push(...rows);
+          if (!(page * 20 < Number(body.totalCount)) || !body.jobs.length)
+            break;
+          await new Promise((r) => setTimeout(r, 1200));
         }
       } else if (s.kind === "smartrecruiters") {
         // Ask the board only for the three target countries instead of every posting.
@@ -357,13 +424,13 @@ export async function discover(
       // The board answered in full, so anything it no longer lists has closed.
       // Untouched matches are removed; ones you saved or applied to are kept and marked.
       let closed = 0;
-      for (const row of await store.all(
-        "SELECT id,data FROM jobs WHERE source=?",
-        s.kind,
-      )) {
+      const feed = feeds.includes(s.kind);
+      for (const row of partial
+        ? []
+        : await store.all("SELECT id,data FROM jobs WHERE source=?", s.kind)) {
         if (kept.has(row.id)) continue;
         const data = JSON.parse(row.data);
-        if (data.company !== s.company || data.closed) continue;
+        if ((!feed && data.company !== s.company) || data.closed) continue;
         const used =
           ["Saved", "Shortlisted"].includes(data.collection) ||
           (await store.get(
