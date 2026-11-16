@@ -10,8 +10,14 @@ import {
   discover,
   canonical,
   normalize,
+  isTargetRole,
+  isTargetLocation,
+  sourceURL,
 } from "../src/connectors.mjs";
 import {
+  trackFromName,
+  quickTrack,
+  untrack,
   addResume,
   prepare,
   overrideResume,
@@ -149,10 +155,19 @@ test("greater than two years and missing mandatory Figma hard block", () => {
   assert.equal(
     assess(
       job({
-        description: "Product discovery. 2–3 years required.",
+        description: "Product discovery. 3–5 years required.",
       }),
     ).decision,
     "Skip",
+  );
+  // A range is judged by its lower bound: 1–3 years is a stretch, not a block.
+  assert.equal(
+    assess(
+      job({
+        description: "Product discovery. 1–3 years required.",
+      }),
+    ).decision,
+    "Review",
   );
   assert.equal(
     assess(
@@ -388,5 +403,227 @@ test(
         ),
       /hard eligibility/,
     );
+  }),
+);
+
+test("resume track is read from the file name", () => {
+  assert.equal(trackFromName("Pranav Goldar APM resume.pdf"), "Product");
+  assert.equal(
+    trackFromName("Pranav Goldar founder office resume.pdf"),
+    "Founder’s Office",
+  );
+  assert.equal(trackFromName("Founders_Office_v3.docx"), "Founder’s Office");
+  assert.equal(trackFromName("resume.pdf"), null);
+});
+test(
+  "a resume uploaded without a track is filed by its name, and an unclear name is refused",
+  fixture(async (s) => {
+    const id = await addResume(s, {
+      name: "Pranav Goldar APM resume.pdf",
+      bytes: pdf,
+      mime: "application/pdf",
+    });
+    assert.equal(
+      (await s.get("SELECT track FROM resumes WHERE id=?", id)).track,
+      "Product",
+    );
+    await assert.rejects(
+      async () =>
+        await addResume(s, {
+          name: "cv.pdf",
+          bytes: pdf,
+          mime: "application/pdf",
+        }),
+    );
+  }),
+);
+test(
+  "one click marks a job applied, moves it through stages and removes it again",
+  fixture(async (s) => {
+    await resume(s);
+    const id = await upsertJob(s, job());
+    const a = await quickTrack(s, id, "Applied");
+    assert.equal(a.status, "Applied");
+    assert.equal(a.confirmation.type, "user-confirmed");
+    assert.equal(a.resumeSnapshot.track, "Product");
+    assert.equal(
+      (await quickTrack(s, id, "Assessment / Interview")).status,
+      "Assessment / Interview",
+    );
+    assert.equal((await s.apps()).length, 1);
+    await assert.rejects(async () => await quickTrack(s, id, "Hired"));
+    await untrack(s, id);
+    assert.equal((await s.apps()).length, 0);
+  }),
+);
+test("only early-career Product and Founder’s Office titles are targeted", () => {
+  for (const title of [
+    "Associate Product Manager",
+    "APM",
+    "Product Analyst",
+    "Product Management Intern",
+    "Founder’s Office",
+    "Chief of Staff",
+    "Associate, Strategy & Operations",
+    "Business Analyst Intern",
+    "Binance Accelerator Program - Growth Operations",
+  ])
+    assert(isTargetRole({ title }), title);
+  for (const title of [
+    "Product Engineer II",
+    "Senior Product Designer",
+    "Product Marketing Manager",
+    "Account Executive, Product Sales",
+    "Product Counsel",
+    "HR Operations Intern",
+    "Backend Developer",
+    "Card Risk Strategy Specialist",
+  ])
+    assert(!isTargetRole({ title }), title);
+});
+test("locations outside India, Dubai and Singapore are dropped; preferred cities rank highest", () => {
+  for (const location of [
+    "Bengaluru",
+    "Mumbai, Maharashtra",
+    "Gurugram, India",
+    "Dubai, United Arab Emirates",
+    "Hong Kong; Singapore",
+    "Remote - APAC",
+    "Remote",
+  ])
+    assert(isTargetLocation({ location }), location);
+  for (const location of [
+    "San Francisco, CA",
+    "Remote - US",
+    "London",
+    "Indianapolis, IN",
+    "Unknown",
+  ])
+    assert(!isTargetLocation({ location }), location);
+  const points = (location) =>
+    assess(job({ employmentType: "Full-time", title: "APM", location })).parts
+      .location;
+  assert(points("Bangalore") > points("Mumbai"));
+  assert(points("Mumbai") > points("Dubai"));
+  assert(points("Dubai") > points("Singapore"));
+});
+test("seniority words, level II titles and years stated in the title block a role", () => {
+  for (const title of [
+    "Senior Product Manager",
+    "Product Manager II",
+    "Group Product Manager",
+    "Product Management - UPI | Experience : 6-9 yrs",
+  ])
+    assert(
+      assess(job({ title, employmentType: "Full-time" })).blocked.length,
+      title,
+    );
+  assert.equal(
+    assess(job({ title: "Chief of Staff", employmentType: "Full-time" }))
+      .blocked.length,
+    0,
+  );
+  assert.equal(
+    assess(
+      job({
+        title: "Product Manager I - International",
+        employmentType: "Full-time",
+      }),
+    ).employmentType,
+    "Full-time",
+  );
+});
+test("SmartRecruiters and Workable boards are normalized", () => {
+  const sr = normalize(
+    { kind: "smartrecruiters", company: "TEST", board: "Test" },
+    {
+      totalFound: 1,
+      content: [
+        {
+          id: "42",
+          name: "Associate Product Manager",
+          company: { identifier: "Test" },
+          location: {
+            city: "Bengaluru",
+            country: "in",
+            fullLocation: "Bengaluru, India",
+          },
+          experienceLevel: { id: "entry_level", label: "Entry Level" },
+          typeOfEmployment: { label: "Full-time" },
+        },
+      ],
+    },
+  )[0];
+  assert.equal(sr.originalUrl, "https://jobs.smartrecruiters.com/Test/42");
+  assert.equal(sr.location, "Bengaluru, India");
+  assert.equal(sr.experienceLevel, "Entry Level");
+  const w = normalize(
+    { kind: "workable", company: "TEST", board: "test" },
+    {
+      jobs: [
+        {
+          title: "Product Intern",
+          shortcode: "ABC",
+          url: "https://apply.workable.com/j/ABC",
+          city: "Singapore",
+          country: "Singapore",
+          employment_type: "Internship",
+        },
+      ],
+    },
+  )[0];
+  assert.equal(w.location, "Singapore, Singapore");
+  assert.equal(w.sourceId, "ABC");
+  assert.match(
+    sourceURL({ kind: "smartrecruiters", board: "Wise" }),
+    /^https:\/\/api\.smartrecruiters\.com\/v1\/companies\/Wise\/postings/,
+  );
+  assert.throws(() => sourceURL({ kind: "workday", board: "x" }));
+});
+test(
+  "a scan keeps only matching roles and clears ones the board no longer lists",
+  fixture(async (s) => {
+    await s.run(
+      "INSERT INTO sources(id,kind,company,board) VALUES ('t','greenhouse','TEST','test')",
+    );
+    const board = (jobs) => async () => ({
+      ok: true,
+      text: async () => JSON.stringify({ jobs }),
+    });
+    const posting = (id, title, location) => ({
+      id,
+      title,
+      location: { name: location },
+      content: "Product discovery and roadmap. 0-1 years experience.",
+      absolute_url: "https://example.test/jobs/" + id,
+    });
+    await discover(
+      s,
+      board([
+        posting(1, "Associate Product Manager", "Bengaluru"),
+        posting(2, "Product Analyst", "Mumbai"),
+        posting(3, "Associate Product Manager", "New York"),
+        posting(4, "Senior Product Manager", "Bengaluru"),
+        posting(5, "Backend Engineer", "Bengaluru"),
+      ]),
+    );
+    let jobs = await s.jobs();
+    assert.deepEqual(jobs.map((j) => j.sourceId).sort(), ["1", "2"]);
+    assert.equal(
+      jobs[0].assessment.region,
+      jobs[0].location === "Mumbai" ? "Mumbai" : "Bangalore",
+    );
+    // Job 2 is saved by the user, then both disappear from the board.
+    const saved = jobs.find((j) => j.sourceId === "2");
+    await s.run(
+      "UPDATE jobs SET data=? WHERE id=?",
+      JSON.stringify({ ...saved, collection: "Saved" }),
+      saved.id,
+    );
+    await discover(s, board([]));
+    jobs = await s.jobs();
+    assert.equal(jobs.length, 1);
+    assert.equal(jobs[0].sourceId, "2");
+    assert.equal(jobs[0].closed, true);
   }),
 );

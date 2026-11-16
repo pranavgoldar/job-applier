@@ -1,10 +1,13 @@
 import { uuid, now } from "./ids.mjs";
-import { assess, initialProfile } from "./matching.mjs";
+import { assess, geo, initialProfile, isTargetRole } from "./matching.mjs";
 export const docs = {
   greenhouse: "https://docs.greenhouse.io/job-board.html",
   lever: "https://github.com/lever/postings-api",
   ashby: "https://developers.ashbyhq.com/docs/public-job-posting-api",
+  smartrecruiters: "https://developers.smartrecruiters.com/docs/posting-api",
+  workable: "https://workable.readme.io/reference/jobs",
 };
+export const kinds = Object.keys(docs);
 export function canonical(url) {
   const u = new URL(url);
   if (u.protocol !== "https:" && u.protocol !== "http:")
@@ -26,15 +29,20 @@ export function sourceURL(source) {
   )
     throw new Error("Invalid board identifier");
   const b = encodeURIComponent(source.board);
-  return source.kind === "greenhouse"
-    ? `https://boards-api.greenhouse.io/v1/boards/${b}/jobs?content=true`
-    : source.kind === "lever"
-      ? `https://api.lever.co/v0/postings/${b}?mode=json&limit=100&skip=0`
-      : source.kind === "ashby"
-        ? `https://api.ashbyhq.com/posting-api/job-board/${b}?includeCompensation=true`
-        : (() => {
-            throw new Error("Unsupported source");
-          })();
+  switch (source.kind) {
+    case "greenhouse":
+      return `https://boards-api.greenhouse.io/v1/boards/${b}/jobs?content=true`;
+    case "lever":
+      return `https://api.lever.co/v0/postings/${b}?mode=json&limit=100&skip=0`;
+    case "ashby":
+      return `https://api.ashbyhq.com/posting-api/job-board/${b}?includeCompensation=true`;
+    case "smartrecruiters":
+      return `https://api.smartrecruiters.com/v1/companies/${b}/postings?limit=100&offset=0`;
+    case "workable":
+      return `https://apply.workable.com/api/v1/widget/accounts/${b}?details=true`;
+    default:
+      throw new Error("Unsupported source");
+  }
 }
 export function plain(s = "") {
   return s
@@ -48,38 +56,133 @@ export function plain(s = "") {
     .replace(/\s+/g, " ")
     .trim();
 }
+const joined = (...parts) =>
+  [...new Set(parts.flat().map((x) => String(x || "").trim()))]
+    .filter(Boolean)
+    .join("; ");
+const base = (source) => ({
+  company: source.company,
+  source: source.kind,
+  active: "Published on source board; submission availability unverified",
+  activeEvidence: "Returned by structured public postings endpoint",
+  industry: source.industry || "Unknown",
+});
+function normalizeSmartRecruiters(source, body) {
+  if (!Array.isArray(body?.content))
+    throw new Error("Unexpected source schema; jobs were not changed");
+  return body.content.map((j) => {
+    const l = j.location || {},
+      url = `https://jobs.smartrecruiters.com/${encodeURIComponent(j.company?.identifier || source.board)}/${encodeURIComponent(j.id)}`;
+    return {
+      ...base(source),
+      title: j.name,
+      location:
+        joined(
+          l.fullLocation || [l.city, l.region, l.country],
+          l.remote ? "Remote" : "",
+        ) || "Unknown",
+      description: plain(
+        [
+          j.department?.label,
+          j.function?.label,
+          j.experienceLevel?.label && "Level: " + j.experienceLevel.label,
+          j.typeOfEmployment?.label,
+        ]
+          .filter(Boolean)
+          .join(". "),
+      ),
+      descriptionPartial: true,
+      employmentType:
+        j.experienceLevel?.id === "internship"
+          ? "Internship"
+          : j.typeOfEmployment?.label || "Unknown",
+      experienceLevel: j.experienceLevel?.label || null,
+      isRemote: l.remote === true,
+      originalUrl: url,
+      applyUrl: url,
+      sourceId: String(j.id),
+      postedAt: j.releasedDate || null,
+      compensation: null,
+    };
+  });
+}
+function normalizeWorkable(source, body) {
+  if (!Array.isArray(body?.jobs))
+    throw new Error("Unexpected source schema; jobs were not changed");
+  return body.jobs.map((j) => ({
+    ...base(source),
+    title: j.title,
+    location:
+      joined(
+        (j.locations?.length ? j.locations : [j]).map((l) =>
+          [l.city, l.country].filter(Boolean).join(", "),
+        ),
+        j.telecommuting ? "Remote" : "",
+      ) || "Unknown",
+    description: plain(j.description || ""),
+    employmentType: j.employment_type || "Unknown",
+    experienceLevel: j.experience || null,
+    isRemote: j.telecommuting === true,
+    originalUrl: j.url || j.shortlink,
+    applyUrl: j.application_url || j.url || null,
+    sourceId: String(j.shortcode || j.url),
+    postedAt: j.published_on ? new Date(j.published_on).toISOString() : null,
+    compensation: null,
+  }));
+}
 export function normalize(source, body) {
+  if (source.kind === "smartrecruiters")
+    return normalizeSmartRecruiters(source, body).filter(
+      (j) => j.title && j.originalUrl,
+    );
+  if (source.kind === "workable")
+    return normalizeWorkable(source, body).filter(
+      (j) => j.title && j.originalUrl,
+    );
   const rows = source.kind === "lever" ? body : body.jobs;
   if (!Array.isArray(rows))
     throw new Error("Unexpected source schema; jobs were not changed");
   return rows
     .filter((j) => j.isListed !== false)
     .map((j) => ({
-      company: source.company,
+      ...base(source),
       title: j.title || j.text,
       location:
-        j.location?.name || j.location || j.categories?.location || "Unknown",
+        joined(
+          j.location?.name || j.location || j.categories?.location,
+          j.categories?.allLocations || [],
+          (j.secondaryLocations || []).map((l) => l.location),
+          j.address?.postalAddress?.addressCountry,
+        ) || "Unknown",
       description: plain(
-        j.descriptionPlain ||
-          j.content ||
-          (j.description || "") +
-            " " +
-            (j.lists || []).map((l) => l.text + " " + l.content).join(" "),
+        [
+          j.descriptionPlain || j.content || j.description || "",
+          ...(j.lists || []).map((l) => l.text + " " + l.content),
+          j.additionalPlain || "",
+        ].join(" "),
       ),
-      employmentType: j.employmentType || j.categories?.commitment || "Unknown",
-      isRemote: j.isRemote === true,
+      employmentType:
+        {
+          FullTime: "Full-time",
+          PartTime: "Part-time",
+          Intern: "Internship",
+        }[j.employmentType] ||
+        j.employmentType ||
+        j.categories?.commitment ||
+        "Unknown",
+      isRemote:
+        j.isRemote === true ||
+        String(j.workplaceType || "").toLowerCase() === "remote",
       originalUrl: j.absolute_url || j.hostedUrl || j.jobUrl,
       applyUrl: j.applyUrl || j.absolute_url || null,
-      source: source.kind,
       sourceId: String(j.id || j.jobUrl),
       postedAt:
         j.publishedAt ||
+        j.first_published ||
+        j.updated_at ||
         (j.createdAt && new Date(j.createdAt).toISOString()) ||
         null,
       compensation: j.compensation || j.salaryRange || null,
-      active: "Published on source board; submission availability unverified",
-      activeEvidence: "Returned by structured public postings endpoint",
-      industry: source.industry || "Unknown",
     }))
     .filter((j) => j.title && j.originalUrl);
 }
@@ -140,10 +243,9 @@ export async function upsertJob(store, job) {
     ).id
   );
 }
-export function isTargetRole(job) {
-  return /(?:product.*(?:manager|management|owner|analyst|strateg)|\bapm\b|founder|business operations|strategy|strategic initiatives|chief of staff|special projects)/i.test(
-    job.title || "",
-  );
+export { isTargetRole };
+export function isTargetLocation(job) {
+  return geo(job).region !== null;
 }
 export async function fetchJSON(
   url,
@@ -221,6 +323,21 @@ export async function discover(
             throw new Error("Pagination safety limit; board incomplete");
           await new Promise((r) => setTimeout(r, 250));
         }
+      } else if (s.kind === "smartrecruiters") {
+        // Ask the board only for the three target countries instead of every posting.
+        for (const country of ["in", "ae", "sg"])
+          for (let offset = 0; offset < 1000; offset += 100) {
+            const body = await fetchJSON(
+              sourceURL(s).replace("offset=0", `offset=${offset}`) +
+                "&country=" +
+                country,
+              fetcher,
+              { deadline },
+            );
+            jobs.push(...normalize(s, body));
+            if (!(offset + 100 < Number(body.totalFound))) break;
+            await new Promise((r) => setTimeout(r, 250));
+          }
       } else
         jobs = normalize(
           s,
@@ -229,11 +346,43 @@ export async function discover(
       const relevant = jobs.filter(
         (job) =>
           isTargetRole(job) &&
+          isTargetLocation(job) &&
           !assess(job, profile).blocked.some((x) =>
-            /Experience requirement|Seniority/.test(x),
+            /Experience requirement|Seniority|mid-senior|restriction excludes India/.test(
+              x,
+            ),
           ),
       );
-      await upsertJobs(store, relevant, profile);
+      const kept = new Set(await upsertJobs(store, relevant, profile));
+      // The board answered in full, so anything it no longer lists has closed.
+      // Untouched matches are removed; ones you saved or applied to are kept and marked.
+      let closed = 0;
+      for (const row of await store.all(
+        "SELECT id,data FROM jobs WHERE source=?",
+        s.kind,
+      )) {
+        if (kept.has(row.id)) continue;
+        const data = JSON.parse(row.data);
+        if (data.company !== s.company || data.closed) continue;
+        const used =
+          ["Saved", "Shortlisted"].includes(data.collection) ||
+          (await store.get(
+            "SELECT id FROM applications WHERE job_id=?",
+            row.id,
+          ));
+        if (used)
+          await store.run(
+            "UPDATE jobs SET data=? WHERE id=?",
+            JSON.stringify({
+              ...data,
+              closed: true,
+              active: "No longer listed on the source board",
+            }),
+            row.id,
+          );
+        else await store.run("DELETE FROM jobs WHERE id=?", row.id);
+        closed++;
+      }
       const matches = relevant.length;
       await store.run(
         "UPDATE sources SET health=?,last_run=?,error=NULL,count=? WHERE id=?",
@@ -246,7 +395,7 @@ export async function discover(
       await store.event(
         null,
         "discovery",
-        `${s.company}: ${matches} potentially relevant postings checked. Missing jobs were not automatically marked closed.`,
+        `${s.company}: scanned ${jobs.length} postings, kept ${matches} matching roles${closed ? `, cleared ${closed} no longer listed` : ""}.`,
       );
     } catch (e) {
       await store.run(

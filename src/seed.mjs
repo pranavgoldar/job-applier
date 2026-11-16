@@ -17,7 +17,7 @@ export async function seed(store) {
     for (const [id, kind, company, board] of [
       ["aspora", "ashby", "Aspora", "aspora"],
       ["nium", "lever", "Nium", "nium"],
-      ["razorpay", "greenhouse", "Razorpay", "razorpay"],
+      ["razorpay", "greenhouse", "Razorpay", "razorpaysoftwareprivatelimited"],
     ])
       await store.run(
         "INSERT OR IGNORE INTO sources(id,kind,company,board) VALUES (?,?,?,?)",

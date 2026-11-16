@@ -10,8 +10,11 @@ import {
   confirmManual,
   setStage,
   approveEligibility,
+  quickTrack,
+  untrack,
+  trackFromName,
 } from "./applications.mjs";
-import { upsertJob, sourceURL } from "./connectors.mjs";
+import { upsertJob, sourceURL, kinds } from "./connectors.mjs";
 import { initialProfile, assess } from "./matching.mjs";
 import { nextCloudRun } from "./cloud-worker.mjs";
 export function createHandler(
@@ -164,7 +167,7 @@ export function createHandler(
       }
       if (p === "/api/state" && req.method === "GET")
         return json(res, 200, {
-          version: "2.0.0",
+          version: "3.0.0",
           runtime: hosted ? "vercel" : "local",
           maxUploadBytes: hosted ? 3 * 1024 * 1024 : 8 * 1024 * 1024,
           profile: await store.config("profile"),
@@ -185,6 +188,11 @@ export function createHandler(
           queue: await store.all(
             "SELECT * FROM queue ORDER BY created DESC LIMIT 30",
           ),
+          pending: (
+            await store.get(
+              "SELECT COUNT(*) AS n FROM queue WHERE status IN ('queued','running')",
+            )
+          ).n,
           lastDiscovery: await store.config("lastDiscovery"),
           nextDiscovery: hosted
             ? nextCloudRun()
@@ -246,6 +254,16 @@ export function createHandler(
           ok: true,
         });
       }
+      if (p.match(/^\/api\/jobs\/[^/]+\/track$/) && req.method === "POST") {
+        const id = p.split("/")[3],
+          b = await body(req);
+        if (!(await store.job(id))) throw new Error("Job not found");
+        if (b.status === "Not applied") {
+          await untrack(store, id);
+          return json(res, 200, { ok: true });
+        }
+        return json(res, 200, await quickTrack(store, id, b.status));
+      }
       if (p === "/api/prepare" && req.method === "POST") {
         if ((await store.config("settings")).mode === "track")
           throw new Error("Enable preparation mode in settings first");
@@ -259,9 +277,12 @@ export function createHandler(
           Buffer.byteLength(b.base64 || "", "base64") > 3 * 1024 * 1024
         )
           throw new Error("Hosted upload limit is 3 MB");
+        const track = b.track || trackFromName(b.name);
         return json(res, 200, {
+          track,
           id: await addResume(store, {
             ...b,
+            track,
             bytes: Buffer.from(b.base64 || "", "base64"),
           }),
         });
@@ -460,6 +481,7 @@ export function createHandler(
       }
       if (p === "/api/sources" && req.method === "POST") {
         const b = await body(req);
+        if (!kinds.includes(b.kind)) throw new Error("Unsupported source");
         sourceURL(b);
         if (!b.company) throw new Error("Company required");
         await store.run(

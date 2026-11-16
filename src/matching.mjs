@@ -30,6 +30,70 @@ export const initialProfile = {
   facts: "",
 };
 
+// Preferred geographies, in the order the search owner ranked them.
+const regions = [
+  ["Bangalore", /bengaluru|bangalore|\bblr\b/, 20],
+  ["Mumbai", /mumbai|bombay|\bthane\b/, 17],
+  [
+    "India",
+    /\bindia\b|gurgaon|gurugram|delhi|noida|hyderabad|\bpune\b|chennai|kolkata|ahmedabad|jaipur|\bncr\b|kochi|indore/,
+    14,
+  ],
+  ["Dubai / UAE", /dubai|abu dhabi|\buae\b|united arab emirates|sharjah/, 13],
+  ["Singapore", /singapore/, 11],
+];
+export function geo(job) {
+  const loc = String(job.location || "").toLowerCase();
+  const remote =
+    job.isRemote === true ||
+    String(job.workplaceType || "").toLowerCase() === "remote" ||
+    /remote|work from home|\bwfh\b|anywhere/.test(loc);
+  let best = null;
+  for (const [region, pattern, points] of regions)
+    if (pattern.test(loc) && (!best || points > best.points))
+      best = { region, points };
+  if (best) return { ...best, remote };
+  if (
+    remote &&
+    (/\bapac\b|\basia\b|worldwide|global|anywhere/.test(loc) ||
+      /^[\s,;()\-–/]*remote[\s,;()\-–/]*$/.test(loc))
+  )
+    return { region: "Remote", points: 12, remote: true };
+  return { region: null, points: 0, remote };
+}
+export function sectorOf(job, text = "") {
+  const industry = String(job.industry || "").toLowerCase();
+  if (industry.startsWith("consumer")) return "Consumer";
+  if (
+    /fintech|payments|remittance|digital bank|lending|financial infrastructure|investment platform|banking|financial institution|financial services|crypto|wealth|insurance|neobank|broking/.test(
+      text + " " + industry,
+    )
+  )
+    return "Fintech";
+  if (
+    /consumer|marketplace|commerce|food|mobility|travel|social|media|gaming|d2c|entertainment|delivery|audio|edtech|health/.test(
+      industry,
+    )
+  )
+    return "Consumer";
+  return "Other";
+}
+
+const productRole =
+  /\bapm\b|product\s+(?:manager|management|owner|analyst|analytics|strateg|operations|ops|associate|intern|specialist|research|growth|lead)|(?:associate|assistant|junior|graduate|rotational|intern)[\s,/-]+product|product\s*[-,/(]\s*(?:intern|associate|graduate)/i;
+const foundersRole =
+  /founder|chief of staff|\bceo'?s? office|business operations|\bbiz\s?ops\b|strategy|strategic (?:initiatives|projects|insights)|special projects|new initiatives|business (?:analyst|associate)|management trainee|generalist|entrepreneur in residence|\beir\b|growth (?:analyst|associate|intern|management|operations)|program (?:associate|analyst)|(?:accelerator|builders|graduate|internship|rotational) program|apprentice|(?:intern|internship).*(?:business|growth|research|strategy)|(?:business|growth|research).*(?:intern\b|internship)/i;
+// Titles that mention "product" or "strategy" but belong to a different job family.
+const otherFamily =
+  /engineer|developer|\bsde\b|design|counsel|legal|security|support|sales|account (?:executive|manager)|marketing|compliance|scientist|architect|accountant|accounting|audit|\btax\b|recruit|talent|sourcer|production|content|risk strateg|warehouse|financial crime|investigat|\bkyc\b|\bkyb\b|\baml\b|\bhr\b|human resources|people op|public relations|\bkol\b|events|monitorship|business development|\bbd\b|tele ?caller|emirati|saudi national/i;
+export function isTargetRole(job) {
+  const title = job.title || "";
+  return (
+    (productRole.test(title) || foundersRole.test(title)) &&
+    !otherFamily.test(title)
+  );
+}
+
 const count = (s, terms) =>
   terms.reduce((n, t) => n + (s.includes(t) ? 1 : 0), 0);
 export function classify(job) {
@@ -94,30 +158,37 @@ export function assess(job, profile = initialProfile) {
   const blocked = [],
     review = [],
     evidence = [];
+  // "1-3 years" asks for at least 1; "3+ years" asks for at least 3. Use that lower bound.
   const years = [
-    ...d.matchAll(/(\d+)\s*(?:[-–]\s*(\d+)|\+)\s*years?/g),
-    ...d.matchAll(/(?:minimum|at least|requires?|required)\s+(\d+)\s+years?/g),
-  ];
-  let requiredYears = years.length
-    ? Math.max(...years.map((m) => Number(m[2] || m[1])))
-    : null;
+    ...((job.title || "").toLowerCase() + " " + d).matchAll(
+      /(\d{1,2})\s*(?:\+|(?:[-–]|to)\s*\d{1,2})?\s*\+?\s*(?:years?|yrs?)/g,
+    ),
+  ]
+    .map((m) => Number(m[1]))
+    .filter((n) => n <= 20);
+  const level = String(job.experienceLevel || "").toLowerCase();
+  let requiredYears = years.length ? Math.max(...years) : null;
+  if (/mid.?senior|director|executive/.test(level))
+    blocked.push("Employer lists this as a mid-senior or higher level role.");
   if (requiredYears > 2)
     blocked.push("Experience requirement exceeds two years.");
   else if (requiredYears > 1)
     review.push("1–2 years required; internship evidence must be reviewed.");
   else if (
     requiredYears === null &&
-    !/freshers?|no experience|graduate|entry.level/.test(t)
+    !/freshers?|no experience|graduate|entry.level|internship/.test(
+      t + " " + level,
+    )
   )
     review.push("Required experience is unknown.");
   else evidence.push("Early-career or graduate responsibilities.");
   if (
-    /\b(senior|director|head of|vice president|principal|lead product)\b/.test(
-      job.title?.toLowerCase() || "",
+    /\b(senior|sr|staff|director|head|vice president|vp|avp|principal|lead|group|general manager|ii|iii|iv|dgm|gm|agm)\b/.test(
+      (job.title?.toLowerCase() || "").replace(/chief of staff/g, ""),
     )
   )
     blocked.push("Seniority is outside early-career targets.");
-  const internship = /intern/i.test(
+  const internship = /\bintern(?:ship)?s?\b/i.test(
     (job.employmentType || "") + " " + (job.title || ""),
   );
   const remote = job.workplaceType
@@ -202,11 +273,11 @@ export function assess(job, profile = initialProfile) {
     review.push(
       "Overlapping responsibilities: approve or override the recommended resume.",
     );
-  const fintech =
-    /fintech|payments|remittance|digital bank|lending|financial infrastructure|investment platform|banking|financial institution|financial services/.test(
-      t + " " + (job.industry || ""),
-    );
+  const sector = sectorOf(job, t),
+    fintech = sector === "Fintech",
+    place = geo(job);
   const relevant =
+    isTargetRole(job) ||
     /product|apm|founder|business operations|strategy|strategic|chief of staff|special projects/.test(
       t,
     );
@@ -220,18 +291,9 @@ export function assess(job, profile = initialProfile) {
           : requiredYears <= 2
             ? 10
             : 0,
-    industry: fintech ? 25 : 10,
-    skills: Math.min(
-      15,
-      count(d, [
-        "research",
-        "sql",
-        "api",
-        "automation",
-        "financial model",
-        "discovery",
-      ]) * 3,
-    ),
+    industry: fintech ? 20 : sector === "Consumer" ? 15 : 8,
+    location:
+      internship && remote && explicitIndia ? 20 : Math.min(20, place.points),
     evidence:
       c.responsibilitySignals.product + c.responsibilitySignals.founders > 0
         ? 10
@@ -240,6 +302,8 @@ export function assess(job, profile = initialProfile) {
   const score = Object.values(parts).reduce((a, b) => a + b, 0);
   if (fintech)
     evidence.push("Fintech focus: financial products or infrastructure.");
+  else if (sector === "Consumer")
+    evidence.push("Consumer company: products used directly by people.");
   else
     evidence.push(
       "Other-industry opportunity; assess fit against strategy, research and automation experience.",
@@ -252,6 +316,9 @@ export function assess(job, profile = initialProfile) {
     review,
     evidence,
     requiredYears,
+    sector,
+    region: place.region || (remote ? "Remote" : "Other"),
+    remote,
     remoteEligibility,
     employmentType: internship ? "Internship" : job.employmentType || "Unknown",
     workAuthorization: auth,

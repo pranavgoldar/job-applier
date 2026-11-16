@@ -26,17 +26,20 @@
     "group": "Your target",
     "industry": "Fintech / cross-border payments",
     "careersUrl": "https://wise.jobs/",
-    "connector": null,
+    "connector": {
+      "kind": "smartrecruiters",
+      "board": "Wise"
+    },
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-15",
+    "checkedOn": "2026-11-16",
     "ycBacked": null,
     "ycEvidenceUrl": null,
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
     "indiaSignal": "Unknown — expansion plans not verified",
     "indiaEvidenceUrl": null,
-    "note": "SmartRecruiters career site; a collector is not connected in this version."
+    "note": "Public job board verified 16 Nov 2026."
   },
   {
     "id": "revolut",
@@ -430,18 +433,18 @@
     "careersUrl": "https://razorpay.com/jobs/",
     "connector": {
       "kind": "greenhouse",
-      "board": "razorpay"
+      "board": "razorpaysoftwareprivatelimited"
     },
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-15",
+    "checkedOn": "2026-11-16",
     "ycBacked": null,
     "ycEvidenceUrl": null,
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
     "indiaSignal": "Unknown — expansion plans not verified",
     "indiaEvidenceUrl": null,
-    "note": ""
+    "note": "Public job board verified 16 Nov 2026."
   },
   {
     "id": "stripe",
@@ -449,17 +452,20 @@
     "group": "Similar firm",
     "industry": "Fintech / payments infrastructure",
     "careersUrl": "https://stripe.com/careers",
-    "connector": null,
+    "connector": {
+      "kind": "greenhouse",
+      "board": "stripe"
+    },
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-15",
+    "checkedOn": "2026-11-16",
     "ycBacked": null,
     "ycEvidenceUrl": null,
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
     "indiaSignal": "Unknown — expansion plans not verified",
     "indiaEvidenceUrl": null,
-    "note": "Broad comparison target; latest funding stage not checked. Collector not connected."
+    "note": "Public job board verified 16 Nov 2026."
   },
   {
     "id": "adyen",
@@ -467,17 +473,20 @@
     "group": "Similar firm",
     "industry": "Fintech / payments",
     "careersUrl": "https://careers.adyen.com/",
-    "connector": null,
+    "connector": {
+      "kind": "greenhouse",
+      "board": "adyen"
+    },
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-15",
+    "checkedOn": "2026-11-16",
     "ycBacked": null,
     "ycEvidenceUrl": null,
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
     "indiaSignal": "Unknown — expansion plans not verified",
     "indiaEvidenceUrl": null,
-    "note": "Broad comparison target; not represented as an early-stage startup. Collector not connected."
+    "note": "Public job board verified 16 Nov 2026."
   },
   {
     "id": "ramp",
@@ -640,5 +649,1013 @@
     "indiaSignal": "YC directory describes banking and payments for cross-border Indian businesses",
     "indiaEvidenceUrl": "https://www.ycombinator.com/companies/location/india",
     "note": "Identity is from the YC India directory; direct career board and latest funding round still need verification."
+  },
+  {
+    "id": "groww",
+    "name": "Groww",
+    "group": "Fintech",
+    "industry": "Fintech / investing and broking",
+    "careersUrl": "https://groww.in/careers",
+    "connector": {
+      "kind": "greenhouse",
+      "board": "groww"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: India",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "cred",
+    "name": "CRED",
+    "group": "Fintech",
+    "industry": "Fintech / consumer credit and payments",
+    "careersUrl": "https://careers.cred.club/",
+    "connector": {
+      "kind": "lever",
+      "board": "cred"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: India",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "fampay",
+    "name": "FamPay",
+    "group": "Fintech",
+    "industry": "Fintech / payments for young consumers",
+    "careersUrl": "https://fampay.in/careers",
+    "connector": {
+      "kind": "lever",
+      "board": "fampay"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: India",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "paytm",
+    "name": "Paytm",
+    "group": "Fintech",
+    "industry": "Fintech / payments and financial services",
+    "careersUrl": "https://paytm.com/careers/",
+    "connector": {
+      "kind": "lever",
+      "board": "paytm"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: India",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "zeta",
+    "name": "Zeta",
+    "group": "Fintech",
+    "industry": "Fintech / banking technology",
+    "careersUrl": "https://www.zeta.tech/in/careers/",
+    "connector": {
+      "kind": "lever",
+      "board": "zeta"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: India",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "payoneer",
+    "name": "Payoneer",
+    "group": "Fintech",
+    "industry": "Fintech / cross-border payments",
+    "careersUrl": "https://www.payoneer.com/careers/",
+    "connector": {
+      "kind": "greenhouse",
+      "board": "payoneer"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: India",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "tide",
+    "name": "Tide",
+    "group": "Fintech",
+    "industry": "Fintech / business banking",
+    "careersUrl": "https://www.tide.co/careers/",
+    "connector": {
+      "kind": "greenhouse",
+      "board": "tide"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: India",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "scapia",
+    "name": "Scapia",
+    "group": "Fintech",
+    "industry": "Fintech / travel credit card",
+    "careersUrl": "https://apply.workable.com/scapia/",
+    "connector": {
+      "kind": "workable",
+      "board": "scapia"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: India",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "refyne",
+    "name": "Refyne",
+    "group": "Fintech",
+    "industry": "Fintech / earned wage access",
+    "careersUrl": "https://www.refyne.co.in/",
+    "connector": {
+      "kind": "smartrecruiters",
+      "board": "refyne"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: India",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "bureau",
+    "name": "Bureau",
+    "group": "Fintech",
+    "industry": "Fintech / identity and fraud risk",
+    "careersUrl": "https://www.bureau.id/careers",
+    "connector": {
+      "kind": "ashby",
+      "board": "bureau"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: India",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "coinbase",
+    "name": "Coinbase",
+    "group": "Fintech",
+    "industry": "Fintech / crypto exchange",
+    "careersUrl": "https://www.coinbase.com/careers",
+    "connector": {
+      "kind": "greenhouse",
+      "board": "coinbase"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: Singapore, India",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "binance",
+    "name": "Binance",
+    "group": "Fintech",
+    "industry": "Fintech / crypto exchange",
+    "careersUrl": "https://www.binance.com/en/careers",
+    "connector": {
+      "kind": "greenhouse",
+      "board": "binance"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: Dubai, Singapore",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "bybit",
+    "name": "Bybit",
+    "group": "Fintech",
+    "industry": "Fintech / crypto exchange",
+    "careersUrl": "https://www.bybit.com/en/careers",
+    "connector": {
+      "kind": "greenhouse",
+      "board": "bybit"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: Dubai, Singapore",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "tamara",
+    "name": "Tamara",
+    "group": "Fintech",
+    "industry": "Fintech / buy now pay later",
+    "careersUrl": "https://tamara.co/en-AE/careers",
+    "connector": {
+      "kind": "greenhouse",
+      "board": "tamara"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: Dubai, India",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "lean-technologies",
+    "name": "Lean Technologies",
+    "group": "Fintech",
+    "industry": "Fintech / open banking payments",
+    "careersUrl": "https://www.leantech.me/careers",
+    "connector": {
+      "kind": "ashby",
+      "board": "leantech"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: Dubai",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "sardine",
+    "name": "Sardine",
+    "group": "Fintech",
+    "industry": "Fintech / fraud and compliance",
+    "careersUrl": "https://www.sardine.ai/careers",
+    "connector": {
+      "kind": "ashby",
+      "board": "sardine"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: Dubai, India",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "thunes",
+    "name": "Thunes",
+    "group": "Fintech",
+    "industry": "Fintech / cross-border payments",
+    "careersUrl": "https://www.thunes.com/careers/",
+    "connector": {
+      "kind": "greenhouse",
+      "board": "thunes"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: Singapore",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "trust-bank",
+    "name": "Trust Bank",
+    "group": "Fintech",
+    "industry": "Fintech / digital bank",
+    "careersUrl": "https://trustbank.sg/careers/",
+    "connector": {
+      "kind": "greenhouse",
+      "board": "trustbank"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: Singapore",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "xendit",
+    "name": "Xendit",
+    "group": "Fintech",
+    "industry": "Fintech / payments infrastructure",
+    "careersUrl": "https://www.xendit.co/en/careers/",
+    "connector": {
+      "kind": "greenhouse",
+      "board": "xendit"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: Singapore, India",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "youtrip",
+    "name": "YouTrip",
+    "group": "Fintech",
+    "industry": "Fintech / multi-currency wallet",
+    "careersUrl": "https://www.you.co/sg/careers/",
+    "connector": {
+      "kind": "workable",
+      "board": "youtrip"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: Singapore",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "meesho",
+    "name": "Meesho",
+    "group": "Consumer",
+    "industry": "Consumer / e-commerce marketplace",
+    "careersUrl": "https://www.meesho.io/jobs",
+    "connector": {
+      "kind": "lever",
+      "board": "meesho"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: India",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "swiggy",
+    "name": "Swiggy",
+    "group": "Consumer",
+    "industry": "Consumer / food delivery and quick commerce",
+    "careersUrl": "https://careers.swiggy.com/",
+    "connector": {
+      "kind": "smartrecruiters",
+      "board": "swiggy"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: India",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "glance",
+    "name": "Glance",
+    "group": "Consumer",
+    "industry": "Consumer / mobile content platform",
+    "careersUrl": "https://glance.com/careers",
+    "connector": {
+      "kind": "greenhouse",
+      "board": "glance"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: India",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "inmobi",
+    "name": "InMobi",
+    "group": "Consumer",
+    "industry": "Consumer / mobile advertising and content",
+    "careersUrl": "https://www.inmobi.com/company/careers",
+    "connector": {
+      "kind": "greenhouse",
+      "board": "inmobi"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: India",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "truecaller",
+    "name": "Truecaller",
+    "group": "Consumer",
+    "industry": "Consumer / communication app",
+    "careersUrl": "https://www.truecaller.com/careers",
+    "connector": {
+      "kind": "greenhouse",
+      "board": "truecaller"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: India",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "pocket-fm",
+    "name": "Pocket FM",
+    "group": "Consumer",
+    "industry": "Consumer / audio entertainment",
+    "careersUrl": "https://www.pocketfm.com/careers",
+    "connector": {
+      "kind": "lever",
+      "board": "pocketfm"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: India",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "ixigo",
+    "name": "ixigo",
+    "group": "Consumer",
+    "industry": "Consumer / travel booking",
+    "careersUrl": "https://www.ixigo.com/about/careers/",
+    "connector": {
+      "kind": "smartrecruiters",
+      "board": "ixigo"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: India",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "lokal",
+    "name": "Lokal",
+    "group": "Consumer",
+    "industry": "Consumer / local social media app",
+    "careersUrl": "https://getlokalapp.com/",
+    "connector": {
+      "kind": "smartrecruiters",
+      "board": "lokal"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: India",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "abhibus",
+    "name": "AbhiBus",
+    "group": "Consumer",
+    "industry": "Consumer / travel booking",
+    "careersUrl": "https://www.abhibus.com/",
+    "connector": {
+      "kind": "smartrecruiters",
+      "board": "abhibus"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: India",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "grab",
+    "name": "Grab",
+    "group": "Consumer",
+    "industry": "Consumer / mobility, delivery and payments super app",
+    "careersUrl": "https://www.grab.careers/",
+    "connector": {
+      "kind": "smartrecruiters",
+      "board": "grab"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: Singapore",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "delivery-hero",
+    "name": "foodpanda (Delivery Hero)",
+    "group": "Consumer",
+    "industry": "Consumer / food delivery",
+    "careersUrl": "https://careers.deliveryhero.com/",
+    "connector": {
+      "kind": "smartrecruiters",
+      "board": "deliveryhero"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: Singapore, Dubai",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "airbnb",
+    "name": "Airbnb",
+    "group": "Consumer",
+    "industry": "Consumer / travel marketplace",
+    "careersUrl": "https://careers.airbnb.com/",
+    "connector": {
+      "kind": "greenhouse",
+      "board": "airbnb"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: India, Singapore",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "agoda",
+    "name": "Agoda",
+    "group": "Consumer",
+    "industry": "Consumer / travel booking",
+    "careersUrl": "https://careersatagoda.com/",
+    "connector": {
+      "kind": "greenhouse",
+      "board": "agoda"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: India, Singapore",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "spotify",
+    "name": "Spotify",
+    "group": "Consumer",
+    "industry": "Consumer / audio entertainment",
+    "careersUrl": "https://www.lifeatspotify.com/",
+    "connector": {
+      "kind": "lever",
+      "board": "spotify"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: Singapore, India",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "notion",
+    "name": "Notion",
+    "group": "Consumer",
+    "industry": "Consumer / productivity software",
+    "careersUrl": "https://www.notion.com/careers",
+    "connector": {
+      "kind": "ashby",
+      "board": "notion"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: India",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "duolingo",
+    "name": "Duolingo",
+    "group": "Consumer",
+    "industry": "Consumer / edtech app",
+    "careersUrl": "https://careers.duolingo.com/",
+    "connector": {
+      "kind": "greenhouse",
+      "board": "duolingo"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: India",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "freshworks",
+    "name": "Freshworks",
+    "group": "Other",
+    "industry": "Software / business SaaS",
+    "careersUrl": "https://www.freshworks.com/company/careers/",
+    "connector": {
+      "kind": "smartrecruiters",
+      "board": "freshworks"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: India",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "kredx",
+    "name": "KredX",
+    "group": "Fintech",
+    "industry": "Fintech / supply chain finance",
+    "careersUrl": "https://www.kredx.com/careers",
+    "connector": {
+      "kind": "smartrecruiters",
+      "board": "kredx"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: India",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "bitgo",
+    "name": "BitGo",
+    "group": "Fintech",
+    "industry": "Fintech / crypto custody",
+    "careersUrl": "https://www.bitgo.com/careers/",
+    "connector": {
+      "kind": "greenhouse",
+      "board": "bitgo"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: India, Singapore",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "ripple",
+    "name": "Ripple",
+    "group": "Fintech",
+    "industry": "Fintech / crypto payments",
+    "careersUrl": "https://ripple.com/careers/",
+    "connector": {
+      "kind": "greenhouse",
+      "board": "ripple"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: Singapore, Dubai, India",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "gemini",
+    "name": "Gemini",
+    "group": "Fintech",
+    "industry": "Fintech / crypto exchange",
+    "careersUrl": "https://www.gemini.com/careers",
+    "connector": {
+      "kind": "greenhouse",
+      "board": "gemini"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: Singapore, India",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "fireblocks",
+    "name": "Fireblocks",
+    "group": "Fintech",
+    "industry": "Fintech / digital asset infrastructure",
+    "careersUrl": "https://www.fireblocks.com/careers/",
+    "connector": {
+      "kind": "greenhouse",
+      "board": "fireblocks"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: Singapore",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "paxos",
+    "name": "Paxos",
+    "group": "Fintech",
+    "industry": "Fintech / stablecoin infrastructure",
+    "careersUrl": "https://www.paxos.com/careers",
+    "connector": {
+      "kind": "ashby",
+      "board": "paxos"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: Singapore",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "anchorage",
+    "name": "Anchorage Digital",
+    "group": "Fintech",
+    "industry": "Fintech / crypto bank",
+    "careersUrl": "https://www.anchorage.com/careers",
+    "connector": {
+      "kind": "lever",
+      "board": "anchorage"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: Singapore",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "dtcpay",
+    "name": "dtcpay",
+    "group": "Fintech",
+    "industry": "Fintech / digital payments",
+    "careersUrl": "https://dtcpay.com/careers",
+    "connector": {
+      "kind": "greenhouse",
+      "board": "dtcpay"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: Singapore",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "shopback",
+    "name": "ShopBack",
+    "group": "Consumer",
+    "industry": "Consumer / cashback and shopping rewards",
+    "careersUrl": "https://corporate.shopback.com/careers",
+    "connector": {
+      "kind": "lever",
+      "board": "shopback-2"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: Singapore",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "deliveroo",
+    "name": "Deliveroo",
+    "group": "Consumer",
+    "industry": "Consumer / food delivery",
+    "careersUrl": "https://careers.deliveroo.co.uk/",
+    "connector": {
+      "kind": "greenhouse",
+      "board": "deliveroo"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: Dubai, India, Singapore",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
+  },
+  {
+    "id": "namshi",
+    "name": "Namshi",
+    "group": "Consumer",
+    "industry": "Consumer / fashion e-commerce",
+    "careersUrl": "https://www.namshi.com/careers/",
+    "connector": {
+      "kind": "smartrecruiters",
+      "board": "namshi"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-16",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not researched",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Live postings seen in: Dubai",
+    "indiaEvidenceUrl": null,
+    "note": "Public job board verified 16 Nov 2026."
   }
 ]
