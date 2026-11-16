@@ -158,18 +158,90 @@ async function refresh(draw = true) {
       $("#app").innerHTML = `<div class="loading">${e(err.message)}</div>`;
   }
 }
-// Run an API call, refresh, and report failures in one place.
-async function act(fn, done) {
-  try {
-    await fn();
-    await refresh();
-    if (activeJob && jobFor(activeJob)) openJob(activeJob);
-    else if (activeJob) closeModal();
-    if (done) toast(done);
-  } catch (err) {
-    toast(err.message);
-  }
+// Redraw the page, keeping an open job drawer (and its scroll position) in place.
+function redraw() {
+  const top = $(".drawer")?.scrollTop;
+  render();
+  if (!activeJob) return;
+  if (!jobFor(activeJob)) return closeModal();
+  openJob(activeJob);
+  if (top && $(".drawer")) $(".drawer").scrollTop = top;
 }
+// Every change goes through here. With `local`, the screen updates at once and
+// the request is sent in the background; if it fails, the server's version is
+// restored. Without `local`, the screen updates when the server has answered.
+// Requests are sent one at a time, in the order they were made.
+let inflight = 0,
+  chain = Promise.resolve();
+function act(send, { local, done, after } = {}) {
+  if (local) {
+    local();
+    redraw();
+    if (done) toast(done);
+  }
+  inflight++;
+  const run = chain.then(async () => {
+    try {
+      const result = await send();
+      if (after) after(result);
+      if (!local) {
+        await refresh(false);
+        redraw();
+        if (done) toast(done);
+      }
+    } catch (err) {
+      toast(err.message);
+      await refresh(false);
+      if (state) redraw();
+    } finally {
+      inflight--;
+    }
+  });
+  chain = run;
+  return run;
+}
+const stamp = () => new Date().toISOString();
+function putApp(app) {
+  if (!app?.id) return;
+  const i = state.applications.findIndex((a) => a.jobId === app.jobId);
+  if (i < 0) state.applications.unshift(app);
+  else state.applications[i] = app;
+}
+// Show a job as tracked straight away; the server's copy replaces this one.
+function trackLocally(jobId, status) {
+  const old = appFor(jobId);
+  if (status === "Not applied") {
+    state.applications = state.applications.filter((a) => a.jobId !== jobId);
+    return;
+  }
+  if (old) {
+    old.status = status;
+    old.confirmation ||= { type: "user-confirmed", time: stamp() };
+    old.updated = stamp();
+    return;
+  }
+  const r = resumeFor(jobFor(jobId).assessment.track);
+  state.applications.unshift({
+    id: "pending-" + jobId,
+    jobId,
+    status,
+    confirmation: { type: "user-confirmed", time: stamp() },
+    notes: "",
+    followUp: null,
+    created: stamp(),
+    updated: stamp(),
+    resumeId: r?.id || null,
+    resumeSnapshot: r
+      ? { id: r.id, track: r.track, version: r.version, name: r.name }
+      : null,
+  });
+}
+const track = (jobId, status, done) =>
+  act(() => api(`jobs/${jobId}/track`, { status }), {
+    local: () => trackLocally(jobId, status),
+    after: putApp,
+    done,
+  });
 
 // ---------- login ----------
 function login() {
@@ -335,7 +407,7 @@ function jobsPage() {
     ])}${select("sort", [
       ["best", "Best match"],
       ["newest", "Newest"],
-    ])}</div><div class="chips">${regions.map(([v, l, n]) => `<button class="chip ${filters.region === v ? "active" : ""}" data-region="${e(v)}">${l} <i>${n}</i></button>`).join("")}${filters.company !== "All" ? `<button class="chip active" data-clear-company>${e(filters.company)} ✕</button>` : ""}</div><div id="job-list">${jobList(list)}</div>`
+    ])}</div><div class="chips">${regions.map(([v, l, n]) => `<button class="chip ${filters.region === v ? "active" : ""}" data-region="${e(v)}">${l} <i>${n}</i></button>`).join("")}<button class="chip ${filters.type === "Internship" ? "active" : ""}" data-internships>Internships <i>${count((j) => jobType(j) === "Internship")}</i></button>${filters.company !== "All" ? `<button class="chip active" data-clear-company>${e(filters.company)} ✕</button>` : ""}</div><div id="job-list">${jobList(list)}</div>`
   );
 }
 function jobList(list) {
@@ -466,9 +538,10 @@ async function saveResume(file, track) {
     return toast("Please choose a PDF or DOCX file.");
   track ||= guessTrack(file.name);
   if (!track) return uploadResume(file);
+  toast(`Uploading ${file.name}…`);
   await act(
     async () => api("resumes", { track, ...(await filePayload(file)) }),
-    `Saved as your ${trackLabel(track)} resume.`,
+    { done: `Saved as your ${trackLabel(track)} resume.` },
   );
 }
 let pendingTrack = "";
@@ -567,7 +640,7 @@ function companiesPage() {
       .join("")}</div><div class="company-grid">${shown
       .map((c) => {
         const [dot, label, err] = companyStatus(c);
-        return `<div class="card company"><div class="company-top">${logo(c.name)}<div style="flex:1;min-width:0"><div class="company-name">${e(c.name)}</div><div class="muted small">${e(String(c.industry || "").replace(/^(Fintech|Consumer|Software)\s*\/\s*/i, ""))}</div></div>${c.sourceId ? `<button class="switch ${c.sourceEnabled ? "on" : ""}" data-source="${e(c.sourceId)}" data-enabled="${c.sourceEnabled ? "0" : "1"}" role="switch" aria-checked="${!!c.sourceEnabled}" aria-label="Check ${e(c.name)} automatically"></button>` : ""}</div><span class="status" title="${e(err)}"><span class="dot ${dot}"></span>${e(label)}</span><div class="company-links">${c.sourceCount ? `<button class="link" data-company-jobs="${e(c.name)}">View ${c.sourceCount} job${c.sourceCount === 1 ? "" : "s"}</button>` : ""}${c.careersUrl ? `<a class="link" href="${e(c.careersUrl)}" target="_blank" rel="noopener noreferrer">Careers page ↗</a>` : ""}</div></div>`;
+        return `<div class="card company"><div class="company-top">${logo(c.name)}<div style="flex:1;min-width:0"><div class="company-name">${e(c.name)}</div><div class="muted small">${e(String(c.industry || "").replace(/^(Fintech|Consumer|Software|Job feed)\s*\/\s*/i, ""))}</div></div>${c.sourceId ? `<button class="switch ${c.sourceEnabled ? "on" : ""}" data-source="${e(c.sourceId)}" data-enabled="${c.sourceEnabled ? "0" : "1"}" role="switch" aria-checked="${!!c.sourceEnabled}" aria-label="Check ${e(c.name)} automatically"></button>` : ""}</div><span class="status" title="${e(err)}"><span class="dot ${dot}"></span>${e(label)}</span><div class="company-links">${c.sourceCount ? `<button class="link" data-company-jobs="${e(c.name)}">View ${c.sourceCount} job${c.sourceCount === 1 ? "" : "s"}</button>` : ""}${c.careersUrl ? `<a class="link" href="${e(c.careersUrl)}" target="_blank" rel="noopener noreferrer">Careers page ↗</a>` : ""}</div></div>`;
       })
       .join("")}</div>`
   );
@@ -591,7 +664,7 @@ function settingsPage() {
             `<div class="log-row"><span>${e(ev.message)}</span><time>${e(when(ev.created))}</time></div>`,
         )
         .join("") || '<p class="muted small">Nothing yet.</p>'
-    }</section></div><div class="stack"><section class="card card-pad stack"><h2>Daily scan</h2><div class="spread"><div><b>${s.paused ? "Paused" : "On"}</b><div class="muted small">${s.paused ? "Jobs only update when you press Refresh." : state.runtime === "vercel" ? "Runs every morning around 8:30 to 9:30 IST." : `Runs every ${s.intervalHours} hours while the server is on.`}</div></div><button class="switch ${s.paused ? "" : "on"}" data-action="toggle-pause" role="switch" aria-checked="${!s.paused}" aria-label="Daily scan"></button></div><div class="callout">Last scan ${e(when(state.lastDiscovery))}${s.paused ? "" : ` · next ${e(when(state.nextDiscovery))}`}</div></section><section class="card card-pad stack"><h2>How it works</h2><div class="steps"><div><b>Reads company job boards directly</b>Each company on your list publishes its openings through a public feed. The scan reads those feeds. No AI and no paid API.</div><div><b>Keeps only roles for you</b>Product and Founder’s Office titles, in India, Dubai or Singapore, that ask for two years of experience or less.</div><div><b>Scores and pairs a resume</b>Each role is scored on fit, sector and city, then paired with your Product or Founder’s Office resume.</div><div><b>You apply, it tracks</b>Open the company page, apply, then mark it applied. Closed roles are cleared on the next scan.</div></div></section><section class="card card-pad stack"><h2>Account</h2><div class="row"><a class="btn sm" href="/api/export">${icon("download", 14)}Export CSV</a>${state.authEnabled ? '<button class="btn sm" data-action="logout">Sign out</button>' : ""}</div><p class="muted small">Career OS ${e(state.version || "")}</p></section></div></div>`
+    }</section></div><div class="stack"><section class="card card-pad stack"><h2>Daily scan</h2><div class="spread"><div><b>${s.paused ? "Paused" : "On"}</b><div class="muted small">${s.paused ? "Jobs only update when you press Refresh." : state.runtime === "vercel" ? "Runs every morning around 8:30 to 9:30 IST." : `Runs every ${s.intervalHours} hours while the server is on.`}</div></div><button class="switch ${s.paused ? "" : "on"}" data-action="toggle-pause" role="switch" aria-checked="${!s.paused}" aria-label="Daily scan"></button></div><div class="callout">Last scan ${e(when(state.lastDiscovery))}${s.paused ? "" : ` · next ${e(when(state.nextDiscovery))}`}</div></section><section class="card card-pad stack"><h2>How it works</h2><div class="steps"><div><b>Reads company job boards directly</b>Each company on your list publishes its openings through a public feed. The scan reads those feeds. No AI and no paid API.</div><div><b>Keeps only roles for you</b>Product and Founder’s Office titles plus business-side internships, in India, Dubai or Singapore or remote, that ask for two years of experience or less.</div><div><b>Scores and pairs a resume</b>Each role is scored on fit, sector and city, then paired with your Product or Founder’s Office resume.</div><div><b>You apply, it tracks</b>Open the company page, apply, then mark it applied. Closed roles are cleared on the next scan.</div></div></section><section class="card card-pad stack"><h2>Account</h2><div class="row"><a class="btn sm" href="/api/export">${icon("download", 14)}Export CSV</a>${state.authEnabled ? '<button class="btn sm" data-action="logout">Sign out</button>' : ""}</div><p class="muted small">Career OS ${e(state.version || "")}</p></section></div></div>`
   );
 }
 
@@ -692,19 +765,25 @@ function openJob(id) {
       $("#more-desc").remove();
     };
   if ($("#app-stage"))
-    $("#app-stage").onchange = (ev) =>
-      act(() => api(`jobs/${id}/track`, { status: ev.target.value }));
+    $("#app-stage").onchange = (ev) => track(id, ev.target.value);
   if ($("#save-notes"))
-    $("#save-notes").onclick = () =>
+    $("#save-notes").onclick = () => {
+      const notes = $("#app-notes").value,
+        followUp = $("#follow-up").value;
       act(
+        // Looked up when sent, so a just-created application has its real id.
         () =>
-          api("applications/" + a.id, {
+          api("applications/" + appFor(id).id, {
             action: "notes",
-            notes: $("#app-notes").value,
-            followUp: $("#follow-up").value,
+            notes,
+            followUp,
           }),
-        "Notes saved",
+        {
+          local: () => Object.assign(appFor(id), { notes, followUp }),
+          done: "Notes saved",
+        },
       );
+    };
 }
 function addJob() {
   modal(
@@ -771,7 +850,10 @@ async function discover() {
 
 // ---------- events ----------
 const setCollection = (id, collection, done) =>
-  act(() => api("jobs/" + id, { collection }), done);
+  act(() => api("jobs/" + id, { collection }), {
+    local: () => (jobFor(id).collection = collection),
+    done,
+  });
 document.addEventListener("click", async (ev) => {
   const t = (sel) => ev.target.closest?.(sel);
   let n;
@@ -793,10 +875,7 @@ document.addEventListener("click", async (ev) => {
   if ((n = t("[data-restore]")))
     return setCollection(n.dataset.restore, "New", "Restored");
   if ((n = t("[data-mark-applied]")))
-    return act(
-      () => api(`jobs/${n.dataset.markApplied}/track`, { status: "Applied" }),
-      "Marked as applied",
-    );
+    return track(n.dataset.markApplied, "Applied", "Marked as applied");
   if ((n = t("[data-view]"))) {
     if ($('[role="dialog"]')) closeModal();
     view = n.dataset.view;
@@ -824,33 +903,48 @@ document.addEventListener("click", async (ev) => {
       });
       return render();
     }
-    if (a === "toggle-pause")
+    if (a === "toggle-pause") {
+      const paused = !state.settings.paused;
       return act(
         () =>
           api("settings", {
             ...state.settings,
-            paused: !state.settings.paused,
+            paused,
             enableAuto: state.settings.mode === "auto",
           }),
-        state.settings.paused ? "Daily scan turned on" : "Daily scan paused",
+        {
+          local: () => (state.settings.paused = paused),
+          done: paused ? "Daily scan paused" : "Daily scan turned on",
+        },
       );
+    }
     if (a === "logout") {
       await api("logout", {});
       return location.reload();
     }
   }
-  if ((n = t("[data-source]")))
-    return act(() =>
-      api("sources/" + n.dataset.source, {
-        enabled: n.dataset.enabled === "1",
-      }),
-    );
+  if ((n = t("[data-source]"))) {
+    const id = n.dataset.source,
+      enabled = n.dataset.enabled === "1";
+    return act(() => api("sources/" + id, { enabled }), {
+      local: () => {
+        for (const x of state.sources)
+          if (x.id === id) x.enabled = enabled ? 1 : 0;
+        for (const c of state.companyWatchlist || [])
+          if (c.sourceId === id) c.sourceEnabled = enabled;
+      },
+    });
+  }
   if ((n = t("[data-tab]"))) {
     filters.tab = n.dataset.tab;
     return render();
   }
   if ((n = t("[data-region]"))) {
     filters.region = n.dataset.region;
+    return render();
+  }
+  if (t("[data-internships]")) {
+    filters.type = filters.type === "Internship" ? "All" : "Internship";
     return render();
   }
   if (t("[data-clear-company]")) {
@@ -928,10 +1022,13 @@ document.addEventListener("change", (ev) => {
 document.addEventListener("submit", (ev) => {
   if (ev.target.id !== "profile-form") return;
   ev.preventDefault();
-  act(
-    () => api("profile", Object.fromEntries(new FormData(ev.target))),
-    "Details saved",
-  );
+  const data = Object.fromEntries(new FormData(ev.target));
+  act(() => api("profile", data), {
+    local: () => Object.assign(state.profile, data),
+    // Scores can shift with the profile; pick them up quietly.
+    after: () => refresh(false),
+    done: "Details saved",
+  });
 });
 // Drag a resume straight onto a slot.
 for (const type of ["dragover", "dragleave", "drop"])
@@ -946,7 +1043,7 @@ for (const type of ["dragover", "dragleave", "drop"])
 
 await refresh();
 setInterval(async () => {
-  if (!state || scanning || $('[role="dialog"]')) return;
+  if (!state || scanning || inflight || $('[role="dialog"]')) return;
   if (["settings", "resumes"].includes(view)) return;
   if (document.activeElement?.id === "search") return;
   try {

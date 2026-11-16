@@ -25,9 +25,15 @@ export class CloudStore extends SqlModel {
     return s;
   }
   async initialize() {
-    await this.client.execute(
-      "CREATE TABLE IF NOT EXISTS schema_migrations(name TEXT PRIMARY KEY, checksum TEXT NOT NULL)",
+    // One round trip on a normal start: make sure the ledger exists and read it.
+    const [, ledger] = await this.client.batch(
+      [
+        "CREATE TABLE IF NOT EXISTS schema_migrations(name TEXT PRIMARY KEY, checksum TEXT NOT NULL)",
+        "SELECT name,checksum FROM schema_migrations",
+      ],
+      "write",
     );
+    const applied = new Map(ledger.rows.map((r) => [r.name, r.checksum]));
     for (const name of fs
       .readdirSync(new URL("../migrations/", import.meta.url))
       .filter((n) => n.endsWith(".sql"))
@@ -36,13 +42,9 @@ export class CloudStore extends SqlModel {
           new URL("../migrations/" + name, import.meta.url),
           "utf8",
         ),
-        checksum = sha(original),
-        old = await this.get(
-          "SELECT checksum FROM schema_migrations WHERE name=?",
-          name,
-        );
-      if (old) {
-        if (old.checksum !== checksum)
+        checksum = sha(original);
+      if (applied.has(name)) {
+        if (applied.get(name) !== checksum)
           throw new Error("Migration checksum changed: " + name);
         continue;
       }
@@ -74,6 +76,11 @@ export class CloudStore extends SqlModel {
   }
   async batch(statements) {
     return this.client.batch(statements, "write");
+  }
+  async readMany(statements) {
+    return (await this.client.batch(statements, "read")).map((r) =>
+      r.rows.map((row) => ({ ...row })),
+    );
   }
   async transaction(fn) {
     const client = await this.client.transaction("write"),

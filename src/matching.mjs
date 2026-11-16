@@ -86,8 +86,21 @@ const foundersRole =
 // Titles that mention "product" or "strategy" but belong to a different job family.
 const otherFamily =
   /engineer|developer|\bsde\b|design|counsel|legal|security|support|sales|account (?:executive|manager)|marketing|compliance|scientist|architect|accountant|accounting|audit|\btax\b|recruit|talent|sourcer|production|content|risk strateg|warehouse|financial crime|investigat|\bkyc\b|\bkyb\b|\baml\b|\bhr\b|human resources|people op|public relations|\bkol\b|events|monitorship|business development|\bbd\b|tele ?caller|emirati|saudi national/i;
+// Internships are judged more loosely: any business-side internship is worth a look.
+const internWord =
+  /\bintern(?:ship)?s?\b|\btrainee\b|apprentice|working student|\bco-?op\b/i;
+const internArea =
+  /product|strategy|business|operations|\bops\b|growth|analyst|analytics|research|program|project|marketing|community|partnership|commercial|founder|general|management|finance|consult/i;
+const internOther =
+  /engineer|developer|software|\bsde\b|design|\bhr\b|human resources|talent|people|recruit|legal|counsel|compliance|security|animator|biomedical|content|social media|health|immigration|public affairs|audit|\bkyc\b|\baml\b|fraud|investigat|scientist|sales/i;
 export function isTargetRole(job) {
   const title = job.title || "";
+  if (
+    internWord.test(title + " " + (job.employmentType || "")) &&
+    internArea.test(title) &&
+    !internOther.test(title)
+  )
+    return true;
   return (
     (productRole.test(title) || foundersRole.test(title)) &&
     !otherFamily.test(title)

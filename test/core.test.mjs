@@ -627,3 +627,92 @@ test(
     assert.equal(jobs[0].closed, true);
   }),
 );
+
+test("business-side internships are kept; engineering, design and HR internships are not", () => {
+  for (const title of [
+    "Product Management Intern",
+    "Founder’s Office Intern",
+    "Operations Intern",
+    "Data Analytics Intern",
+    "Financial Data Analyst Intern, Technical Operations",
+    "Community Marketing Intern",
+    "Project Management Intern",
+    "Management Trainee",
+  ])
+    assert(isTargetRole({ title }), title);
+  for (const title of [
+    "Software Engineer Intern",
+    "UX Design - Intern",
+    "Talent Acquisition Intern",
+    "HR Intern",
+    "Compliance Intern, KYC",
+    "Social Media Intern",
+    "Sales Intern",
+  ])
+    assert(!isTargetRole({ title }), title);
+});
+test(
+  "the remote internship feed keeps India-eligible business internships from many employers",
+  fixture(async (s) => {
+    await s.run(
+      "INSERT INTO sources(id,kind,company,board) VALUES ('h','himalayas','Himalayas remote internships','intern')",
+    );
+    const posting = (n, title, countries = ["India"]) => ({
+      title,
+      companyName: "Employer " + n,
+      employmentType: "Intern",
+      seniority: ["Entry-level"],
+      locationRestrictions: countries,
+      description: "<p>Help the team.</p>",
+      pubDate: 1794824260,
+      applicationLink: "https://himalayas.app/companies/e/jobs/" + n,
+      guid: "https://himalayas.app/companies/e/jobs/" + n,
+    });
+    let calls = 0;
+    const feed = async (url) => {
+      calls++;
+      assert.match(String(url), /country=IN/);
+      // The second page is refused, as the keyless rate limit does.
+      if (/page=2/.test(url)) return { ok: false, status: 429 };
+      return {
+        ok: true,
+        text: async () =>
+          JSON.stringify({
+            totalCount: 40,
+            jobs: [
+              posting(1, "Product Management Intern"),
+              posting(2, "Founder’s Office Intern", ["India", "Nepal"]),
+              posting(3, "Java Intern"),
+              posting(4, "HR Intern"),
+            ],
+          }),
+      };
+    };
+    await discover(s, feed);
+    const jobs = await s.jobs();
+    assert.deepEqual(jobs.map((j) => j.title).sort(), [
+      "Founder’s Office Intern",
+      "Product Management Intern",
+    ]);
+    assert(jobs.every((j) => j.assessment.employmentType === "Internship"));
+    assert(
+      jobs.every((j) => j.assessment.remoteEligibility === "India remote"),
+    );
+    assert(jobs.some((j) => j.company === "Employer 1"));
+    // A partial read still counts as a healthy source with its matches kept.
+    assert.equal((await s.get("SELECT health FROM sources")).health, "Healthy");
+    assert(calls >= 2);
+  }),
+);
+test(
+  "several reads are answered together and the state endpoint needs one batch",
+  fixture(async (s) => {
+    await s.set("a", 1);
+    const [config, jobs] = await s.readMany([
+      { sql: "SELECT key FROM config WHERE key=?", args: ["a"] },
+      { sql: "SELECT * FROM jobs" },
+    ]);
+    assert.equal(config[0].key, "a");
+    assert.deepEqual(jobs, []);
+  }),
+);
