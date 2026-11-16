@@ -1,8 +1,38 @@
 {
   "manifest_version": 3,
-  "name": "Career OS · Application Handoff",
-  "version": "1.0.0",
-  "description": "Fill supported employer fields from your reviewed Career OS packet. Never submits.",
-  "permissions": ["activeTab", "scripting"],
-  "action": { "default_popup": "popup.html" }
+  "name": "Career OS Autofill",
+  "version": "2.0.0",
+  "description": "Fills job application forms from your Career OS dashboard. You review and press Submit yourself.",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "background": { "service_worker": "background.js" },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Career OS Autofill"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://job-applier-beta.vercel.app/*",
+        "http://localhost/*",
+        "http://127.0.0.1/*"
+      ],
+      "js": ["bridge.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://jobs.lever.co/*",
+        "https://boards.greenhouse.io/*",
+        "https://job-boards.greenhouse.io/*",
+        "https://boards.eu.greenhouse.io/*",
+        "https://job-boards.eu.greenhouse.io/*",
+        "https://jobs.ashbyhq.com/*",
+        "https://jobs.smartrecruiters.com/*",
+        "https://apply.workable.com/*"
+      ],
+      "js": ["fill.js", "content.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ]
 }

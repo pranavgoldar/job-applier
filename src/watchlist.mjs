@@ -20,7 +20,7 @@ export const defaultSearchPreferences = {
   fullTimeFrom: "2027-05-15",
   remoteInternshipsRequireIndiaEligibility: true,
 };
-export const catalogVersion = 3;
+export const catalogVersion = 4;
 export async function ensureWatchlist(store) {
   if ((await store.config("companyCatalogVersion")) === catalogVersion) return;
   const old = await store.config("companyWatchlist", []),

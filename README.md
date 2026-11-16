@@ -61,27 +61,65 @@ Open `http://127.0.0.1:4173`. Local development binds to loopback. Set `APP_PASS
 - **Applications:** a four-column board (To apply, Applied, Interviewing, Outcome). Mark a job applied in one click, then update its stage, notes and follow-up date.
 - **Resumes:** one slot each for Product / APM and Founder’s Office. Drag in a PDF or DOCX. A file named like `… APM resume.pdf` or `… founder office resume.pdf` is filed automatically. Old versions are kept.
 - **Companies:** every watched company with its scan status, an on/off switch and its matches. Add your own by job-board name.
-- **Discovery without AI:** ordinary HTTP reads of public job-board feeds from Greenhouse, Lever, Ashby, SmartRecruiters and Workable. No AI key, no paid API, no subscription.
+- **Discovery without AI:** ordinary HTTP reads of public job-board feeds from Greenhouse, Lever, Ashby, SmartRecruiters, Workable and Pinpoint, and of Y Combinator company pages. No AI key, no paid API, no subscription.
 - **Internships:** business-side internships (product, strategy, operations, analytics, growth, marketing) are kept from every company board, and the Himalayas feed adds remote internships open to India. That feed allows only a few requests a day without a key; setting the optional free `HIMALAYAS_API_KEY` environment variable in Vercel lifts the limit. Everything else works without it.
 
 ### How discovery decides what to keep
 
-1. Read every posting from each enabled company board.
-2. Keep titles in the Product family (APM, Product Analyst, Product intern…) or Founder’s Office family (Chief of Staff, Strategy & Operations, BizOps, early-career programmes…). Engineering, design, sales, legal, compliance and HR titles are dropped. Internships are judged more loosely: any business-side internship is kept.
-3. Keep locations in India, the UAE or Singapore, plus remote roles open to Asia or worldwide.
-4. Drop senior titles (Senior, Lead, Staff, level II and above) and roles asking for more than two years.
-5. Score what is left out of 100: role fit 30, experience 20, sector 20 (fintech highest, then consumer), location 20 (Bangalore highest, then Mumbai, rest of India, Dubai, Singapore), job detail 10.
-6. Roles a board stops listing are removed on the next successful scan. Ones you saved or applied to are kept and marked as no longer listed.
+1. Read every posting from each enabled source.
+2. Keep titles in the Product family or Founder’s Office family. A generic title such as “Associate” is also kept when the described work is clearly one of the two (three or more matching responsibilities). Engineering, design, sales, legal, compliance and HR titles are dropped. Internships are judged more loosely: any business-side internship is kept.
+3. Keep locations in India, the UAE or Singapore, plus remote roles open to India, Asia or worldwide. A remote role keeps the actual list of countries it is open to; India is never assumed.
+4. Drop senior titles and roles asking for more than two years. A number of years only counts when the sentence is about the candidate’s experience, so “we have operated for 10 years” is ignored.
+5. Score what is left out of 100: role fit 30, experience 20, sector 20, location 20, job detail 10.
+6. SmartRecruiters lists carry only a summary, so the full description is fetched (and reused on later scans) before a role is judged and a resume suggested.
 
-The watchlist has 82 companies plus one remote-internship feed; 61 companies have a verified public board and are scanned automatically. The rest (for example Revolut, Remitly, Navi, Tabby) use careers sites without a public feed and are listed for manual checks. See [COMPANY-WATCHLIST.md](COMPANY-WATCHLIST.md). Workable rate-limits shared server addresses, so its two boards can show a temporary error.
+### What happens to a job after it is found
 
-## Application boundaries
+Presence and suitability are tracked separately, and nothing is deleted:
 
-Default mode is Prepare for review. Missing facts or overlapping responsibilities require input; the user can approve or override the recommended resume. Application packets preserve their selected version and factual answers. The app states when no employer fields have been filled.
+- **Still listed and still fits:** stays open.
+- **Still listed but changed so it no longer fits:** kept, marked “no longer matches” with the reason. It returns to the open list if it changes back.
+- **Not in a complete read of the board:** kept, marked “no longer listed”.
+- **Partial or failed read:** nothing is concluded. Jobs keep their previous state.
 
-**Live automatic submission adapters are not implemented.** All employer final submissions, logins, verification, declarations, custom assessments and personal decisions remain human tasks. Automatic mode is reserved configuration and does not make unsupported sites submit. Manual confirmation is labeled user-confirmed. System-confirmed receipts exist only in isolated test fixtures. Uncertain submission results block retries until reconciled.
+Closed and no-longer-matching jobs are under **Jobs → Closed**.
+
+### Scan status
+
+Every scan reports how many sources were checked, how many failed and how many are still waiting. It is called finished only when none are waiting. If the hosted function runs out of time, the dashboard says the scan did not finish and offers **Continue scan**.
+
+### Coverage
+
+The watchlist has 82 companies plus one remote-internship feed. 72 companies are read automatically: 61 through their own job board (Greenhouse, Lever, Ashby, SmartRecruiters, Workable, Pinpoint) and 11 through their Y Combinator company page. 10 need a manual check because their careers sites refuse automated reads or have no public feed (Revolut, Remitly, Navi, Juspay, Ramp, Sarwa, Fasset, Monee, NephroPlus, Different AI). The Companies page shows Product and Founder’s Office coverage separately and each company’s sourced evidence. See [COMPANY-WATCHLIST.md](COMPANY-WATCHLIST.md).
+
+## Applying
+
+Job boards do not accept applications from a server: Greenhouse, Lever and Ashby only take submissions with the employer’s own key, and every public form carries a captcha. So applying happens in your browser, with a Chrome extension doing the typing.
+
+- **Applications → To apply** lists every open match with an **Apply** button.
+- **Needs my attention** lists every prepared packet that is waiting on you, and any submission whose outcome is unclear, with what is left to do.
+- **All applications** shows every application in one of four columns with its exact status. Nothing drops off the board.
+- A job’s panel holds its whole packet: why it is waiting, the exact resume version (which you can change), the remaining-action checklist, prepared answers with copy buttons, the submission record and its history.
+- With the extension installed ([extension/README.md](extension/README.md)), Apply opens the form filled in. You check it and press Submit.
+- **Settings → Application answers** holds the answers forms keep asking for.
+
+### Recording a submission
+
+An application becomes **Applied** only with a record of what was sent:
+
+- **user-confirmed**: you fill a short form with the exact resume version, the date, what confirms it, and an optional attachment.
+- **browser-detected**: the extension saw the employer’s confirmation page and attached the resume itself.
+- **system-confirmed**: a receipt the system obtained itself. Only the test fixture produces this today.
+
+A submission marked **Submission uncertain** cannot be moved on by a stage change or by the extension. It is resolved by recording your own evidence, or by marking it Withdrawn or Closed. Submitted applications are never deleted.
+
+## If the hosted app will not start
+
+The error page names the setting or service at fault: which of `APP_PASSWORD`, `CRON_SECRET`, `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` and `BLOB_READ_WRITE_TOKEN` is missing or not valid, or whether the database or file storage refused the connection. Values of secrets are never shown.
 
 ## Development
+
+Tests run on every pull request and on `main` through GitHub Actions (`.github/workflows/test.yml`). `test/regression.test.mjs` holds one test per fault found in review; each fails on the code it was written against.
 
 ```sh
 npm ci
@@ -103,3 +141,4 @@ See [TEST-RESULTS.md](TEST-RESULTS.md). Cloud integration tests use the real lib
 - `migrations/`: append-only schema migrations, recorded by checksum on startup.
 - `scripts/migrate-to-cloud.mjs`: private data transfer into an empty cloud app.
 - `public/`: responsive browser app.
+- `extension/`: Chrome extension that fills application forms; `src/answers.mjs` lists the saved answers it can use.

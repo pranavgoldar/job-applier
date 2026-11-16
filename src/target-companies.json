@@ -16,9 +16,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "India headquarters and hiring shown; expansion plans require separate evidence",
+    "indiaSignal": "Hiring in India: 13 roles on its job board on 16 Nov 2026",
     "indiaEvidenceUrl": "https://jobs.lever.co/dozee",
-    "note": ""
+    "note": "",
+    "hiring": {
+      "india": 13,
+      "uae": 0,
+      "singapore": 0,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "wise",
@@ -37,9 +43,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Unknown — expansion plans not verified",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 30 roles on its job board on 16 Nov 2026 (also Singapore 41)",
+    "indiaEvidenceUrl": "https://jobs.smartrecruiters.com/Wise",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 30,
+      "uae": 0,
+      "singapore": 41,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "revolut",
@@ -50,14 +62,14 @@
     "connector": null,
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-15",
+    "checkedOn": "2026-11-16",
     "ycBacked": null,
     "ycEvidenceUrl": null,
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "India roles require individual verification",
-    "indiaEvidenceUrl": null,
-    "note": "Custom careers site; manual vacancy review."
+    "indiaSignal": "Reported plan: about 5,500 staff in India by end of 2026, roughly 40% of its workforce (March 2026)",
+    "indiaEvidenceUrl": "https://fintechnews.sg/128143/fintech-india/revolut-india-workforce/",
+    "note": "Careers site refuses automated reads (HTTP 403 on 16 Nov 2026). Check it by hand."
   },
   {
     "id": "remitly",
@@ -68,14 +80,14 @@
     "connector": null,
     "aliases": ["remitely"],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-15",
+    "checkedOn": "2026-11-16",
     "ycBacked": null,
     "ycEvidenceUrl": null,
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
     "indiaSignal": "Unknown — expansion plans not verified",
     "indiaEvidenceUrl": null,
-    "note": "Employer careers site; a collector is not connected."
+    "note": "Workday careers site refuses automated reads (HTTP 429 on 16 Nov 2026). Check it by hand."
   },
   {
     "id": "nephroplus",
@@ -107,14 +119,21 @@
     },
     "aliases": ["Vance"],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-15",
+    "checkedOn": "2026-11-16",
     "ycBacked": true,
     "ycEvidenceUrl": "https://www.ycombinator.com/companies/aspora",
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Unknown — expansion plans not verified",
-    "indiaEvidenceUrl": null,
-    "note": ""
+    "indiaSignal": "Hiring in India: 6 roles on its job board on 16 Nov 2026 (also UAE 2)",
+    "indiaEvidenceUrl": "https://jobs.ashbyhq.com/Aspora",
+    "note": "",
+    "ycBatch": "Winter 2022",
+    "hiring": {
+      "india": 6,
+      "uae": 2,
+      "singapore": 0,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "nium",
@@ -133,9 +152,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Unknown — expansion plans not verified",
-    "indiaEvidenceUrl": null,
-    "note": ""
+    "indiaSignal": "Hiring in India: 13 roles on its job board on 16 Nov 2026 (also Singapore 8)",
+    "indiaEvidenceUrl": "https://jobs.lever.co/nium",
+    "note": "",
+    "hiring": {
+      "india": 13,
+      "uae": 0,
+      "singapore": 8,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "airwallex",
@@ -154,9 +179,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Unknown — expansion plans not verified",
-    "indiaEvidenceUrl": null,
-    "note": ""
+    "indiaSignal": "Hiring in India: 12 roles on its job board on 16 Nov 2026 (also UAE 3, Singapore 109)",
+    "indiaEvidenceUrl": "https://jobs.ashbyhq.com/airwallex",
+    "note": "",
+    "hiring": {
+      "india": 12,
+      "uae": 3,
+      "singapore": 109,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "monee",
@@ -188,14 +219,21 @@
     },
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-15",
-    "ycBacked": null,
-    "ycEvidenceUrl": null,
+    "checkedOn": "2026-11-16",
+    "ycBacked": true,
+    "ycEvidenceUrl": "https://www.ycombinator.com/companies/flagright",
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Unknown — expansion plans not verified",
-    "indiaEvidenceUrl": null,
-    "note": ""
+    "indiaSignal": "No India roles on its job board on 16 Nov 2026 (also Singapore 3)",
+    "indiaEvidenceUrl": "https://jobs.ashbyhq.com/flagright.com",
+    "note": "",
+    "ycBatch": "Winter 2022",
+    "hiring": {
+      "india": 0,
+      "uae": 0,
+      "singapore": 3,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "okx",
@@ -214,9 +252,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Unknown — expansion plans not verified",
-    "indiaEvidenceUrl": null,
-    "note": ""
+    "indiaSignal": "No India roles on its job board on 16 Nov 2026 (also UAE 3, Singapore 168)",
+    "indiaEvidenceUrl": "https://boards.greenhouse.io/okx",
+    "note": "",
+    "hiring": {
+      "india": 0,
+      "uae": 3,
+      "singapore": 168,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "careem",
@@ -235,9 +279,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Unknown — expansion plans not verified",
-    "indiaEvidenceUrl": null,
-    "note": "Include Careem Pay and suitable marketplace Product or business operations roles."
+    "indiaSignal": "No India roles on its job board on 16 Nov 2026 (also UAE 7)",
+    "indiaEvidenceUrl": "https://boards.greenhouse.io/careem",
+    "note": "Include Careem Pay and suitable marketplace Product or business operations roles.",
+    "hiring": {
+      "india": 0,
+      "uae": 7,
+      "singapore": 0,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "different",
@@ -263,17 +313,21 @@
     "group": "Your target",
     "industry": "Fintech / merchant payments",
     "careersUrl": "https://hitpayapp.com/careers",
-    "connector": null,
+    "connector": {
+      "kind": "ycombinator",
+      "board": "hitpay"
+    },
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-15",
-    "ycBacked": null,
-    "ycEvidenceUrl": null,
+    "checkedOn": "2026-11-16",
+    "ycBacked": true,
+    "ycEvidenceUrl": "https://www.ycombinator.com/companies/hitpay",
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
     "indiaSignal": "Unknown — expansion plans not verified",
     "indiaEvidenceUrl": null,
-    "note": "Public employer careers page; collector not connected."
+    "note": "Collected from its YC page (verified 16 Nov 2026). Roles posted only on its own site are missed.",
+    "ycBatch": "Summer 2021"
   },
   {
     "id": "xpay",
@@ -281,17 +335,21 @@
     "group": "Your target",
     "industry": "Fintech / international payments",
     "careersUrl": "https://www.ycombinator.com/companies/xpay/jobs",
-    "connector": null,
+    "connector": {
+      "kind": "ycombinator",
+      "board": "xpay"
+    },
     "aliases": ["Xpay", "xPay"],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-15",
+    "checkedOn": "2026-11-16",
     "ycBacked": true,
     "ycEvidenceUrl": "https://www.ycombinator.com/companies/xpay",
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "YC profile describes an Indian payment processor based in Bengaluru",
+    "indiaSignal": "Based in Bengaluru (YC profile, 16 Nov 2026)",
     "indiaEvidenceUrl": "https://www.ycombinator.com/companies/xpay",
-    "note": "User confirmed https://www.linkedin.com/company/xpay-checkout/. Website: https://www.xpaycheckout.com/."
+    "note": "Collected from its YC page; it has no separate careers board.",
+    "ycBatch": "Winter 2024"
   },
   {
     "id": "navi",
@@ -302,14 +360,14 @@
     "connector": null,
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-15",
+    "checkedOn": "2026-11-16",
     "ycBacked": null,
     "ycEvidenceUrl": null,
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
     "indiaSignal": "Unknown — expansion plans not verified",
     "indiaEvidenceUrl": null,
-    "note": "Employer career site; collector not connected."
+    "note": "Careers site refuses automated reads (HTTP 403 on 16 Nov 2026). Check it by hand."
   },
   {
     "id": "ziina",
@@ -323,14 +381,21 @@
     },
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-15",
-    "ycBacked": null,
-    "ycEvidenceUrl": null,
+    "checkedOn": "2026-11-16",
+    "ycBacked": true,
+    "ycEvidenceUrl": "https://www.ycombinator.com/companies/ziina",
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Unknown — expansion plans not verified",
-    "indiaEvidenceUrl": null,
-    "note": ""
+    "indiaSignal": "No India roles on its job board on 16 Nov 2026 (also UAE 13)",
+    "indiaEvidenceUrl": "https://jobs.ashbyhq.com/ziina",
+    "note": "",
+    "ycBatch": "Winter 2021",
+    "hiring": {
+      "india": 0,
+      "uae": 13,
+      "singapore": 0,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "fasset",
@@ -374,17 +439,20 @@
     "group": "Your target",
     "industry": "Fintech / consumer credit",
     "careersUrl": "https://tabby.ai/careers",
-    "connector": null,
+    "connector": {
+      "kind": "pinpoint",
+      "board": "tabby"
+    },
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-15",
+    "checkedOn": "2026-11-16",
     "ycBacked": null,
     "ycEvidenceUrl": null,
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
     "indiaSignal": "Unknown — expansion plans not verified",
     "indiaEvidenceUrl": null,
-    "note": "Pinpoint employer recruiting system; collector not connected."
+    "note": "Pinpoint job board verified 16 Nov 2026 (63 roles)."
   },
   {
     "id": "alaan",
@@ -392,17 +460,21 @@
     "group": "Your target",
     "industry": "Fintech / spend management",
     "careersUrl": "https://www.alaan.com/careers",
-    "connector": null,
+    "connector": {
+      "kind": "ycombinator",
+      "board": "alaan"
+    },
     "aliases": ["Alaam", "alaanpay"],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-15",
+    "checkedOn": "2026-11-16",
     "ycBacked": true,
     "ycEvidenceUrl": "https://www.ycombinator.com/companies/alaan",
-    "fundingStage": "Series A reported by company; latest round unverified",
-    "fundingEvidenceUrl": "https://www.ycombinator.com/companies/alaan",
-    "indiaSignal": "Bengaluru office and India engineering hiring shown; expansion timing unverified",
-    "indiaEvidenceUrl": "https://www.alaan.com/careers",
-    "note": "User confirmed https://www.linkedin.com/company/alaanpay/. Rippling collector not connected."
+    "fundingStage": "Series A: US$48M, August 2025, led by Peak XV Partners",
+    "fundingEvidenceUrl": "https://www.wamda.com/en/2025/08/alaan-raises-48-million-series-transform-spend-management-mena",
+    "indiaSignal": "Bengaluru roles listed on its YC page on 16 Nov 2026",
+    "indiaEvidenceUrl": "https://www.ycombinator.com/companies/alaan",
+    "note": "Collected from its YC page. Its own careers board (Rippling) could not be read, so roles posted only there are missed.",
+    "ycBatch": "Winter 2023"
   },
   {
     "id": "brex",
@@ -416,14 +488,21 @@
     },
     "aliases": ["brerx"],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-15",
-    "ycBacked": null,
-    "ycEvidenceUrl": null,
+    "checkedOn": "2026-11-16",
+    "ycBacked": true,
+    "ycEvidenceUrl": "https://www.ycombinator.com/companies/brex",
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Unknown — expansion plans not verified",
-    "indiaEvidenceUrl": null,
-    "note": "Country and work-authorization restrictions must be checked; do not assume India remote."
+    "indiaSignal": "No India roles on its job board on 16 Nov 2026",
+    "indiaEvidenceUrl": "https://boards.greenhouse.io/brex",
+    "note": "Country and work-authorization restrictions must be checked; do not assume India remote.",
+    "ycBatch": "Winter 2017",
+    "hiring": {
+      "india": 0,
+      "uae": 0,
+      "singapore": 0,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "razorpay",
@@ -438,13 +517,20 @@
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
     "checkedOn": "2026-11-16",
-    "ycBacked": null,
-    "ycEvidenceUrl": null,
+    "ycBacked": true,
+    "ycEvidenceUrl": "https://www.ycombinator.com/companies/razorpay",
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Unknown — expansion plans not verified",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 21 roles on its job board on 16 Nov 2026",
+    "indiaEvidenceUrl": "https://boards.greenhouse.io/razorpaysoftwareprivatelimited",
+    "note": "Public job board verified 16 Nov 2026.",
+    "ycBatch": "Winter 2015",
+    "hiring": {
+      "india": 21,
+      "uae": 0,
+      "singapore": 0,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "stripe",
@@ -459,13 +545,20 @@
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
     "checkedOn": "2026-11-16",
-    "ycBacked": null,
-    "ycEvidenceUrl": null,
+    "ycBacked": true,
+    "ycEvidenceUrl": "https://www.ycombinator.com/companies/stripe",
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Unknown — expansion plans not verified",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 42 roles on its job board on 16 Nov 2026 (also Singapore 57)",
+    "indiaEvidenceUrl": "https://boards.greenhouse.io/stripe",
+    "note": "Public job board verified 16 Nov 2026.",
+    "ycBatch": "Summer 2009",
+    "hiring": {
+      "india": 42,
+      "uae": 0,
+      "singapore": 57,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "adyen",
@@ -484,9 +577,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Unknown — expansion plans not verified",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 2 roles on its job board on 16 Nov 2026 (also Singapore 18)",
+    "indiaEvidenceUrl": "https://boards.greenhouse.io/adyen",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 2,
+      "uae": 0,
+      "singapore": 18,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "ramp",
@@ -530,17 +629,21 @@
     "group": "Similar firm",
     "industry": "Fintech / payments and banking APIs",
     "careersUrl": "https://www.cashfree.com/careers/",
-    "connector": null,
+    "connector": {
+      "kind": "ycombinator",
+      "board": "cashfree-payments"
+    },
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-15",
+    "checkedOn": "2026-11-16",
     "ycBacked": true,
-    "ycEvidenceUrl": "https://www.ycombinator.com/companies/industry/fintech/india/hiring",
+    "ycEvidenceUrl": "https://www.ycombinator.com/companies/cashfree-payments",
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
     "indiaSignal": "Unknown — expansion plans not verified",
     "indiaEvidenceUrl": null,
-    "note": "Collector not connected; current stage not verified."
+    "note": "Collected from its YC page (verified 16 Nov 2026). Roles posted only on its own site are missed.",
+    "ycBatch": "Summer 2017"
   },
   {
     "id": "decentro",
@@ -548,17 +651,21 @@
     "group": "YC / India research",
     "industry": "Fintech / banking and payments APIs",
     "careersUrl": "https://www.ycombinator.com/companies/decentro/jobs",
-    "connector": null,
+    "connector": {
+      "kind": "ycombinator",
+      "board": "decentro"
+    },
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-15",
+    "checkedOn": "2026-11-16",
     "ycBacked": true,
     "ycEvidenceUrl": "https://www.ycombinator.com/companies/decentro",
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
     "indiaSignal": "Employer YC profile describes Indian banking infrastructure and a GIFT-based cross-border launch",
     "indiaEvidenceUrl": "https://www.ycombinator.com/companies/decentro",
-    "note": "Latest funding round and suitable vacancies remain unverified; collector not connected."
+    "note": "Collected from its YC page (verified 16 Nov 2026). Roles posted only on its own site are missed.",
+    "ycBatch": "Summer 2020"
   },
   {
     "id": "volopay",
@@ -566,17 +673,21 @@
     "group": "YC / India research",
     "industry": "Fintech / corporate cards and payments",
     "careersUrl": "https://www.ycombinator.com/companies/volopay/jobs",
-    "connector": null,
+    "connector": {
+      "kind": "ycombinator",
+      "board": "volopay"
+    },
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-15",
+    "checkedOn": "2026-11-16",
     "ycBacked": true,
     "ycEvidenceUrl": "https://www.ycombinator.com/companies/volopay",
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
     "indiaSignal": "Bengaluru location shown; fresh expansion plans unknown",
     "indiaEvidenceUrl": "https://www.ycombinator.com/companies/volopay",
-    "note": "Latest funding round not verified; collector not connected."
+    "note": "Collected from its YC page (verified 16 Nov 2026). Roles posted only on its own site are missed.",
+    "ycBatch": "Summer 2020"
   },
   {
     "id": "karbon",
@@ -584,17 +695,21 @@
     "group": "YC / India research",
     "industry": "Fintech / corporate cards",
     "careersUrl": "https://www.ycombinator.com/companies/karbon-card/jobs",
-    "connector": null,
+    "connector": {
+      "kind": "ycombinator",
+      "board": "karbon-card"
+    },
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-15",
+    "checkedOn": "2026-11-16",
     "ycBacked": true,
     "ycEvidenceUrl": "https://www.ycombinator.com/companies/karbon-card",
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
     "indiaSignal": "YC profile describes products for Indian businesses and Bengaluru location",
     "indiaEvidenceUrl": "https://www.ycombinator.com/companies/karbon-card",
-    "note": "Latest funding round not verified; collector not connected."
+    "note": "Collected from its YC page (verified 16 Nov 2026). Roles posted only on its own site are missed.",
+    "ycBatch": "Summer 2021"
   },
   {
     "id": "gosats",
@@ -602,17 +717,21 @@
     "group": "YC / India research",
     "industry": "Fintech / cards and wealth",
     "careersUrl": "https://www.ycombinator.com/companies/gosats/jobs",
-    "connector": null,
+    "connector": {
+      "kind": "ycombinator",
+      "board": "gosats"
+    },
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-15",
+    "checkedOn": "2026-11-16",
     "ycBacked": true,
-    "ycEvidenceUrl": "https://www.ycombinator.com/companies/gosats/jobs/0TZL6W7-senior-product-manager-cards-payments",
+    "ycEvidenceUrl": "https://www.ycombinator.com/companies/gosats",
     "fundingStage": "Series A reported in employer posting; latest round unverified",
     "fundingEvidenceUrl": "https://www.ycombinator.com/companies/gosats/jobs/0TZL6W7-senior-product-manager-cards-payments",
     "indiaSignal": "Employer posting describes scaling in India",
     "indiaEvidenceUrl": "https://www.ycombinator.com/companies/gosats/jobs/0TZL6W7-senior-product-manager-cards-payments",
-    "note": "The referenced Senior PM role is not a candidate match; watch the company for future junior roles. Collector not connected."
+    "note": "Collected from its YC page (verified 16 Nov 2026). Roles posted only on its own site are missed.",
+    "ycBatch": "Winter 2022"
   },
   {
     "id": "gromo",
@@ -620,17 +739,21 @@
     "group": "YC / India research",
     "industry": "Fintech / financial-product distribution",
     "careersUrl": "https://www.ycombinator.com/companies/gromo/jobs",
-    "connector": null,
+    "connector": {
+      "kind": "ycombinator",
+      "board": "gromo"
+    },
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-15",
+    "checkedOn": "2026-11-16",
     "ycBacked": true,
-    "ycEvidenceUrl": "https://www.ycombinator.com/companies/gromo/jobs",
+    "ycEvidenceUrl": "https://www.ycombinator.com/companies/gromo",
     "fundingStage": "Series A reported by company; latest round unverified",
     "fundingEvidenceUrl": "https://www.ycombinator.com/companies/gromo/jobs",
     "indiaSignal": "Unknown — expansion plans not verified",
     "indiaEvidenceUrl": null,
-    "note": "India market/hiring details need a dated review; collector not connected."
+    "note": "Collected from its YC page (verified 16 Nov 2026). Roles posted only on its own site are missed.",
+    "ycBatch": "Winter 2021"
   },
   {
     "id": "infinity",
@@ -638,17 +761,21 @@
     "group": "YC / India research",
     "industry": "Fintech / cross-border banking",
     "careersUrl": "https://www.ycombinator.com/companies/location/india",
-    "connector": null,
+    "connector": {
+      "kind": "ycombinator",
+      "board": "infinity"
+    },
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-15",
+    "checkedOn": "2026-11-16",
     "ycBacked": true,
-    "ycEvidenceUrl": "https://www.ycombinator.com/companies/location/india",
+    "ycEvidenceUrl": "https://www.ycombinator.com/companies/infinity",
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
     "indiaSignal": "YC directory describes banking and payments for cross-border Indian businesses",
     "indiaEvidenceUrl": "https://www.ycombinator.com/companies/location/india",
-    "note": "Identity is from the YC India directory; direct career board and latest funding round still need verification."
+    "note": "Collected from its YC page (verified 16 Nov 2026). Roles posted only on its own site are missed.",
+    "ycBatch": "Winter 2024"
   },
   {
     "id": "groww",
@@ -663,13 +790,20 @@
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
     "checkedOn": "2026-11-16",
-    "ycBacked": null,
-    "ycEvidenceUrl": null,
+    "ycBacked": true,
+    "ycEvidenceUrl": "https://www.ycombinator.com/companies/groww",
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: India",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 9 roles on its job board on 16 Nov 2026",
+    "indiaEvidenceUrl": "https://boards.greenhouse.io/groww",
+    "note": "Public job board verified 16 Nov 2026.",
+    "ycBatch": "Winter 2018",
+    "hiring": {
+      "india": 9,
+      "uae": 0,
+      "singapore": 0,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "cred",
@@ -688,9 +822,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: India",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 14 roles on its job board on 16 Nov 2026",
+    "indiaEvidenceUrl": "https://jobs.lever.co/cred",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 14,
+      "uae": 0,
+      "singapore": 0,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "fampay",
@@ -705,13 +845,20 @@
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
     "checkedOn": "2026-11-16",
-    "ycBacked": null,
-    "ycEvidenceUrl": null,
+    "ycBacked": true,
+    "ycEvidenceUrl": "https://www.ycombinator.com/companies/fampay",
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: India",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 17 roles on its job board on 16 Nov 2026",
+    "indiaEvidenceUrl": "https://jobs.lever.co/fampay",
+    "note": "Public job board verified 16 Nov 2026.",
+    "ycBatch": "Summer 2019",
+    "hiring": {
+      "india": 17,
+      "uae": 0,
+      "singapore": 0,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "paytm",
@@ -730,9 +877,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: India",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 163 roles on its job board on 16 Nov 2026 (also UAE 2)",
+    "indiaEvidenceUrl": "https://jobs.lever.co/paytm",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 163,
+      "uae": 2,
+      "singapore": 0,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "zeta",
@@ -751,9 +904,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: India",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 25 roles on its job board on 16 Nov 2026",
+    "indiaEvidenceUrl": "https://jobs.lever.co/zeta",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 25,
+      "uae": 0,
+      "singapore": 0,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "payoneer",
@@ -772,9 +931,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: India",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 31 roles on its job board on 16 Nov 2026",
+    "indiaEvidenceUrl": "https://boards.greenhouse.io/payoneer",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 31,
+      "uae": 0,
+      "singapore": 0,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "tide",
@@ -793,9 +958,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: India",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 29 roles on its job board on 16 Nov 2026",
+    "indiaEvidenceUrl": "https://boards.greenhouse.io/tide",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 29,
+      "uae": 0,
+      "singapore": 0,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "scapia",
@@ -814,9 +985,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: India",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 1 role on its job board on 16 Nov 2026",
+    "indiaEvidenceUrl": "https://apply.workable.com/scapia",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 1,
+      "uae": 0,
+      "singapore": 0,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "refyne",
@@ -835,9 +1012,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: India",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 8 roles on its job board on 16 Nov 2026",
+    "indiaEvidenceUrl": "https://jobs.smartrecruiters.com/refyne",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 8,
+      "uae": 0,
+      "singapore": 0,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "bureau",
@@ -856,9 +1039,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: India",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 15 roles on its job board on 16 Nov 2026",
+    "indiaEvidenceUrl": "https://jobs.ashbyhq.com/bureau",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 15,
+      "uae": 0,
+      "singapore": 0,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "coinbase",
@@ -873,13 +1062,20 @@
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
     "checkedOn": "2026-11-16",
-    "ycBacked": null,
-    "ycEvidenceUrl": null,
+    "ycBacked": true,
+    "ycEvidenceUrl": "https://www.ycombinator.com/companies/coinbase",
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: Singapore, India",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 10 roles on its job board on 16 Nov 2026 (also UAE 4, Singapore 9)",
+    "indiaEvidenceUrl": "https://boards.greenhouse.io/coinbase",
+    "note": "Public job board verified 16 Nov 2026.",
+    "ycBatch": "Summer 2012",
+    "hiring": {
+      "india": 10,
+      "uae": 4,
+      "singapore": 9,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "binance",
@@ -898,9 +1094,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: Dubai, Singapore",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 2 roles on its job board on 16 Nov 2026 (also UAE 51, Singapore 108)",
+    "indiaEvidenceUrl": "https://boards.greenhouse.io/binance",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 2,
+      "uae": 51,
+      "singapore": 108,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "bybit",
@@ -919,9 +1121,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: Dubai, Singapore",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "No India roles on its job board on 16 Nov 2026 (also UAE 58)",
+    "indiaEvidenceUrl": "https://boards.greenhouse.io/bybit",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 0,
+      "uae": 58,
+      "singapore": 0,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "tamara",
@@ -940,9 +1148,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: Dubai, India",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 4 roles on its job board on 16 Nov 2026 (also UAE 7)",
+    "indiaEvidenceUrl": "https://boards.greenhouse.io/tamara",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 4,
+      "uae": 7,
+      "singapore": 0,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "lean-technologies",
@@ -961,9 +1175,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: Dubai",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "No India roles on its job board on 16 Nov 2026 (also UAE 4)",
+    "indiaEvidenceUrl": "https://jobs.ashbyhq.com/leantech",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 0,
+      "uae": 4,
+      "singapore": 0,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "sardine",
@@ -982,9 +1202,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: Dubai, India",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 1 role on its job board on 16 Nov 2026 (also UAE 2)",
+    "indiaEvidenceUrl": "https://jobs.ashbyhq.com/sardine",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 1,
+      "uae": 2,
+      "singapore": 0,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "thunes",
@@ -1003,9 +1229,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: Singapore",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "No India roles on its job board on 16 Nov 2026 (also UAE 1, Singapore 7)",
+    "indiaEvidenceUrl": "https://boards.greenhouse.io/thunes",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 0,
+      "uae": 1,
+      "singapore": 7,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "trust-bank",
@@ -1024,9 +1256,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: Singapore",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "No India roles on its job board on 16 Nov 2026 (also Singapore 11)",
+    "indiaEvidenceUrl": "https://boards.greenhouse.io/trustbank",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 0,
+      "uae": 0,
+      "singapore": 11,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "xendit",
@@ -1041,13 +1279,20 @@
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
     "checkedOn": "2026-11-16",
-    "ycBacked": null,
-    "ycEvidenceUrl": null,
+    "ycBacked": true,
+    "ycEvidenceUrl": "https://www.ycombinator.com/companies/xendit",
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: Singapore, India",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 4 roles on its job board on 16 Nov 2026 (also Singapore 10)",
+    "indiaEvidenceUrl": "https://boards.greenhouse.io/xendit",
+    "note": "Public job board verified 16 Nov 2026.",
+    "ycBatch": "Summer 2015",
+    "hiring": {
+      "india": 4,
+      "uae": 0,
+      "singapore": 10,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "youtrip",
@@ -1066,9 +1311,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: Singapore",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 12 roles on its job board on 16 Nov 2026 (also Singapore 19)",
+    "indiaEvidenceUrl": "https://apply.workable.com/youtrip",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 12,
+      "uae": 0,
+      "singapore": 19,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "meesho",
@@ -1083,13 +1334,20 @@
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
     "checkedOn": "2026-11-16",
-    "ycBacked": null,
-    "ycEvidenceUrl": null,
+    "ycBacked": true,
+    "ycEvidenceUrl": "https://www.ycombinator.com/companies/meesho",
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: India",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 47 roles on its job board on 16 Nov 2026",
+    "indiaEvidenceUrl": "https://jobs.lever.co/meesho",
+    "note": "Public job board verified 16 Nov 2026.",
+    "ycBatch": "Summer 2016",
+    "hiring": {
+      "india": 47,
+      "uae": 0,
+      "singapore": 0,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "swiggy",
@@ -1108,9 +1366,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: India",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 190 roles on its job board on 16 Nov 2026",
+    "indiaEvidenceUrl": "https://jobs.smartrecruiters.com/swiggy",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 190,
+      "uae": 0,
+      "singapore": 0,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "glance",
@@ -1129,9 +1393,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: India",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 21 roles on its job board on 16 Nov 2026",
+    "indiaEvidenceUrl": "https://boards.greenhouse.io/glance",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 21,
+      "uae": 0,
+      "singapore": 0,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "inmobi",
@@ -1150,9 +1420,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: India",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 42 roles on its job board on 16 Nov 2026 (also UAE 1)",
+    "indiaEvidenceUrl": "https://boards.greenhouse.io/inmobi",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 42,
+      "uae": 1,
+      "singapore": 0,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "truecaller",
@@ -1171,9 +1447,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: India",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 16 roles on its job board on 16 Nov 2026",
+    "indiaEvidenceUrl": "https://boards.greenhouse.io/truecaller",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 16,
+      "uae": 0,
+      "singapore": 0,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "pocket-fm",
@@ -1192,9 +1474,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: India",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 2 roles on its job board on 16 Nov 2026",
+    "indiaEvidenceUrl": "https://jobs.lever.co/pocketfm",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 2,
+      "uae": 0,
+      "singapore": 0,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "ixigo",
@@ -1213,9 +1501,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: India",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 10 roles on its job board on 16 Nov 2026",
+    "indiaEvidenceUrl": "https://jobs.smartrecruiters.com/ixigo",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 10,
+      "uae": 0,
+      "singapore": 0,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "lokal",
@@ -1230,13 +1524,20 @@
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
     "checkedOn": "2026-11-16",
-    "ycBacked": null,
-    "ycEvidenceUrl": null,
+    "ycBacked": true,
+    "ycEvidenceUrl": "https://www.ycombinator.com/companies/lokal",
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: India",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 9 roles on its job board on 16 Nov 2026",
+    "indiaEvidenceUrl": "https://jobs.smartrecruiters.com/lokal",
+    "note": "Public job board verified 16 Nov 2026.",
+    "ycBatch": "Summer 2019",
+    "hiring": {
+      "india": 9,
+      "uae": 0,
+      "singapore": 0,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "abhibus",
@@ -1255,9 +1556,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: India",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 6 roles on its job board on 16 Nov 2026",
+    "indiaEvidenceUrl": "https://jobs.smartrecruiters.com/abhibus",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 6,
+      "uae": 0,
+      "singapore": 0,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "grab",
@@ -1276,9 +1583,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: Singapore",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 10 roles on its job board on 16 Nov 2026 (also Singapore 107)",
+    "indiaEvidenceUrl": "https://jobs.smartrecruiters.com/grab",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 10,
+      "uae": 0,
+      "singapore": 107,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "delivery-hero",
@@ -1297,9 +1610,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: Singapore, Dubai",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "No India roles on its job board on 16 Nov 2026 (also UAE 53, Singapore 54)",
+    "indiaEvidenceUrl": "https://jobs.smartrecruiters.com/deliveryhero",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 0,
+      "uae": 53,
+      "singapore": 54,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "airbnb",
@@ -1314,13 +1633,20 @@
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
     "checkedOn": "2026-11-16",
-    "ycBacked": null,
-    "ycEvidenceUrl": null,
+    "ycBacked": true,
+    "ycEvidenceUrl": "https://www.ycombinator.com/companies/airbnb",
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: India, Singapore",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 12 roles on its job board on 16 Nov 2026 (also Singapore 6)",
+    "indiaEvidenceUrl": "https://boards.greenhouse.io/airbnb",
+    "note": "Public job board verified 16 Nov 2026.",
+    "ycBatch": "Winter 2009",
+    "hiring": {
+      "india": 12,
+      "uae": 0,
+      "singapore": 6,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "agoda",
@@ -1339,9 +1665,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: India, Singapore",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 11 roles on its job board on 16 Nov 2026 (also Singapore 8)",
+    "indiaEvidenceUrl": "https://boards.greenhouse.io/agoda",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 11,
+      "uae": 0,
+      "singapore": 8,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "spotify",
@@ -1360,9 +1692,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: Singapore, India",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 1 role on its job board on 16 Nov 2026 (also UAE 1, Singapore 1)",
+    "indiaEvidenceUrl": "https://jobs.lever.co/spotify",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 1,
+      "uae": 1,
+      "singapore": 1,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "notion",
@@ -1381,9 +1719,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: India",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 2 roles on its job board on 16 Nov 2026 (also Singapore 6)",
+    "indiaEvidenceUrl": "https://jobs.ashbyhq.com/notion",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 2,
+      "uae": 0,
+      "singapore": 6,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "duolingo",
@@ -1402,9 +1746,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: India",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 1 role on its job board on 16 Nov 2026",
+    "indiaEvidenceUrl": "https://boards.greenhouse.io/duolingo",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 1,
+      "uae": 0,
+      "singapore": 0,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "freshworks",
@@ -1423,9 +1773,15 @@
     "ycEvidenceUrl": null,
     "fundingStage": "Not researched",
     "fundingEvidenceUrl": null,
-    "indiaSignal": "Live postings seen in: India",
-    "indiaEvidenceUrl": null,
-    "note": "Public job board verified 16 Nov 2026."
+    "indiaSignal": "Hiring in India: 32 roles on its job board on 16 Nov 2026 (also Singapore 4)",
+    "indiaEvidenceUrl": "https://jobs.smartrecruiters.com/freshworks",
+    "note": "Public job board verified 16 Nov 2026.",
+    "hiring": {
+      "india": 32,
+      "uae": 0,
+      "singapore": 4,
+      "asOf": "2026-11-16"
+    }
   },
   {
     "id": "kredx",

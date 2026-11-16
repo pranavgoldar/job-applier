@@ -11,13 +11,33 @@ import {
   confirmManual,
   setStage,
   approveEligibility,
-  quickTrack,
+  confirmDetected,
   untrack,
   trackFromName,
 } from "./applications.mjs";
 import { upsertJob, sourceURL, kinds } from "./connectors.mjs";
 import { initialProfile, assess } from "./matching.mjs";
 import { nextCloudRun } from "./cloud-worker.mjs";
+import { answerFields, cleanAnswers } from "./answers.mjs";
+import { extensionZip } from "./zip.mjs";
+// How far the current (or last) scan has got, source by source.
+export function scanProgress(sources, startedAt, pending = 0) {
+  const enabled = sources.filter((s) => s.enabled),
+    ran = (s) => startedAt && s.last_run && s.last_run >= startedAt,
+    done = enabled.filter((s) => ran(s) && s.health === "Healthy").length,
+    failed = enabled.filter((s) => ran(s) && s.health === "Error").length,
+    waiting = startedAt ? enabled.length - done - failed : 0;
+  return {
+    startedAt: startedAt || null,
+    total: enabled.length,
+    done,
+    failed,
+    waiting,
+    // Work is still queued or running on the server.
+    active: pending > 0,
+    complete: !!startedAt && waiting === 0,
+  };
+}
 export function createHandler(
   store,
   { hosted = false, onDiscoveryQueued = null } = {},
@@ -179,7 +199,7 @@ export function createHandler(
         const [config, jobs, apps, resumes, sources, events, queue, pending] =
           await store.readMany([
             {
-              sql: "SELECT key,value FROM config WHERE key IN ('profile','settings','companyWatchlist','companySearchPreferences','lastDiscovery','nextDiscovery','workerHeartbeat')",
+              sql: "SELECT key,value FROM config WHERE key IN ('profile','settings','answers','scanStarted','companyWatchlist','companySearchPreferences','lastDiscovery','nextDiscovery','workerHeartbeat')",
             },
             { sql: "SELECT * FROM jobs ORDER BY first_seen DESC" },
             { sql: "SELECT * FROM applications ORDER BY updated DESC" },
@@ -197,11 +217,13 @@ export function createHandler(
           config.map((r) => [r.key, JSON.parse(r.value)]),
         );
         return json(res, 200, {
-          version: "3.1.0",
+          version: "3.3.0",
           runtime: hosted ? "vercel" : "local",
           maxUploadBytes: hosted ? 3 * 1024 * 1024 : 8 * 1024 * 1024,
           profile: c.profile ?? null,
           settings: c.settings ?? null,
+          answers: c.answers || {},
+          answerFields,
           jobs: jobs.map(jobRow),
           applications: apps.map(appRow),
           resumes,
@@ -211,6 +233,7 @@ export function createHandler(
           events,
           queue,
           pending: pending[0].n,
+          scan: scanProgress(sources, c.scanStarted, pending[0].n),
           lastDiscovery: c.lastDiscovery ?? null,
           nextDiscovery: hosted ? nextCloudRun() : (c.nextDiscovery ?? null),
           workerHeartbeat: c.workerHeartbeat ?? null,
@@ -269,14 +292,93 @@ export function createHandler(
           ok: true,
         });
       }
-      if (p.match(/^\/api\/jobs\/[^/]+\/track$/) && req.method === "POST") {
+      if (p.match(/^\/api\/jobs\/[^/]+\/confirm$/) && req.method === "POST") {
+        // Record a submission. Always names the exact resume that was sent.
         const id = p.split("/")[3],
           b = await body(req);
-        if (b.status === "Not applied") {
-          await untrack(store, id);
-          return json(res, 200, { ok: true });
-        }
-        return json(res, 200, await quickTrack(store, id, b.status));
+        if (b.detected === true)
+          return json(res, 200, await confirmDetected(store, id, b));
+        if (
+          hosted &&
+          b.attachment &&
+          Buffer.byteLength(b.attachment.base64 || "", "base64") >
+            3 * 1024 * 1024
+        )
+          throw new Error("Hosted upload limit is 3 MB");
+        const a = await prepare(store, id);
+        return json(res, 200, await confirmManual(store, a.id, b));
+      }
+      if (p.match(/^\/api\/jobs\/[^/]+\/untrack$/) && req.method === "POST") {
+        await untrack(store, p.split("/")[3]);
+        return json(res, 200, { ok: true });
+      }
+      if (p.match(/^\/api\/jobs\/[^/]+\/opened$/) && req.method === "POST") {
+        // Remember that the application page was opened, so the dashboard can
+        // ask "did you submit?" if nothing confirms it.
+        const id = p.split("/")[3],
+          b = await body(req);
+        await store.run(
+          b.clear
+            ? "UPDATE jobs SET data=json_remove(data,'$.applyOpened') WHERE id=?"
+            : "UPDATE jobs SET data=json_set(data,'$.applyOpened',?) WHERE id=?",
+          ...(b.clear ? [id] : [now(), id]),
+        );
+        return json(res, 200, { ok: true });
+      }
+      if (p.match(/^\/api\/autofill\/[^/]+$/) && req.method === "GET") {
+        // Everything the browser extension needs to fill one application form.
+        const id = p.split("/").pop(),
+          [[jobRecord], [appRecord], config] = await store.readMany([
+            { sql: "SELECT * FROM jobs WHERE id=?", args: [id] },
+            { sql: "SELECT * FROM applications WHERE job_id=?", args: [id] },
+            {
+              sql: "SELECT key,value FROM config WHERE key IN ('profile','answers')",
+            },
+          ]);
+        if (!jobRecord) return json(res, 404, { error: "Job not found" });
+        const j = jobRow(jobRecord),
+          c = Object.fromEntries(
+            config.map((r) => [r.key, JSON.parse(r.value)]),
+          ),
+          r =
+            (appRecord?.resume_id &&
+              (await store.get(
+                "SELECT * FROM resumes WHERE id=?",
+                appRecord.resume_id,
+              ))) ||
+            (await store.get(
+              "SELECT * FROM resumes WHERE track=? AND is_default=1",
+              j.assessment.track,
+            ));
+        return json(res, 200, {
+          schema: "career-os-autofill-v1",
+          jobId: j.id,
+          company: j.company,
+          title: j.title,
+          applyUrl: j.applyUrl || j.originalUrl,
+          profile: {
+            name: c.profile?.name || "",
+            email: c.profile?.email || "",
+            phone: c.profile?.phone || "",
+            education: c.profile?.education || "",
+            graduation: c.profile?.graduation || "",
+          },
+          answers: c.answers || {},
+          resume: r
+            ? {
+                id: r.id,
+                name: r.name,
+                mime: r.mime,
+                track: r.track,
+                base64: (await store.storage.read(r.path)).toString("base64"),
+              }
+            : null,
+        });
+      }
+      if (p === "/api/answers" && req.method === "POST") {
+        const b = await body(req);
+        await store.set("answers", cleanAnswers(b.answers));
+        return json(res, 200, { ok: true });
       }
       if (p === "/api/prepare" && req.method === "POST") {
         if ((await store.config("settings")).mode === "track")
@@ -517,6 +619,13 @@ export function createHandler(
         });
       }
       if (p === "/api/discover" && req.method === "POST") {
+        // A scan already under way is continued, not restarted.
+        const busy = (
+          await store.get(
+            "SELECT COUNT(*) AS n FROM queue WHERE status IN ('queued','running')",
+          )
+        ).n;
+        if (!busy) await store.set("scanStarted", now());
         const id = hosted
           ? await onDiscoveryQueued()
           : await store.enqueue("discovery");
@@ -576,6 +685,14 @@ export function createHandler(
         return json(res, 404, {
           error: "Endpoint not found",
         });
+      if (p === "/career-os-extension.zip") {
+        res.setHeader("Content-Type", "application/zip");
+        res.setHeader(
+          "Content-Disposition",
+          'attachment; filename="career-os-extension.zip"',
+        );
+        return res.end(extensionZip());
+      }
       const names = {
         "/": "index.html",
         "/app.js": "app.js",

@@ -10,6 +10,7 @@ export async function tick(store) {
   });
   const next = await store.config("nextDiscovery");
   if (!settings.paused && (!next || next <= now())) {
+    await store.set("scanStarted", now());
     await store.enqueue("discovery");
     await store.set(
       "nextDiscovery",
