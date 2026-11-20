@@ -384,3 +384,23 @@ test("closed and no-longer-matching jobs leave the open lists but stay in histor
   assert(text().includes("No longer listed"));
   assert(text().includes("No longer matches"));
 });
+
+test("strategy has its own category, uses the founder resume and labels unstated start dates", async () => {
+  const j = job("strategy", {
+    title: "Strategy Analyst",
+    location: "Noida",
+    employmentType: "Full-time",
+    description: "Own strategic initiatives and business planning.",
+  });
+  const { ui, $, modal } = await load(
+    state({ jobs: [j], resumes: [{ ...resume, track: "Founder’s Office" }] }),
+  );
+  ui.setView("jobs");
+  assert($('[data-filter="track"] option[value="Strategy & Operations"]'));
+  assert.match($('[data-job="strategy"]').textContent, /Strategy & Operations/);
+  assert($('[data-region="Noida"]'));
+  ui.openJob("strategy");
+  assert.match(modal().textContent, /Start date not stated/);
+  assert.match(modal().textContent, /Experience not stated/);
+  assert.match(modal().textContent, /Founder’s Office/);
+});

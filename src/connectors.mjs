@@ -2,6 +2,7 @@ import { uuid, now } from "./ids.mjs";
 import {
   assess,
   geo,
+  isTargetLocation,
   initialProfile,
   isTargetRole,
   blockedTitle,
@@ -208,6 +209,7 @@ function normalizePinpoint(source, body) {
       ).slice(0, 12000),
       employmentType: j.employment_type_text || "Unknown",
       isRemote: remote,
+      workplaceType: j.workplace_type,
       originalUrl: j.url,
       applyUrl: j.url || null,
       sourceId: String(j.id),
@@ -312,6 +314,8 @@ export function normalize(source, body) {
         j.employmentType ||
         j.categories?.commitment ||
         "Unknown",
+      startDate: j.startDate || null,
+      workplaceType: j.workplaceType,
       isRemote:
         j.isRemote === true ||
         String(j.workplaceType || "").toLowerCase() === "remote",
@@ -345,6 +349,7 @@ export async function upsertJobs(store, jobs, profile) {
         byUrl.get(key) || bySource.get(job.source + "|" + (job.sourceId || "")),
       id = old?.id || uuid(),
       previous = old ? JSON.parse(old.data) : {},
+      assessment = assess(job, profile),
       data = {
         ...job,
         // What the person did with this job survives every re-scan.
@@ -355,7 +360,8 @@ export async function upsertJobs(store, jobs, profile) {
           : previous.reopenedAt
             ? { reopenedAt: previous.reopenedAt }
             : {}),
-        assessment: assess(job, profile),
+        assessment,
+        ...(assessment.unsuitable ? { unsuitable: assessment.unsuitable } : {}),
       };
     statements.push({
       sql: "INSERT INTO jobs VALUES (?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data,last_checked=excluded.last_checked ON CONFLICT(canonical) DO UPDATE SET data=excluded.data,last_checked=excluded.last_checked",
@@ -392,10 +398,7 @@ export async function upsertJob(store, job) {
     ).id
   );
 }
-export { isTargetRole };
-export function isTargetLocation(job) {
-  return geo(job).region !== null;
-}
+export { isTargetRole, isTargetLocation };
 export async function fetchJSON(
   url,
   fetcher = fetch,
@@ -460,7 +463,9 @@ export async function addSmartRecruitersDescriptions(
   );
   let fetched = 0;
   for (const job of jobs) {
-    if (!isTargetLocation(job) || blockedTitle(job)) continue;
+    if (blockedTitle(job)) continue;
+    const place = geo(job);
+    if (!place.region && !place.remote) continue;
     const old = stored.get(job.sourceId);
     if (old && !old.descriptionPartial && old.description) {
       job.description = old.description;
@@ -585,22 +590,10 @@ export async function discover(
       for (const job of jobs) job.sourceRef = s.id;
       if (s.kind === "smartrecruiters")
         await addSmartRecruitersDescriptions(store, s, jobs, fetcher, deadline);
-      const unsuitable = (job) => {
-        if (!isTargetRole(job))
-          return "The role no longer matches your target roles.";
-        if (!isTargetLocation(job))
-          return "The location is now outside your target locations.";
-        if (job.indiaEligible === false)
-          return "This remote role is not open to people based in India.";
-        return (
-          assess(job, profile).blocked.find((x) =>
-            /Experience requirement|Seniority|mid-senior|restriction excludes India/.test(
-              x,
-            ),
-          ) || null
-        );
-      };
-      const relevant = jobs.filter((job) => !unsuitable(job));
+      const assessments = new Map(
+        jobs.map((job) => [job, assess(job, profile)]),
+      );
+      const relevant = jobs.filter((job) => !assessments.get(job).unsuitable);
       const kept = new Set(await upsertJobs(store, relevant, profile));
       // Two separate questions for every job stored from this source:
       //   1. Is the posting still on the board?  (presence, from ALL postings)
@@ -636,11 +629,12 @@ export async function discover(
         let next = null;
         if (posting) {
           // Still advertised, but it has changed and no longer fits.
-          const reason = unsuitable(posting);
+          const assessment = assessments.get(posting);
+          const reason = assessment.unsuitable;
           next = {
             ...data,
             ...posting,
-            assessment: assess(posting, profile),
+            assessment,
             unsuitable: reason,
             unsuitableSince: data.unsuitableSince || now(),
             closed: false,
