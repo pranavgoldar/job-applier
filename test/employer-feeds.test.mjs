@@ -133,7 +133,7 @@ test("feed continuations stay on the board and blocked feeds remain unread", asy
 });
 test("new watchlist records link a dated target-city vacancy to an official board", () => {
   const additions = catalog.filter((c) => c.hiringEvidence);
-  assert.ok(additions.length >= 29);
+  assert.ok(additions.length >= 30);
   for (const c of additions) {
     assert.ok(c.hiringEvidence.title);
     assert.ok(

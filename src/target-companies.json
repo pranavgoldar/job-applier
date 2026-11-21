@@ -2653,5 +2653,26 @@
       "title": "Senior Associate, E-Tailers",
       "url": "https://careers.chalhoubgroup.com/jobs"
     }
+  },
+  {
+    "id": "wahed",
+    "name": "Wahed",
+    "group": "Fintech",
+    "industry": "Fintech / investing",
+    "careersUrl": "https://jobs.lever.co/wahed.com",
+    "connector": {
+      "kind": "lever",
+      "board": "wahed.com"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Mumbai",
+      "title": "Operations Analyst",
+      "url": "https://jobs.lever.co/wahed.com/b8a2f81e-956b-4daf-943d-322f7045e1b3"
+    }
   }
 ]

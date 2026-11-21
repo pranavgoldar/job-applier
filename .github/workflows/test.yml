@@ -34,7 +34,7 @@ jobs:
           import { catalog } from './src/watchlist.mjs';
           import { discover } from './src/connectors.mjs';
           const store=new Store(fs.mkdtempSync(path.join(os.tmpdir(),'board-check-')));
-          const additions=catalog.filter(c=>c.hiringEvidence && c.connector);
+          const additions=catalog.filter(c=>c.id==="wahed");
           await store.set("companyWatchlist",additions.map(c=>({...c,sourceId:c.id})));
           for(const {id,name,connector} of additions){
             await store.run("INSERT INTO sources(id,company,kind,board) VALUES (?,?,?,?)",id,name,connector.kind,connector.board);

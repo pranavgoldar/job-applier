@@ -52,7 +52,7 @@ export function sourceURL(source) {
   if (Object.hasOwn(employerFeedDocs, source.kind))
     return employerFeedURL(source);
   const validBoard =
-    source.kind === "ashby"
+    source.kind === "ashby" || source.kind === "lever"
       ? /^[a-zA-Z0-9_.-]{1,100}$/
       : source.kind === "pinpoint" ||
           source.kind === "ycombinator" ||
