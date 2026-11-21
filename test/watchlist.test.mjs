@@ -109,7 +109,11 @@ test(
       events = (await s.all("SELECT * FROM events")).length;
     await seed(s);
     assert.equal((await s.config("profile")).name, "Existing user");
-    assert.equal((await s.job(id)).title, "Product Intern");
+    const saved = await s.job(id);
+    assert.equal(saved.title, "Product Intern");
+    assert.equal(saved.assessment.category, "Product management");
+    assert.match(saved.unsuitable, /on-site/);
+    assert(!saved.closed);
     assert.equal(
       (await s.get("SELECT enabled FROM sources WHERE id=?", "existing-aspora"))
         .enabled,

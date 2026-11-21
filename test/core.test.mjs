@@ -139,16 +139,16 @@ test("joining before graduation is blocked for full-time", () => {
   );
   assert(a.blocked.some((x) => /joining date/.test(x)));
 });
-test("unknown eligibility is review, never inferred eligible", () => {
+test("internships with unconfirmed remote eligibility stay out", () => {
   const a = assess(
     job({
       location: "Remote",
       description: "Own the roadmap.",
     }),
   );
-  assert.equal(a.decision, "Review");
-  assert(a.review.some((x) => /permit work from India/.test(x)));
-  assert(a.review.some((x) => /authorization/.test(x)));
+  assert.equal(a.decision, "Skip");
+  assert.match(a.unsuitable, /open to India/);
+  assert.deepEqual(a.review, []);
 });
 test("greater than two years and missing mandatory Figma hard block", () => {
   assert.equal(
@@ -159,7 +159,7 @@ test("greater than two years and missing mandatory Figma hard block", () => {
     ).decision,
     "Skip",
   );
-  // A range is judged by its lower bound: 1–3 years is a stretch, not a block.
+  // A stated range is eligible when its lower bound is within the ceiling.
   assert.equal(
     assess(
       job({
@@ -453,20 +453,21 @@ test(
     assert.equal((await s.apps()).length, 1);
   }),
 );
-test("only early-career Product and Founder’s Office titles are targeted", () => {
+test("only the three early-career role families are targeted", () => {
   for (const title of [
     "Associate Product Manager",
     "APM",
     "Product Analyst",
     "Product Management Intern",
     "Founder’s Office",
-    "Chief of Staff",
+    "Junior Chief of Staff",
     "Associate, Strategy & Operations",
-    "Business Analyst Intern",
-    "Binance Accelerator Program - Growth Operations",
   ])
     assert(isTargetRole({ title }), title);
   for (const title of [
+    "Chief of Staff",
+    "Business Analyst Intern",
+    "Binance Accelerator Program - Growth Operations",
     "Product Engineer II",
     "Senior Product Designer",
     "Product Marketing Manager",
@@ -485,13 +486,14 @@ test("locations outside India, Dubai and Singapore are dropped; preferred cities
     "Gurugram, India",
     "Dubai, United Arab Emirates",
     "Hong Kong; Singapore",
-    "Remote - APAC",
-    "Remote",
+    "Remote - India",
   ])
     assert(isTargetLocation({ location }), location);
   for (const location of [
     "San Francisco, CA",
     "Remote - US",
+    "Remote",
+    "Remote - APAC",
     "London",
     "Indianapolis, IN",
     "Unknown",
@@ -626,19 +628,20 @@ test(
   }),
 );
 
-test("business-side internships are kept; engineering, design and HR internships are not", () => {
+test("internships must also match one of the three role families", () => {
   for (const title of [
     "Product Management Intern",
     "Founder’s Office Intern",
+    "Business Operations Intern",
+  ])
+    assert(isTargetRole({ title }), title);
+  for (const title of [
     "Operations Intern",
     "Data Analytics Intern",
     "Financial Data Analyst Intern, Technical Operations",
     "Community Marketing Intern",
     "Project Management Intern",
     "Management Trainee",
-  ])
-    assert(isTargetRole({ title }), title);
-  for (const title of [
     "Software Engineer Intern",
     "UX Design - Intern",
     "Talent Acquisition Intern",

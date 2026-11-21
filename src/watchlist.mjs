@@ -20,7 +20,7 @@ export const defaultSearchPreferences = {
   fullTimeFrom: "2027-05-15",
   remoteInternshipsRequireIndiaEligibility: true,
 };
-export const catalogVersion = 4;
+export const catalogVersion = 5;
 export async function ensureWatchlist(store) {
   if ((await store.config("companyCatalogVersion")) === catalogVersion) return;
   const old = await store.config("companyWatchlist", []),
@@ -85,17 +85,7 @@ export async function ensureWatchlist(store) {
   });
   // Scoring rules changed with this catalog, so existing matches are re-scored once.
   const profile = await store.config("profile", initialProfile);
-  const rescored = (await store.all("SELECT id,data FROM jobs")).map((row) => {
-    const job = JSON.parse(row.data);
-    return {
-      sql: "UPDATE jobs SET data=? WHERE id=?",
-      args: [
-        JSON.stringify({ ...job, assessment: assess(job, profile) }),
-        row.id,
-      ],
-    };
-  });
-  if (rescored.length) await store.batch(rescored);
+  await rescoreJobs(store, profile);
   await store.set("companyCatalogVersion", catalogVersion);
   await store.event(
     null,
@@ -126,4 +116,18 @@ export async function watchlistState(store) {
     await store.all("SELECT * FROM sources"),
     await store.config("companyWatchlist", []),
   );
+}
+
+// Refresh derived fields only. Scan history, collections and application records
+// belong to the user and survive changes to the search rules or profile.
+export async function rescoreJobs(store, profile) {
+  const rows = await store.all("SELECT id,data FROM jobs");
+  const updates = rows.map(({ id, data }) => {
+    const assessment = assess(JSON.parse(data), profile);
+    return {
+      sql: "UPDATE jobs SET data=json_set(data,'$.assessment',json(?),'$.unsuitable',?) WHERE id=? AND data=?",
+      args: [JSON.stringify(assessment), assessment.unsuitable, id, data],
+    };
+  });
+  if (updates.length) await store.batch(updates);
 }

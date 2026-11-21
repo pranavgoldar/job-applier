@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { sha, uuid, now } from "./ids.mjs";
-import { watchlistFrom } from "./watchlist.mjs";
+import { watchlistFrom, rescoreJobs } from "./watchlist.mjs";
 import { jobRow, appRow } from "./sql-model.mjs";
 import {
   prepare,
@@ -224,7 +224,13 @@ export function createHandler(
           settings: c.settings ?? null,
           answers: c.answers || {},
           answerFields,
-          jobs: jobs.map(jobRow),
+          jobs: jobs.map((row) => {
+            const job = jobRow(row);
+            // A scan can finish after the user changes availability. The feed
+            // should immediately reflect the profile returned in this response.
+            const assessment = assess(job, c.profile || initialProfile);
+            return { ...job, assessment, unsuitable: assessment.unsuitable };
+          }),
           applications: apps.map(appRow),
           resumes,
           sources,
@@ -553,11 +559,7 @@ export function createHandler(
         ])
           if (typeof b[k] === "string") profile[k] = b[k].slice(0, 20000);
         await store.set("profile", profile);
-        const rescored = (await store.jobs()).map((j) => ({
-          sql: "UPDATE jobs SET data=json_set(data,'$.assessment',json(?)) WHERE id=?",
-          args: [JSON.stringify(assess(j, profile)), j.id],
-        }));
-        if (rescored.length) await store.batch(rescored);
+        await rescoreJobs(store, profile);
         await store.event(
           null,
           "profile",
@@ -638,6 +640,7 @@ export function createHandler(
           return {
             company: j.company,
             title: j.title,
+            category: j.assessment.category,
             track: j.assessment.track,
             employment_type: j.assessment.employmentType,
             location: j.location,
