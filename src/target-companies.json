@@ -62,14 +62,14 @@
     "connector": null,
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-16",
+    "checkedOn": "2026-11-21",
     "ycBacked": null,
     "ycEvidenceUrl": null,
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
     "indiaSignal": "Reported plan: about 5,500 staff in India by end of 2026, roughly 40% of its workforce (March 2026)",
     "indiaEvidenceUrl": "https://fintechnews.sg/128143/fintech-india/revolut-india-workforce/",
-    "note": "Careers site refuses automated reads (HTTP 403 on 16 Nov 2026). Check it by hand."
+    "note": "Careers site refuses automated reads (HTTP 403). Check it by hand."
   },
   {
     "id": "remitly",
@@ -80,14 +80,14 @@
     "connector": null,
     "aliases": ["remitely"],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-16",
+    "checkedOn": "2026-11-21",
     "ycBacked": null,
     "ycEvidenceUrl": null,
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
     "indiaSignal": "Unknown — expansion plans not verified",
     "indiaEvidenceUrl": null,
-    "note": "Workday careers site refuses automated reads (HTTP 429 on 16 Nov 2026). Check it by hand."
+    "note": "Workday careers site rate-limits automated reads (HTTP 429). Check it by hand."
   },
   {
     "id": "nephroplus",
@@ -98,14 +98,14 @@
     "connector": null,
     "aliases": ["nephro plus"],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-15",
+    "checkedOn": "2026-11-21",
     "ycBacked": null,
     "ycEvidenceUrl": null,
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
     "indiaSignal": "India operations confirmed; do not infer a suitable opening",
     "indiaEvidenceUrl": "https://nephroplus.com/careers/",
-    "note": "Include product, corporate strategy and business operations when responsibilities fit."
+    "note": "No public job feed; NephroPlus asks for CVs by email (jobs@nephroplus.com). Check its openings page by hand."
   },
   {
     "id": "aspora",
@@ -198,14 +198,14 @@
     "connector": null,
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-15",
+    "checkedOn": "2026-11-21",
     "ycBacked": null,
     "ycEvidenceUrl": null,
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
     "indiaSignal": "Unknown — expansion plans not verified",
     "indiaEvidenceUrl": null,
-    "note": "Custom employer site. Graduate intake and employment metadata must be checked per vacancy."
+    "note": "Jobs are loaded inside the careers site's own app; no public job feed found (21 Nov 2026). Check it by hand."
   },
   {
     "id": "flagright",
@@ -295,17 +295,20 @@
     "group": "Your target",
     "industry": "AI marketing software",
     "careersUrl": "https://www.different.ai/careers",
-    "connector": null,
+    "connector": {
+      "kind": "rippling",
+      "board": "differentai"
+    },
     "aliases": ["Different", "differentai"],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-15",
+    "checkedOn": "2026-11-21",
     "ycBacked": null,
     "ycEvidenceUrl": null,
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
     "indiaSignal": "Employer careers page lists Bengaluru roles",
     "indiaEvidenceUrl": "https://www.different.ai/careers",
-    "note": "User-confirmed LinkedIn identity: https://www.linkedin.com/company/differentai/. Manual vacancy review."
+    "note": "Rippling careers board, linked from different.ai/careers; robots.txt allows it."
   },
   {
     "id": "hitpay",
@@ -360,14 +363,14 @@
     "connector": null,
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-16",
+    "checkedOn": "2026-11-21",
     "ycBacked": null,
     "ycEvidenceUrl": null,
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
     "indiaSignal": "Unknown — expansion plans not verified",
     "indiaEvidenceUrl": null,
-    "note": "Careers site refuses automated reads (HTTP 403 on 16 Nov 2026). Check it by hand."
+    "note": "Careers site refuses automated reads (HTTP 403). The Ashby board named “navi” belongs to a different company. Check by hand."
   },
   {
     "id": "ziina",
@@ -403,17 +406,20 @@
     "group": "Your target",
     "industry": "Fintech / investment and digital assets",
     "careersUrl": "https://fasset.bamboohr.com/careers",
-    "connector": null,
+    "connector": {
+      "kind": "bamboohr",
+      "board": "fasset"
+    },
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-15",
+    "checkedOn": "2026-11-21",
     "ycBacked": null,
     "ycEvidenceUrl": null,
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
     "indiaSignal": "Unknown — expansion plans not verified",
     "indiaEvidenceUrl": null,
-    "note": "BambooHR career board; collector not connected."
+    "note": "BambooHR careers page; reads the public job list behind it, which robots.txt allows."
   },
   {
     "id": "sarwa",
@@ -421,17 +427,20 @@
     "group": "Your target",
     "industry": "Fintech / investing",
     "careersUrl": "https://careers.sarwa.co/",
-    "connector": null,
+    "connector": {
+      "kind": "teamtailor",
+      "board": "careers.sarwa.co"
+    },
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-15",
+    "checkedOn": "2026-11-21",
     "ycBacked": null,
     "ycEvidenceUrl": null,
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
     "indiaSignal": "Unknown — expansion plans not verified",
     "indiaEvidenceUrl": null,
-    "note": "Use careers.sarwa.co, the employer official careers site. Collector not connected."
+    "note": "Teamtailor careers site; reads its public RSS job feed, which robots.txt allows."
   },
   {
     "id": "tabby",
@@ -593,17 +602,20 @@
     "group": "Similar firm",
     "industry": "Fintech / spend management",
     "careersUrl": "https://ramp.com/careers",
-    "connector": null,
+    "connector": {
+      "kind": "ashby",
+      "board": "ramp"
+    },
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-15",
+    "checkedOn": "2026-11-21",
     "ycBacked": null,
     "ycEvidenceUrl": null,
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
     "indiaSignal": "Unknown — expansion plans not verified",
     "indiaEvidenceUrl": null,
-    "note": "Broad comparison target; latest funding stage not checked. Collector not connected."
+    "note": "Ashby job board, linked from ramp.com/careers (187 roles on 21 Nov 2026)."
   },
   {
     "id": "juspay",
@@ -614,14 +626,14 @@
     "connector": null,
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-15",
+    "checkedOn": "2026-11-21",
     "ycBacked": null,
     "ycEvidenceUrl": null,
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
     "indiaSignal": "Unknown — expansion plans not verified",
     "indiaEvidenceUrl": null,
-    "note": "Collector not connected."
+    "note": "Juspay's website terms forbid bots, crawling and scraping, so its careers page is not read automatically. Check it by hand."
   },
   {
     "id": "cashfree",
