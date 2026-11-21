@@ -1,0 +1,28 @@
+name: Scan job boards
+
+on:
+  schedule:
+    - cron: '17 7,12,16 * * *'
+  workflow_dispatch:
+
+permissions: {}
+concurrency:
+  group: scheduled-job-scan
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Call the protected scan endpoint
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${CRON_SECRET:?Set the Actions secret CRON_SECRET to the value used by Vercel}"
+          curl --silent --show-error --fail --max-time 310 \
+            --header "Authorization: Bearer ${CRON_SECRET}" \
+            https://job-applier-beta.vercel.app/api/cron |
+            jq -se 'if length != 1 then error("Expected one scan response") else .[0] end | if .paused == true then {paused} elif (.completed | type) == "number" and (.failed | type) == "number" and (.queued | type) == "number" then {completed, failed, queued} else error("Unexpected scan response") end'

@@ -126,3 +126,50 @@ test("HTTP auth, protected files, preparation, packets, confirmations and persis
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("saving a manually entered YC role contacts no external site and enqueues no scan", async (t) => {
+  const { Store } = await import("../src/store.mjs");
+  const { createHandler } = await import("../src/http.mjs");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "manual-yc-"));
+  const store = new Store(dir);
+  t.after(() => {
+    store.close();
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+  const network = t.mock.method(globalThis, "fetch", () => {
+    throw new Error("Unexpected network request");
+  });
+  const res = {
+    setHeader() {},
+    writeHead(code) {
+      this.status = code;
+    },
+    end(body) {
+      this.result = JSON.parse(body);
+    },
+  };
+  const handler = createHandler(store);
+  const job = {
+    company: "Example",
+    title: "Product Analyst",
+    location: "Mumbai",
+    originalUrl:
+      "https://www.ycombinator.com/companies/example/jobs/product-analyst",
+  };
+  await handler(
+    {
+      method: "POST",
+      url: "/api/jobs",
+      headers: { "content-type": "application/json" },
+      body: job,
+    },
+    res,
+  );
+  assert.equal(res.status, 200);
+  const [saved] = await store.jobs();
+  assert.equal(saved.id, res.result.id);
+  assert.equal(saved.source, "manual");
+  assert.equal(saved.assessment.category, "Product management");
+  assert.equal(network.mock.callCount(), 0);
+  assert.equal((await store.all("SELECT * FROM queue")).length, 0);
+});

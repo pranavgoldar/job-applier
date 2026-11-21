@@ -1,4 +1,10 @@
 import {
+  employerFeedDocs,
+  employerFeedURL,
+  parseEmployerPage,
+  readEmployerFeed,
+} from "./employer-feeds.mjs";
+import {
   ycProps,
   readYC,
   hiringCompanies,
@@ -14,14 +20,13 @@ import {
   blockedTitle,
 } from "./matching.mjs";
 export const docs = {
+  ...employerFeedDocs,
   greenhouse: "https://docs.greenhouse.io/job-board.html",
   lever: "https://github.com/lever/postings-api",
   ashby: "https://developers.ashbyhq.com/docs/public-job-posting-api",
   smartrecruiters: "https://developers.smartrecruiters.com/docs/posting-api",
   workable: "https://workable.readme.io/reference/jobs",
   pinpoint: "https://developers.pinpointhq.com/docs/job-postings",
-  teamtailor:
-    "https://support.teamtailor.com/en/articles/11171756-rss-feed-how-to-guide",
   // The public job list behind the employer's own BambooHR careers page.
   bamboohr: "https://www.bamboohr.com/applicant-tracking/careers-page",
   // The public job board behind the employer's own Rippling careers page.
@@ -44,8 +49,10 @@ export function canonical(url) {
   return u.toString().replace(/\/$/, "");
 }
 export function sourceURL(source) {
+  if (Object.hasOwn(employerFeedDocs, source.kind))
+    return employerFeedURL(source);
   const validBoard =
-    source.kind === "ashby"
+    source.kind === "ashby" || source.kind === "lever"
       ? /^[a-zA-Z0-9_.-]{1,100}$/
       : source.kind === "pinpoint" ||
           source.kind === "ycombinator" ||
@@ -53,10 +60,7 @@ export function sourceURL(source) {
           source.kind === "rippling" ||
           source.kind === "kula"
         ? /^[a-z0-9-]{1,80}$/
-        : source.kind === "teamtailor"
-          ? // A careers-site host name, e.g. careers.example.com or example.teamtailor.com
-            /^(?=.{4,120}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}$/
-          : /^[a-zA-Z0-9_-]{1,100}$/;
+        : /^[a-zA-Z0-9_-]{1,100}$/;
   if (
     typeof source.board !== "string" ||
     source.board.includes("..") ||
@@ -77,14 +81,6 @@ export function sourceURL(source) {
       return `https://apply.workable.com/api/v1/widget/accounts/${b}?details=true`;
     case "pinpoint":
       return `https://${b}.pinpointhq.com/postings.json`;
-    case "teamtailor":
-      if (
-        /(?:^|\.)(?:local|localhost|internal|lan|home|corp|test|example|invalid)$/.test(
-          source.board,
-        )
-      )
-        throw new Error("Invalid board identifier");
-      return `https://${source.board}/jobs.rss`;
     case "bamboohr":
       return `https://${b}.bamboohr.com/careers/list`;
     case "kula":
@@ -338,49 +334,6 @@ const xmlText = (s = "") =>
     .replace(/&#39;|&apos;/g, "'")
     .replace(/&amp;/g, "&")
     .trim();
-const tag = (block, name) =>
-  xmlText(
-    (block.match(new RegExp(`<${name}>([\\s\\S]*?)</${name}>`)) || [])[1] || "",
-  );
-// Teamtailor's public RSS feed: one <item> per published job.
-export function teamtailorItems(xml) {
-  if (!/<rss[\s>]/.test(String(xml)))
-    throw new Error("Unexpected source schema; jobs were not changed");
-  return [...String(xml).matchAll(/<item>([\s\S]*?)<\/item>/g)].map(
-    (m) => m[1],
-  );
-}
-function normalizeTeamtailor(source, xml) {
-  return teamtailorItems(xml).map((item) => {
-    const places = [
-        ...item.matchAll(/<tt:location>([\s\S]*?)<\/tt:location>/g),
-      ].map((m) =>
-        joined(
-          tag(m[1], "tt:city") || tag(m[1], "tt:name"),
-          tag(m[1], "tt:country"),
-        ),
-      ),
-      remote = tag(item, "remoteStatus").toLowerCase(),
-      link = tag(item, "link");
-    return {
-      ...base(source),
-      title: tag(item, "title"),
-      location:
-        joined(places, remote === "fully" ? "Remote" : "") ||
-        (remote === "fully" ? "Remote" : "Unknown"),
-      description: plain(tag(item, "description")).slice(0, 12000),
-      employmentType: "Unknown",
-      isRemote: remote === "fully",
-      originalUrl: link,
-      applyUrl: link ? link.replace(/\/?$/, "/applications/new") : null,
-      sourceId: tag(item, "guid") || link,
-      postedAt: tag(item, "pubDate")
-        ? new Date(tag(item, "pubDate")).toISOString()
-        : null,
-      compensation: null,
-    };
-  });
-}
 function normalizeBamboo(source, body) {
   if (!Array.isArray(body?.result))
     throw new Error("Unexpected source schema; jobs were not changed");
@@ -483,11 +436,20 @@ function normalizeKula(source, page) {
     })
     .filter(Boolean);
 }
+function employerJob(source, row) {
+  return {
+    ...base(source),
+    employmentType: "Unknown",
+    compensation: null,
+    ...row,
+    description: plain(row.description).slice(0, 12000),
+  };
+}
 export function normalize(source, body) {
   if (source.kind === "kula") return normalizeKula(source, body);
-  if (source.kind === "teamtailor")
-    return normalizeTeamtailor(source, body).filter(
-      (j) => j.title && j.originalUrl,
+  if (Object.hasOwn(employerFeedDocs, source.kind))
+    return parseEmployerPage(source, body).jobs.map((row) =>
+      employerJob(source, row),
     );
   if (source.kind === "bamboohr")
     return normalizeBamboo(source, body).filter((j) => j.title);
@@ -640,10 +602,10 @@ export { isTargetRole, isTargetLocation };
 export async function fetchJSON(
   url,
   fetcher = fetch,
-  { deadline = Infinity, headers = {}, text = false } = {},
+  { deadline = Infinity, headers = {}, text = false, attempts = 3 } = {},
 ) {
   let error;
-  for (let n = 0; n < 3; n++) {
+  for (let n = 0; n < attempts; n++) {
     try {
       const remaining = deadline - Date.now();
       if (remaining < 200)
@@ -662,7 +624,9 @@ export async function fetchJSON(
         },
       });
       if (!r.ok) {
-        const e = new Error(`HTTP ${r.status}`);
+        const e = Object.assign(new Error(`HTTP ${r.status}`), {
+          status: r.status,
+        });
         if (r.status < 500 && r.status !== 429) {
           e.permanent = true;
           throw e;
@@ -676,7 +640,8 @@ export async function fetchJSON(
     } catch (e) {
       error = e;
       if (e.permanent || deadline - Date.now() < 1000) break;
-      if (n < 2) await new Promise((r) => setTimeout(r, 500 * 2 ** n));
+      if (n + 1 < attempts)
+        await new Promise((r) => setTimeout(r, 500 * 2 ** n));
     }
   }
   throw error;
@@ -861,7 +826,20 @@ export async function discover(
         );
         continue;
       }
-      if (s.kind === "lever") {
+      if (Object.hasOwn(employerFeedDocs, s.kind)) {
+        const rows = await readEmployerFeed(
+          s,
+          (url, accept) =>
+            fetchJSON(url, fetcher, {
+              deadline,
+              text: true,
+              attempts: 1,
+              headers: { Accept: accept },
+            }),
+          deadline,
+        );
+        jobs = rows.map((row) => employerJob(s, row));
+      } else if (s.kind === "lever") {
         for (let skip = 0; skip < 2000; skip += 100) {
           const body = await fetchJSON(
             sourceURL(s).replace("skip=0", `skip=${skip}`),
@@ -907,23 +885,6 @@ export async function discover(
           s,
           await readYC(store, sourceURL(s), fetcher, deadline),
         );
-      } else if (s.kind === "teamtailor") {
-        // The feed shows up to 100 jobs per page; read every page.
-        const seen = new Set();
-        for (let page = 1; page <= 10; page++) {
-          const rows = normalize(
-            s,
-            await fetchJSON(
-              sourceURL(s) + (page > 1 ? "?page=" + page : ""),
-              fetcher,
-              { deadline, text: true },
-            ),
-          ).filter((j) => !seen.has(j.sourceId) && seen.add(j.sourceId));
-          jobs.push(...rows);
-          if (rows.length < 100) break;
-          if (page === 10) complete = false;
-          await new Promise((r) => setTimeout(r, 300));
-        }
       } else if (s.kind === "kula") {
         jobs = normalize(
           s,
@@ -1070,6 +1031,10 @@ export async function discover(
         "connector_error",
         `${s.company}: connector failed. Existing jobs remain unchanged.`,
       );
+      if (queueNewSources) {
+        await store.set("lastDiscovery", now());
+        throw e;
+      }
     }
   }
   await store.set("lastDiscovery", now());

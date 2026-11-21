@@ -1,6 +1,8 @@
 # Company watchlist
 
-82 companies, plus the Himalayas remote-internship feed. 72 are read automatically; 10 need a manual check. Everything below was checked on 16 November 2026.
+The catalog contains 112 employers and four remote-job searches. The 21 November update adds 30 fintech and consumer employers with a named opening on an employer careers page. Sixteen were verified in Bangalore, eleven in Mumbai, two in Singapore and one in Dubai. Open **Companies → Evidence** for the role, city, source and date. The machine-readable records are in [the company catalog](src/target-companies.json).
+
+With automatic YC reading off, 84 employers have a connected feed and 28 need a manual visit. The following tables document the earlier 16 November check. The catalog includes the later corrections to employer boards.
 
 A fact is only recorded with a source. "Not verified" means no source was found, not that the answer is no.
 

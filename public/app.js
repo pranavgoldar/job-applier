@@ -754,14 +754,16 @@ function evidence(c) {
   const known = (s) => s && !/^(Unknown|Not )/.test(s),
     row = (label, text, url) =>
       `<div class="evidence-row"><span>${label}</span><span>${e(text)}${url ? ` <a href="${e(url)}" target="_blank" rel="noopener noreferrer">source ↗</a>` : ""}</span></div>`;
-  if (!c.fundingStage && !c.indiaSignal && !c.note) return "";
-  return `<details class="evidence"><summary>Evidence</summary>${row("Funding", known(c.fundingStage) ? c.fundingStage : "Not verified", c.fundingEvidenceUrl)}${row("India", known(c.indiaSignal) ? c.indiaSignal : "Not verified", c.indiaEvidenceUrl)}${row("YC", c.ycBacked === true ? `Yes, ${c.ycBatch || "batch not recorded"}` : "Not verified", c.ycBacked === true ? c.ycEvidenceUrl : null)}${c.note ? row("Note", c.note) : ""}${c.checkedOn ? row("Checked", c.checkedOn) : ""}</details>`;
+  if (!c.fundingStage && !c.indiaSignal && !c.note && !c.hiringEvidence)
+    return "";
+  return `<details class="evidence"><summary>Evidence</summary>${row("Funding", known(c.fundingStage) ? c.fundingStage : "Not verified", c.fundingEvidenceUrl)}${c.hiringEvidence ? row("Hiring", c.hiringEvidence.title + " · " + c.hiringEvidence.city, c.hiringEvidence.url) : row("India", known(c.indiaSignal) ? c.indiaSignal : "Not verified", c.indiaEvidenceUrl)}${row("YC", c.ycBacked === true ? `Yes, ${c.ycBatch || "batch not recorded"}` : "Not verified", c.ycBacked === true ? c.ycEvidenceUrl : null)}${c.note ? row("Note", c.note) : ""}${c.checkedOn ? row("Checked", c.checkedOn) : ""}</details>`;
 }
 function companiesPage() {
+  const scannable = (c) => !!c.sourceId && c.sourceHealth !== "Manual";
   const watched = state.companyWatchlist || [],
     known = new Set(watched.map((c) => c.sourceId).filter(Boolean)),
     extra = state.sources
-      .filter((s) => !known.has(s.id))
+      .filter((s) => !known.has(s.id) && s.kind !== "yc-directory")
       .map((s) => ({
         id: s.id,
         name: s.company,
@@ -803,18 +805,21 @@ function companiesPage() {
                 : companyFilter === "YC"
                   ? c.ycBacked === true
                   : companyFilter === "Manual"
-                    ? !c.sourceId
+                    ? !scannable(c)
                     : companyFilter === "Auto"
-                      ? !!c.sourceId
+                      ? scannable(c)
                       : sector(c) === companyFilter,
       )
       .sort(
         (a, b) =>
-          !!b.sourceId - !!a.sourceId ||
+          Number(scannable(b)) - Number(scannable(a)) ||
           (b.sourceCount || 0) - (a.sourceCount || 0) ||
           a.name.localeCompare(b.name),
       ),
-    auto = all.filter((c) => c.sourceId).length,
+    employers = all.filter(
+      (c) => c.group !== "Job feed" && c.connector?.kind !== "himalayas",
+    ),
+    auto = employers.filter(scannable).length,
     coverage = (category, label) => {
       const counts = all.map((c) => matches(c, category)).filter(Boolean);
       const n = counts.reduce((a, b) => a + b, 0);
@@ -823,7 +828,7 @@ function companiesPage() {
   return (
     head(
       "Companies",
-      `${auto} companies are checked automatically. ${all.length - auto} more have no public job feed and need a manual look.`,
+      `${auto} companies have a connected job feed. ${employers.length - auto} need a manual visit.`,
       `<button class="btn primary" data-action="add-source">${icon("plus", 15)}Add company</button>`,
     ) +
     `<div class="stats">${coverage("Product management", "Product / APM")}${coverage("Strategy & Operations", "Strategy & Operations")}${coverage(FOUNDERS, FOUNDERS)}</div>` +
@@ -845,7 +850,7 @@ function companiesPage() {
       .join("")}</div><div class="company-grid">${shown
       .map((c) => {
         const [dot, label, err] = companyStatus(c);
-        return `<div class="card company"><div class="company-top">${logo(c.name)}<div style="flex:1;min-width:0"><div class="company-name">${e(c.name)}</div><div class="muted small">${e(String(c.industry || "").replace(/^(Fintech|Consumer|Software|Job feed)\s*\/\s*/i, ""))}</div></div>${c.sourceId ? `<button class="switch ${c.sourceEnabled ? "on" : ""}" data-source="${e(c.sourceId)}" data-enabled="${c.sourceEnabled ? "0" : "1"}" role="switch" aria-checked="${!!c.sourceEnabled}" aria-label="Check ${e(c.name)} automatically"></button>` : ""}</div><span class="status" title="${e(err)}"><span class="dot ${dot}"></span>${e(label)}</span><div class="tags"><span class="tag ${matches(c, "Product management") ? "product" : ""}">Product ${matches(c, "Product management")}</span><span class="tag">Strategy &amp; Operations ${matches(c, "Strategy & Operations")}</span><span class="tag ${matches(c, FOUNDERS) ? "founders" : ""}">Founder’s Office ${matches(c, FOUNDERS)}</span>${c.ycBacked === true ? `<a class="tag fintech" href="${e(c.ycEvidenceUrl)}" target="_blank" rel="noopener noreferrer" title="Listed in the YC directory">YC ${e((c.ycBatch || "").replace(/^(Winter|Summer|Fall|Spring) 20/, (m) => m[0]))}</a>` : ""}</div>${evidence(c)}<div class="company-links">${c.sourceCount ? `<button class="link" data-company-jobs="${e(c.name)}">View ${c.sourceCount} job${c.sourceCount === 1 ? "" : "s"}</button>` : ""}${c.careersUrl ? `<a class="link" href="${e(c.careersUrl)}" target="_blank" rel="noopener noreferrer">Careers page ↗</a>` : ""}</div></div>`;
+        return `<div class="card company"><div class="company-top">${logo(c.name)}<div style="flex:1;min-width:0"><div class="company-name">${e(c.name)}</div><div class="muted small">${e(String(c.industry || "").replace(/^(Fintech|Consumer|Software|Job feed)\s*\/\s*/i, ""))}</div></div>${scannable(c) ? `<button class="switch ${c.sourceEnabled ? "on" : ""}" data-source="${e(c.sourceId)}" data-enabled="${c.sourceEnabled ? "0" : "1"}" role="switch" aria-checked="${!!c.sourceEnabled}" aria-label="Check ${e(c.name)} automatically"></button>` : ""}</div><span class="status" title="${e(err)}"><span class="dot ${dot}"></span>${e(label)}</span><div class="tags"><span class="tag ${matches(c, "Product management") ? "product" : ""}">Product ${matches(c, "Product management")}</span><span class="tag">Strategy &amp; Operations ${matches(c, "Strategy & Operations")}</span><span class="tag ${matches(c, FOUNDERS) ? "founders" : ""}">Founder’s Office ${matches(c, FOUNDERS)}</span>${c.ycBacked === true ? `<a class="tag fintech" href="${e(c.ycEvidenceUrl)}" target="_blank" rel="noopener noreferrer" title="Listed in the YC directory">YC ${e((c.ycBatch || "").replace(/^(Winter|Summer|Fall|Spring) 20/, (m) => m[0]))}</a>` : ""}</div>${evidence(c)}<div class="company-links">${c.sourceCount ? `<button class="link" data-company-jobs="${e(c.name)}">View ${c.sourceCount} job${c.sourceCount === 1 ? "" : "s"}</button>` : ""}${c.careersUrl ? `<a class="link" href="${e(c.careersUrl)}" target="_blank" rel="noopener noreferrer">Careers page ↗</a>` : ""}</div></div>`;
       })
       .join("")}</div>`
   );
@@ -859,7 +864,7 @@ function settingsPage() {
   const p = state.profile,
     s = state.settings;
   return (
-    head("Settings", "Your details, the daily scan and how it all works.") +
+    head("Settings", "Your details and scan settings.") +
     `<div class="settings-grid"><div class="stack"><form id="profile-form" class="card card-pad stack"><div class="spread"><h2>Your details</h2><button class="btn primary sm">Save</button></div><div class="form-grid">${field("name", "Full name", p.name)}${field("email", "Email", p.email, "email")}${field("phone", "Phone", p.phone)}${field("location", "Based in", p.location)}${field("education", "College and degree", p.education, "text", true)}${field("graduation", "Graduating (YYYY-MM)", p.graduation)}${field("fullTimeStart", "Can join full-time from", p.fullTimeStart, "date")}${field("experience", "Experience summary", p.experience, "textarea", true)}</div></form><form id="answers-form" class="card card-pad stack"><div class="spread"><div><h2>Application answers</h2><p class="muted small">Forms keep asking these. Save them once and autofill uses them. Leave anything blank to answer it yourself each time.</p></div><button class="btn primary sm">Save</button></div><div class="form-grid">${(state.answerFields || []).map((f) => (f.type === "yesno" ? `<div class="field"><label for="ans-${f.id}">${e(f.label)}</label><select id="ans-${f.id}" name="${f.id}" style="width:100%">${["", "Yes", "No"].map((v) => `<option value="${v}" ${(state.answers?.[f.id] || "") === v ? "selected" : ""}>${v || "Ask me each time"}</option>`).join("")}</select></div>` : `<div class="field"><label for="ans-${f.id}">${e(f.label)}</label><input id="ans-${f.id}" name="${f.id}" type="text" placeholder="${e(f.hint || "")}" value="${e(state.answers?.[f.id] || "")}"></div>`)).join("")}</div></form><section class="card card-pad"><h2 style="margin-bottom:10px">Recent activity</h2>${
       state.events
         .filter((ev) => !["preparing", "handoff", "settings"].includes(ev.kind))
@@ -869,7 +874,7 @@ function settingsPage() {
             `<div class="log-row"><span>${e(ev.message)}</span><time>${e(when(ev.created))}</time></div>`,
         )
         .join("") || '<p class="muted small">Nothing yet.</p>'
-    }</section></div><div class="stack"><section class="card card-pad stack"><h2>Daily scan</h2><div class="spread"><div><b>${s.paused ? "Paused" : "On"}</b><div class="muted small">${s.paused ? "Jobs only update when you press Refresh." : state.runtime === "vercel" ? "Runs every morning around 8:30 to 9:30 IST." : `Runs every ${s.intervalHours} hours while the server is on.`}</div></div><button class="switch ${s.paused ? "" : "on"}" data-action="toggle-pause" role="switch" aria-checked="${!s.paused}" aria-label="Daily scan"></button></div><div class="callout">Last scan ${e(when(state.lastDiscovery))}${s.paused ? "" : ` · next ${e(when(state.nextDiscovery))}`}</div></section><section class="card card-pad stack"><h2>Autofill</h2>${extensionCard()}</section><section class="card card-pad stack"><h2>How it works</h2><div class="steps"><div><b>Reads company job boards directly</b>Each company on your list publishes its openings through a public feed. The scan reads those feeds. No AI and no paid API.</div><div><b>Keeps only roles for you</b>Product and Founder’s Office titles plus business-side internships, in India, Dubai or Singapore or remote, that ask for two years of experience or less.</div><div><b>Scores and pairs a resume</b>Each role is scored on fit, sector and city, then paired with your Product or Founder’s Office resume.</div><div><b>Autofill, you press Submit</b>With the Chrome extension, Apply opens the form already filled in with your resume attached. Job sites require a person to press Submit, so that part is yours. The job then moves to Applied by itself.</div></div></section><section class="card card-pad stack"><h2>Account</h2><div class="row"><a class="btn sm" href="/api/export">${icon("download", 14)}Export CSV</a>${state.authEnabled ? '<button class="btn sm" data-action="logout">Sign out</button>' : ""}</div><p class="muted small">Career OS ${e(state.version || "")}</p></section></div></div>`
+    }</section></div><div class="stack"><section class="card card-pad stack"><h2>Scheduled scans</h2><div class="spread"><div><b>${s.paused ? "Paused" : "On"}</b><div class="muted small">${s.paused ? "Jobs only update when you press Refresh." : state.runtime === "vercel" ? "Morning scan around 8:30–9:30 IST. GitHub Actions adds three more scans when configured." : `Runs every ${s.intervalHours} hours while the server is on.`}</div></div><button class="switch ${s.paused ? "" : "on"}" data-action="toggle-pause" role="switch" aria-checked="${!s.paused}" aria-label="Daily scan"></button></div><div class="callout">Last scan ${e(when(state.lastDiscovery))}${s.paused ? "" : ` · ${state.runtime === "vercel" ? "next morning scan" : "next"} ${e(when(state.nextDiscovery))}`}</div></section><section class="card card-pad stack"><h2>Autofill</h2>${extensionCard()}</section><section class="card card-pad stack"><h2>How it works</h2><div class="steps"><div><b>Reads company job boards directly</b>Each company on your list publishes its openings through a public feed. The scan reads those feeds. No AI and no paid API.</div><div><b>Keeps only roles for you</b>Product and Founder’s Office titles plus business-side internships, in India, Dubai or Singapore or remote, that ask for two years of experience or less.</div><div><b>Scores and pairs a resume</b>Each role is scored on fit, sector and city, then paired with your Product or Founder’s Office resume.</div><div><b>Autofill, you press Submit</b>With the Chrome extension, Apply opens the form already filled in with your resume attached. Job sites require a person to press Submit, so that part is yours. The job then moves to Applied by itself.</div></div></section><section class="card card-pad stack"><h2>Account</h2><div class="row"><a class="btn sm" href="/api/export">${icon("download", 14)}Export CSV</a>${state.authEnabled ? '<button class="btn sm" data-action="logout">Sign out</button>' : ""}</div><p class="muted small">Career OS ${e(state.version || "")}</p></section></div></div>`
   );
 }
 
@@ -1134,18 +1139,176 @@ function editAnswers(a, jobId) {
     }
   };
 }
+// Alert text stays in this dialog. Only the reviewed job fields go to the API.
+function alertDrafts(text) {
+  const drafts = [];
+  const seen = new Set();
+  const linkPattern =
+    /\b(?:https?:\/\/|(?:www\.)?ycombinator\.com\/)[^\s<>"\]]+/i;
+  const content = text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(
+      (line) =>
+        line &&
+        !/^(?:from|to|cc|sent|subject|date):|unsubscribe|manage (?:your )?(?:alerts|preferences)|view (?:this )?email|privacy policy/i.test(
+          line,
+        ),
+    );
+  // Some single-job alerts put the link above the job details.
+  const links = content.filter((line) => linkPattern.test(line));
+  if (links.length === 1) {
+    content.splice(content.indexOf(links[0]), 1);
+    content.push(links[0]);
+  }
+  let lines = [];
+  for (const line of content) {
+    const match = line.match(linkPattern);
+    if (!match) {
+      lines.push(line);
+      continue;
+    }
+    const prefix = line.slice(0, match.index).trim();
+    if (
+      prefix &&
+      !/^(?:link|url|view job|apply(?: now)?)[\s:–-]*$/i.test(prefix)
+    )
+      lines.push(prefix);
+    const raw = match[0]
+      .replace(/[.,;]+$/, "")
+      .replace(/\)$/, (s) => (match[0].includes("(") ? s : ""));
+    let url;
+    try {
+      url = new URL(/^https?:\/\//i.test(raw) ? raw : "https://" + raw).href;
+    } catch {
+      continue;
+    }
+    if (seen.has(url)) {
+      lines = [];
+      continue;
+    }
+    seen.add(url);
+    const draft = { originalUrl: url };
+    const free = [];
+    for (const part of lines) {
+      const m = part.match(
+        /^(job title|title|role|company|employer|location|city|type|description)\s*:\s*(.+)$/i,
+      );
+      if (m) {
+        const key =
+          {
+            "job title": "title",
+            role: "title",
+            employer: "company",
+            city: "location",
+            type: "employmentType",
+          }[m[1].toLowerCase()] || m[1].toLowerCase();
+        draft[key] = m[2];
+      } else if (
+        !/job alert|recommended jobs|jobs for you|^hello\b|^hi\b|^view job|^apply now/i.test(
+          part,
+        )
+      )
+        free.push(part);
+    }
+    if (!draft.title && free.length) {
+      const [title, company, location] = free
+        .shift()
+        .split(/\s+(?:at|\||•|@)\s+/i);
+      draft.title = title;
+      if (company) draft.company ||= company;
+      if (location) draft.location ||= location;
+    }
+    if (!draft.company && free.length) {
+      const [company, place] = free.shift().split(/\s+[·•|]\s+/);
+      draft.company = company;
+      if (place) draft.location ||= place;
+    }
+    draft.location ||= free.shift() || "";
+    const type = draft.employmentType || draft.title || "";
+    draft.employmentType = /intern|trainee|apprentice/i.test(type)
+      ? "Internship"
+      : /full[- ]time/i.test(type)
+        ? "Full-time"
+        : "Unknown";
+    drafts.push(draft);
+    lines = [];
+  }
+  return drafts;
+}
+
 function addJob() {
+  let drafts = [];
+  let selected = 0;
   modal(
     "Add a job you found",
-    `<form id="job-form" class="stack">${field("company", "Company", "")}${field("title", "Job title", "")}${field("originalUrl", "Link to the job", "", "url")}${field("location", "Location", "")}<div class="field"><label for="employmentType">Type</label><select id="employmentType" name="employmentType" style="width:100%"><option>Full-time</option><option>Internship</option></select></div>${field("description", "Job description (paste it for a better score)", "", "textarea")}<button class="btn primary block">Add job</button></form>`,
+    `<div class="stack"><div class="field"><label for="alert-text">Paste a job link or job-alert email</label><textarea id="alert-text" rows="4"></textarea></div><button type="button" id="read-alert" class="btn">Fill from paste</button><p class="small muted" id="paste-status" role="status">Links stay unopened. Review the details below before saving.</p><div id="draft-picker"></div></div><form id="job-form" class="stack">${field("company", "Company", "")}${field("title", "Job title", "")}${field("originalUrl", "Link to the job", "", "url")}${field("location", "Location", "")}<div class="field"><label for="employmentType">Type</label><select id="employmentType" name="employmentType" style="width:100%"><option value="Unknown">Not stated</option><option>Full-time</option><option>Internship</option></select></div>${field("description", "Job description (paste it for a better score)", "", "textarea")}<button class="btn primary block">Add job</button></form>`,
   );
+  const keys = [
+    "title",
+    "company",
+    "location",
+    "originalUrl",
+    "employmentType",
+    "description",
+  ];
+  function display(index) {
+    selected = index;
+    const draft = drafts[index];
+    for (const key of keys)
+      $("#" + key).value =
+        draft[key] || (key === "employmentType" ? "Unknown" : "");
+    const picker = $("#draft-picker");
+    picker.innerHTML =
+      drafts.length > 1
+        ? '<label for="alert-job">Job to review</label><select id="alert-job">' +
+          drafts
+            .map(
+              (d, i) =>
+                '<option value="' +
+                i +
+                '">' +
+                e(d.title || d.originalUrl) +
+                "</option>",
+            )
+            .join("") +
+          "</select>"
+        : "";
+    const select = $("#alert-job");
+    if (select) {
+      select.value = String(index);
+      select.onchange = () => {
+        for (const key of keys) drafts[selected][key] = $("#" + key).value;
+        display(Number(select.value));
+      };
+    }
+  }
+  $("#read-alert").onclick = () => {
+    const found = alertDrafts($("#alert-text").value);
+    if (!found.length) {
+      $("#paste-status").textContent =
+        "Include a job link, or fill in the fields below.";
+      return;
+    }
+    drafts = found;
+    display(0);
+    $("#paste-status").textContent =
+      found.length === 1
+        ? "Review the fields and fill in any missing details."
+        : found.length + " jobs found. Review and save each job.";
+  };
   $("#job-form").onsubmit = async (ev) => {
     ev.preventDefault();
     const data = Object.fromEntries(new FormData(ev.target));
     try {
       const r = await api("jobs", data);
       await refresh();
-      openJob(r.id);
+      if (drafts.length > 1) {
+        drafts.splice(selected, 1);
+        display(0);
+        $("#paste-status").textContent =
+          "Job saved. " + drafts.length + " left to review.";
+      } else openJob(r.id);
     } catch (err) {
       toast(err.message);
     }
@@ -1154,7 +1317,7 @@ function addJob() {
 function addSource() {
   modal(
     "Add a company",
-    `<form id="source-form" class="stack"><p class="muted small">Works for companies whose careers page runs on one of these job boards. Open their careers page, click any job and look at the address bar.</p>${field("company", "Company name", "")}<div class="field"><label for="kind">Job board</label><select id="kind" name="kind" style="width:100%"><option value="greenhouse">Greenhouse (boards.greenhouse.io/NAME)</option><option value="lever">Lever (jobs.lever.co/NAME)</option><option value="ashby">Ashby (jobs.ashbyhq.com/NAME)</option><option value="smartrecruiters">SmartRecruiters (jobs.smartrecruiters.com/NAME)</option><option value="workable">Workable (apply.workable.com/NAME)</option><option value="pinpoint">Pinpoint (NAME.pinpointhq.com)</option><option value="bamboohr">BambooHR (NAME.bamboohr.com/careers)</option><option value="rippling">Rippling (ats.rippling.com/NAME/jobs)</option><option value="kula">Kula (careers.kula.ai/NAME)</option><option value="teamtailor">Teamtailor (the careers site address, e.g. careers.example.com)</option></select></div>${field("board", "NAME from that address", "")}<button class="btn primary block">Add company</button></form>`,
+    `<form id="source-form" class="stack"><p class="muted small">Works for companies whose careers page runs on one of these job boards. Open their careers page, click any job and look at the address bar.</p>${field("company", "Company name", "")}<div class="field"><label for="kind">Job board</label><select id="kind" name="kind" style="width:100%"><option value="greenhouse">Greenhouse (boards.greenhouse.io/NAME)</option><option value="lever">Lever (jobs.lever.co/NAME)</option><option value="ashby">Ashby (jobs.ashbyhq.com/NAME)</option><option value="smartrecruiters">SmartRecruiters (jobs.smartrecruiters.com/NAME)</option><option value="recruitee">Recruitee (NAME.recruitee.com)</option><option value="personio">Personio (NAME.jobs.personio.com or full .de board hostname)</option><option value="workable">Workable (apply.workable.com/NAME)</option><option value="pinpoint">Pinpoint (NAME.pinpointhq.com)</option><option value="bamboohr">BambooHR (NAME.bamboohr.com/careers)</option><option value="rippling">Rippling (ats.rippling.com/NAME/jobs)</option><option value="kula">Kula (careers.kula.ai/NAME)</option><option value="teamtailor">Teamtailor (the careers site address, e.g. careers.example.com)</option></select></div>${field("board", "NAME from that address", "")}<button class="btn primary block">Add company</button></form>`,
   );
   $("#source-form").onsubmit = async (ev) => {
     ev.preventDefault();
