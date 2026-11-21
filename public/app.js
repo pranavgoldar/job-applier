@@ -282,6 +282,13 @@ function head(title, sub, actions = "") {
 }
 
 // ---------- jobs ----------
+function officeInternship(job) {
+  return ["On-site", "Hybrid"].includes(job.assessment.internshipWorkplace);
+}
+function workplaceTag(job) {
+  const label = job.assessment.internshipWorkplace;
+  return label ? `<span class="tag">${e(label)}</span>` : "";
+}
 function comparePreferredJobs(a, b) {
   return (
     b.assessment.parts.location - a.assessment.parts.location ||
@@ -323,12 +330,14 @@ function visibleJobs() {
         [j.title, j.company, j.location].join(" ").toLowerCase().includes(q)
       );
     })
-    .sort((a, b) =>
-      filters.sort === "newest"
-        ? String(b.postedAt || b.firstSeen).localeCompare(
-            String(a.postedAt || a.firstSeen),
-          )
-        : comparePreferredJobs(a, b),
+    .sort(
+      (a, b) =>
+        officeInternship(a) - officeInternship(b) ||
+        (filters.sort === "newest"
+          ? String(b.postedAt || b.firstSeen).localeCompare(
+              String(a.postedAt || a.firstSeen),
+            )
+          : comparePreferredJobs(a, b)),
     );
 }
 function jobCard(j) {
@@ -336,7 +345,7 @@ function jobCard(j) {
     [, ring] = fit(m.score),
     a = appFor(j.id),
     sector = sectorOf(j);
-  return `<article class="card job" data-job="${j.id}" tabindex="0" role="button" aria-label="${e(j.title)} at ${e(j.company)}">${logo(j.company)}<div class="job-main"><div class="job-title"><span>${e(j.title)}</span>${isNew(j) ? '<span class="tag new">New</span>' : ""}</div><div class="job-meta">${e(j.company)} · ${e(j.location)}${j.postedAt ? " · posted " + ago(j.postedAt) : ""}</div><div class="tags"><span class="tag ${sector.toLowerCase()}">${sector}</span><span class="tag ${m.track === PRODUCT ? "product" : "founders"}">${e(m.category || j.unsuitable || m.reason)}</span><span class="tag">${e(jobType(j))}</span><span class="tag">${e(experience(j))}</span>${a ? statusTag(a) : ""}${j.closed ? '<span class="tag warn">No longer listed</span>' : j.unsuitable ? '<span class="tag warn">No longer matches</span>' : ""}</div></div><div class="job-side"><div class="score" style="--p:${m.score};--ring:${ring}" title="Match score ${m.score} of 100"><span>${m.score}</span></div><button class="icon-btn ${isSaved(j) ? "on" : ""}" data-save="${j.id}" aria-label="${isSaved(j) ? "Remove from saved" : "Save for later"}" title="${isSaved(j) ? "Saved" : "Save for later"}">${icon("bookmark", 18)}</button>${j.collection === "Dismissed" ? `<button class="icon-btn" data-restore="${j.id}" aria-label="Restore" title="Restore">${icon("undo", 18)}</button>` : `<button class="icon-btn hide-sm" data-dismiss="${j.id}" aria-label="Not interested" title="Not interested">${icon("x", 18)}</button>`}</div></article>`;
+  return `<article class="card job" data-job="${j.id}" tabindex="0" role="button" aria-label="${e(j.title)} at ${e(j.company)}">${logo(j.company)}<div class="job-main"><div class="job-title"><span>${e(j.title)}</span>${isNew(j) ? '<span class="tag new">New</span>' : ""}</div><div class="job-meta">${e(j.company)} · ${e(j.location)}${j.postedAt ? " · posted " + ago(j.postedAt) : ""}</div><div class="tags"><span class="tag ${sector.toLowerCase()}">${sector}</span><span class="tag ${m.track === PRODUCT ? "product" : "founders"}">${e(m.category || j.unsuitable || m.reason)}</span><span class="tag">${e(jobType(j))}</span>${workplaceTag(j)}<span class="tag">${e(experience(j))}</span>${a ? statusTag(a) : ""}${j.closed ? '<span class="tag warn">No longer listed</span>' : j.unsuitable ? `<span class="tag warn">${e(m.historyOnly ? j.unsuitable : "No longer matches")}</span>` : ""}</div></div><div class="job-side"><div class="score" style="--p:${m.score};--ring:${ring}" title="Match score ${m.score} of 100"><span>${m.score}</span></div><button class="icon-btn ${isSaved(j) ? "on" : ""}" data-save="${j.id}" aria-label="${isSaved(j) ? "Remove from saved" : "Save for later"}" title="${isSaved(j) ? "Saved" : "Save for later"}">${icon("bookmark", 18)}</button>${j.collection === "Dismissed" ? `<button class="icon-btn" data-restore="${j.id}" aria-label="Restore" title="Restore">${icon("undo", 18)}</button>` : `<button class="icon-btn hide-sm" data-dismiss="${j.id}" aria-label="Not interested" title="Not interested">${icon("x", 18)}</button>`}</div></article>`;
 }
 function setupBanner() {
   const missing = [PRODUCT, FOUNDERS].filter((t) => !resumeFor(t));
@@ -401,7 +410,7 @@ function jobsPage() {
       ["open", "Open"],
       ["saved", "Saved"],
       ["dismissed", "Hidden"],
-      ["closed", "Closed"],
+      ["closed", "History"],
     ]
       .map(
         ([v, l]) =>
@@ -464,7 +473,7 @@ function applyRow(j) {
   const m = j.assessment,
     sector = sectorOf(j),
     asked = !!j.applyOpened;
-  return `<article class="card job" data-job="${j.id}" tabindex="0" role="button" aria-label="${e(j.title)} at ${e(j.company)}">${logo(j.company)}<div class="job-main"><div class="job-title"><span>${e(j.title)}</span>${isSaved(j) ? '<span class="tag founders">Saved</span>' : ""}</div><div class="job-meta">${e(j.company)} · ${e(j.location)}</div><div class="tags"><span class="tag ${sector.toLowerCase()}">${sector}</span><span class="tag ${m.track === PRODUCT ? "product" : "founders"}">${trackLabel(m.track)} resume</span><span class="tag">${m.score}/100 match</span>${asked ? `<span class="tag warn">Opened ${ago(j.applyOpened)} · did you submit?</span>` : ""}</div></div><div class="job-side">${asked ? `<button class="btn sm" data-mark-applied="${j.id}">${icon("check", 14)}Yes, record it</button><button class="btn ghost sm" data-not-yet="${j.id}">Not yet</button>` : ""}<button class="btn accent sm" data-apply="${j.id}">${icon("external", 14)}${asked ? "Open again" : "Apply"}</button><button class="icon-btn hide-sm" data-dismiss="${j.id}" aria-label="Not interested" title="Not interested">${icon("x", 18)}</button></div></article>`;
+  return `<article class="card job" data-job="${j.id}" tabindex="0" role="button" aria-label="${e(j.title)} at ${e(j.company)}">${logo(j.company)}<div class="job-main"><div class="job-title"><span>${e(j.title)}</span>${isSaved(j) ? '<span class="tag founders">Saved</span>' : ""}</div><div class="job-meta">${e(j.company)} · ${e(j.location)}</div><div class="tags"><span class="tag ${sector.toLowerCase()}">${sector}</span><span class="tag ${m.track === PRODUCT ? "product" : "founders"}">${trackLabel(m.track)} resume</span>${workplaceTag(j)}<span class="tag">${m.score}/100 match</span>${asked ? `<span class="tag warn">Opened ${ago(j.applyOpened)} · did you submit?</span>` : ""}</div></div><div class="job-side">${asked ? `<button class="btn sm" data-mark-applied="${j.id}">${icon("check", 14)}Yes, record it</button><button class="btn ghost sm" data-not-yet="${j.id}">Not yet</button>` : ""}<button class="btn accent sm" data-apply="${j.id}">${icon("external", 14)}${asked ? "Open again" : "Apply"}</button><button class="icon-btn hide-sm" data-dismiss="${j.id}" aria-label="Not interested" title="Not interested">${icon("x", 18)}</button></div></article>`;
 }
 function applicationsPage() {
   const apps = state.applications
@@ -472,6 +481,7 @@ function applicationsPage() {
       .filter(([j]) => j),
     todo = openJobs().sort(
       (a, b) =>
+        officeInternship(a) - officeInternship(b) ||
         !!b.applyOpened - !!a.applyOpened ||
         isSaved(b) - isSaved(a) ||
         comparePreferredJobs(a, b),
@@ -720,6 +730,7 @@ function uploadResume(file) {
 
 // ---------- companies ----------
 function companyStatus(c) {
+  if (c.sourceHealth === "Manual") return ["", "Manual check", c.sourceError];
   if (!c.sourceId) return ["manual", "Check manually", ""];
   if (!c.sourceEnabled) return ["", "Paused", ""];
   if (c.sourceHealth === "Error")
@@ -971,7 +982,7 @@ function openJob(id) {
   sheet(
     "drawer",
     j.title,
-    `<header class="sheet-head"><div class="spread" style="margin-bottom:12px"><span class="tag" style="color:${fitColor}">${fitLabel} · ${m.score}/100</span><button class="icon-btn" data-close aria-label="Close">${icon("x")}</button></div><div class="hero">${logo(j.company)}<div><h2>${e(j.title)}</h2><div class="muted" style="margin-top:3px">${e(j.company)} · ${e(j.location)}</div></div></div><div class="tags" style="margin-top:12px">${a ? statusTag(a) : ""}<span class="tag ${sector.toLowerCase()}">${sector}</span><span class="tag">${e(m.category || j.unsuitable || m.reason)}</span><span class="tag">${e(jobType(j))}</span><span class="tag">${e(experience(j))}</span>${m.employmentType === "Full-time" ? '<span class="tag">' + (m.startDate ? "Start date " + e(m.startDate) : "Start date not stated") + "</span>" : ""}${isRemote(j) ? '<span class="tag">Remote</span>' : ""}${j.postedAt ? `<span class="tag">Posted ${ago(j.postedAt)}</span>` : ""}${j.closed ? '<span class="tag warn">No longer listed</span>' : j.unsuitable ? '<span class="tag warn">No longer matches</span>' : ""}</div><div class="row" style="margin-top:16px">${canApply ? `<button class="btn accent" style="flex:1" data-apply="${id}">${icon("external", 15)}${extVersion() ? "Apply with autofill" : "Apply on company site"}</button>` : `<a class="btn" style="flex:1" href="${e(j.applyUrl || j.originalUrl)}" target="_blank" rel="noopener noreferrer">${icon("external", 15)}Open job page</a>`}${a ? "" : `<button class="btn" data-prepare="${id}">Prepare packet</button><button class="btn" data-mark-applied="${id}">${icon("check", 15)}I applied</button>`}<button class="icon-btn ${isSaved(j) ? "on" : ""}" data-save="${id}" aria-label="${isSaved(j) ? "Remove from saved" : "Save for later"}">${icon("bookmark", 18)}</button></div></header><div class="sheet-body">${j.unsuitable ? `<div class="callout" style="margin-bottom:18px">Still listed, but it changed: ${e(j.unsuitable)}</div>` : ""}${
+    `<header class="sheet-head"><div class="spread" style="margin-bottom:12px"><span class="tag" style="color:${fitColor}">${fitLabel} · ${m.score}/100</span><button class="icon-btn" data-close aria-label="Close">${icon("x")}</button></div><div class="hero">${logo(j.company)}<div><h2>${e(j.title)}</h2><div class="muted" style="margin-top:3px">${e(j.company)} · ${e(j.location)}</div></div></div><div class="tags" style="margin-top:12px">${a ? statusTag(a) : ""}<span class="tag ${sector.toLowerCase()}">${sector}</span><span class="tag">${e(m.category || j.unsuitable || m.reason)}</span><span class="tag">${e(jobType(j))}</span>${workplaceTag(j)}<span class="tag">${e(experience(j))}</span>${m.employmentType === "Full-time" ? '<span class="tag">' + (m.startDate ? "Start date " + e(m.startDate) : "Start date not stated") + "</span>" : ""}${isRemote(j) ? '<span class="tag">Remote</span>' : ""}${j.postedAt ? `<span class="tag">Posted ${ago(j.postedAt)}</span>` : ""}${j.closed ? '<span class="tag warn">No longer listed</span>' : j.unsuitable ? `<span class="tag warn">${e(m.historyOnly ? j.unsuitable : "No longer matches")}</span>` : ""}</div><div class="row" style="margin-top:16px">${canApply ? `<button class="btn accent" style="flex:1" data-apply="${id}">${icon("external", 15)}${extVersion() ? "Apply with autofill" : "Apply on company site"}</button>` : `<a class="btn" style="flex:1" href="${e(j.applyUrl || j.originalUrl)}" target="_blank" rel="noopener noreferrer">${icon("external", 15)}Open job page</a>`}${a ? "" : `<button class="btn" data-prepare="${id}">Prepare packet</button><button class="btn" data-mark-applied="${id}">${icon("check", 15)}I applied</button>`}<button class="icon-btn ${isSaved(j) ? "on" : ""}" data-save="${id}" aria-label="${isSaved(j) ? "Remove from saved" : "Save for later"}">${icon("bookmark", 18)}</button></div></header><div class="sheet-body">${j.unsuitable ? `<div class="callout" style="margin-bottom:18px">Reason hidden: ${e(j.unsuitable)}</div>` : ""}${
       a
         ? packetSections(j, a)
         : `<section><h3>Resume to send</h3>${

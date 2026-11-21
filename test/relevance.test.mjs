@@ -99,10 +99,10 @@ test("internship eligibility respects the remote workplace and real allowed coun
     }
   }
   for (const override of [
-    { location: "Bengaluru" },
+    { location: "Hyderabad" },
     { location: "Remote" },
     { location: "Remote – Singapore" },
-    { location: "Bengaluru (Remote)", workplaceType: "Hybrid" },
+    { location: "Hyderabad (Remote)", workplaceType: "Hybrid" },
     { location: "Remote India", remoteCountries: ["France"] },
     { location: "Remote India", description: "Must be located in Canada." },
   ])

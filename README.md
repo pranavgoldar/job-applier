@@ -142,3 +142,9 @@ See [TEST-RESULTS.md](TEST-RESULTS.md). Cloud integration tests use the real lib
 - `scripts/migrate-to-cloud.mjs`: private data transfer into an empty cloud app.
 - `public/`: responsive browser app.
 - `extension/`: Chrome extension that fills application forms; `src/answers.mjs` lists the saved answers it can use.
+
+### YC hiring directories
+
+With express YC permission for automated extraction, set `YC_DISCOVERY_AUTHORIZED=true`. YC's [terms of use](https://www.ycombinator.com/legal#tou) govern these reads. The scanner uses the location and industry hiring paths allowed by [robots.txt](https://www.ycombinator.com/robots.txt). It skips company query-search URLs. It reads the hiring directories on each scan, deduplicates employers across directories, and checks their published company pages using the shared job matcher. Individual boards report success or failure independently. Hosted scans add new company reads to the durable queue. All YC requests use the app's identifying User-Agent and leave at least half a second between reads.
+
+Internships open to remote work from India appear first. On-site and hybrid internships are eligible in Bangalore and Mumbai and show their workplace on each card. Otherwise-matching on-site internships elsewhere appear in History with the reason.

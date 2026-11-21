@@ -1,3 +1,9 @@
+import {
+  ycProps,
+  readYC,
+  hiringCompanies,
+  canScanSource,
+} from "./yc-discovery.mjs";
 import { uuid, now } from "./ids.mjs";
 import {
   assess,
@@ -222,46 +228,76 @@ function normalizePinpoint(source, body) {
 }
 // A YC company page carries its data, including open roles, as JSON in the HTML.
 export function ycPage(htmlText) {
-  const m = String(htmlText).match(/data-page="([^"]+)"/);
-  if (!m) throw new Error("Unexpected source schema; jobs were not changed");
-  const props = JSON.parse(plainEntities(m[1])).props || {};
-  if (!props.company)
+  const props = ycProps(htmlText);
+  if (!props?.company)
     throw new Error("Unexpected source schema; jobs were not changed");
   return props;
 }
-const plainEntities = (s) =>
-  s
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;|&#x27;/g, "'")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&amp;/g, "&");
 function normalizeYC(source, props) {
-  return (props.jobPostings || []).map((j) => ({
-    ...base(source),
-    title: j.title,
-    location: String(j.location || "Unknown").split(" / ")[0],
-    // The listing page gives facts, not the full write-up.
-    description: plain(
-      [
-        j.prettyRole && "Role: " + j.prettyRole + ".",
-        j.minExperience && "Minimum experience: " + j.minExperience + ".",
-        j.salaryRange && "Salary: " + j.salaryRange + ".",
-        props.company.one_liner,
-      ]
-        .filter(Boolean)
-        .join(" "),
-    ),
-    descriptionPartial: true,
-    employmentType: j.type || "Unknown",
-    isRemote: /remote/i.test(j.location || ""),
-    originalUrl: "https://www.ycombinator.com" + j.url,
-    applyUrl: null,
-    sourceId: String(j.id),
-    postedAt: null,
-    compensation: j.salaryRange || null,
-    activeEvidence: "Listed on the company’s Y Combinator page",
-  }));
+  if (!props?.company || !Array.isArray(props.jobPostings))
+    throw new Error("YC company job list incomplete");
+  return props.jobPostings.map((j) => {
+    if (
+      !j.id ||
+      !j.title ||
+      !/^\/companies\/[a-z0-9-]+\/jobs\/[^/?#]+/.test(j.url || "")
+    )
+      throw new Error("Incomplete YC job posting");
+    const parts = String(j.location || "Unknown").split(" / ");
+    const first = parts[0];
+    // YC repeats city/state abbreviations in long form. Keep distinct places
+    // and every remote restriction instead of dropping everything after city one.
+    const locations = parts.filter(
+      (part, i) =>
+        !i ||
+        !(
+          part.split(",").length >= 3 &&
+          part.split(",")[0] === first.split(",")[0] &&
+          part.split(",").at(-1) === first.split(",").at(-1)
+        ),
+    );
+    const titleRemoteIndia =
+      /India\s*\/\s*Remote|Remote\s*[-–/,(]\s*India/i.test(j.title);
+    const remoteList = String(j.location || "").match(
+      /Remote\s*\(([^)]+)\)/i,
+    )?.[1];
+    const remoteCountries = remoteList?.split(",").map((c) => c.trim());
+    if (
+      titleRemoteIndia &&
+      !remoteCountries &&
+      !locations.some((l) => /remote.*india|india.*remote/i.test(l))
+    )
+      locations.push("Remote – India");
+    const exp = /^Any(?:\s*\(new grads ok\))?$/i.test(j.minExperience || "")
+      ? "No experience required"
+      : j.minExperience;
+    return {
+      ...base(source),
+      company: props.company.name || source.company,
+      title: j.title,
+      location: locations.join(" / "),
+      description: plain(
+        [
+          j.prettyRole && "Role: " + j.prettyRole + ".",
+          exp && "Minimum experience: " + exp + ".",
+          j.salaryRange && "Salary: " + j.salaryRange + ".",
+          props.company.one_liner,
+        ]
+          .filter(Boolean)
+          .join(" "),
+      ),
+      descriptionPartial: true,
+      employmentType: j.type || "Unknown",
+      isRemote: /remote/i.test(locations.join(" ")),
+      ...(remoteCountries ? { remoteCountries } : {}),
+      originalUrl: "https://www.ycombinator.com" + j.url,
+      applyUrl: null,
+      sourceId: String(j.id),
+      postedAt: null,
+      compensation: j.salaryRange || null,
+      activeEvidence: "Listed on the company’s Y Combinator page",
+    };
+  });
 }
 export function normalize(source, body) {
   if (source.kind === "pinpoint")
@@ -357,13 +393,18 @@ export async function upsertJobs(store, jobs, profile) {
         // What the person did with this job survives every re-scan.
         ...(previous.collection ? { collection: previous.collection } : {}),
         ...(previous.applyOpened ? { applyOpened: previous.applyOpened } : {}),
-        ...(previous.closed || previous.unsuitable
+        ...(previous.closed || (previous.unsuitable && !assessment.unsuitable)
           ? { reopenedAt: now() }
           : previous.reopenedAt
             ? { reopenedAt: previous.reopenedAt }
             : {}),
         assessment,
-        ...(assessment.unsuitable ? { unsuitable: assessment.unsuitable } : {}),
+        ...(assessment.unsuitable
+          ? {
+              unsuitable: assessment.unsuitable,
+              unsuitableSince: previous.unsuitableSince || now(),
+            }
+          : {}),
       };
     statements.push({
       sql: "INSERT INTO jobs VALUES (?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data,last_checked=excluded.last_checked ON CONFLICT(canonical) DO UPDATE SET data=excluded.data,last_checked=excluded.last_checked",
@@ -503,11 +544,11 @@ export async function addSmartRecruitersDescriptions(
 export async function discover(
   store,
   fetcher = fetch,
-  { sourceIds = null, deadline = Infinity } = {},
+  { sourceIds = null, deadline = Infinity, queueNewSources = false } = {},
 ) {
   const sources = (
     await store.all("SELECT * FROM sources WHERE enabled=1")
-  ).filter((s) => !sourceIds || sourceIds.includes(s.id));
+  ).filter((s) => canScanSource(s) && (!sourceIds || sourceIds.includes(s.id)));
   const profile = await store.config("profile", initialProfile);
   let count = 0;
   const targets = await store.config("companyWatchlist", []);
@@ -522,6 +563,57 @@ export async function discover(
         // False when the board could not be read to the end, so absence of a
         // posting proves nothing.
         complete = true;
+      if (s.kind === "yc-directory") {
+        const companies = await hiringCompanies(
+          store,
+          s.board,
+          fetcher,
+          deadline,
+        );
+        const existing = new Set(
+          (
+            await store.all(
+              "SELECT board FROM sources WHERE kind='ycombinator'",
+            )
+          ).map((row) => row.board),
+        );
+        for (const [board, company] of companies) {
+          if (existing.has(board)) continue;
+          if (Date.now() + 1000 >= deadline)
+            throw Object.assign(
+              new Error("Directory waiting for the next scan window"),
+              { deferred: true },
+            );
+          const id = "yc-company-" + board;
+          const added = await store.transaction(async (tx) => {
+            const row = await tx.get(
+              "INSERT OR IGNORE INTO sources(id,kind,company,board) SELECT ?,'ycombinator',?,? WHERE NOT EXISTS(SELECT 1 FROM sources WHERE kind='ycombinator' AND board=?) RETURNING *",
+              id,
+              company,
+              board,
+              board,
+            );
+            if (row && queueNewSources)
+              await tx.enqueue("discovery-source", { sourceId: id });
+            return row;
+          });
+          if (added && !queueNewSources) sources.push(added);
+        }
+        await store.run(
+          "UPDATE sources SET health='Healthy',last_run=?,error=NULL,count=0 WHERE id=?",
+          now(),
+          s.id,
+        );
+        await store.event(
+          null,
+          "discovery",
+          s.company +
+            ": checked directory, " +
+            companies.size +
+            " company boards listed.",
+        );
+        continue;
+      }
       if (s.kind === "lever") {
         for (let skip = 0; skip < 2000; skip += 100) {
           const body = await fetchJSON(
@@ -566,7 +658,7 @@ export async function discover(
       } else if (s.kind === "ycombinator") {
         jobs = normalize(
           s,
-          await fetchJSON(sourceURL(s), fetcher, { deadline, text: true }),
+          await readYC(store, sourceURL(s), fetcher, deadline),
         );
       } else if (s.kind === "smartrecruiters") {
         // Ask the board only for the three target countries instead of every posting.
@@ -596,7 +688,11 @@ export async function discover(
         jobs.map((job) => [job, assess(job, profile)]),
       );
       const relevant = jobs.filter((job) => !assessments.get(job).unsuitable);
-      const kept = new Set(await upsertJobs(store, relevant, profile));
+      const retained = jobs.filter((job) => {
+        const a = assessments.get(job);
+        return !a.unsuitable || a.historyOnly;
+      });
+      const kept = new Set(await upsertJobs(store, retained, profile));
       // Two separate questions for every job stored from this source:
       //   1. Is the posting still on the board?  (presence, from ALL postings)
       //   2. Does it still fit the search?       (suitability)
@@ -675,6 +771,7 @@ export async function discover(
         `${s.company}: read ${jobs.length} postings${complete ? "" : " (partial read)"}, ${matches} match${matches === 1 ? "" : "es"}${dropped ? `, ${dropped} still listed but no longer matching` : ""}${closed ? `, ${closed} no longer listed` : ""}.`,
       );
     } catch (e) {
+      if (e.deferred && queueNewSources) throw e;
       await store.run(
         "UPDATE sources SET health=?,last_run=?,error=? WHERE id=?",
         "Error",
