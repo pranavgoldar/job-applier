@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { runCloudQueue } from "../src/cloud-worker.mjs";
 import { Store } from "../src/store.mjs";
 import { readEmployerFeed } from "../src/employer-feeds.mjs";
 import { discover, sourceURL } from "../src/connectors.mjs";
@@ -83,7 +84,13 @@ test("only a complete Teamtailor scan may close an existing posting", async (t) 
   const [job] = await store.jobs();
   assert.equal(job.sourceId, "101");
   assert.equal(job.isRemote, true);
-  for (const broken of [null, "<rss><channel>", fullPage, rss("<item/>")]) {
+  for (const broken of [
+    null,
+    "<rss><channel>",
+    fullPage,
+    rss("<item/>"),
+    rss("<error>Listing temporarily unavailable</error>"),
+  ]) {
     lastPage = broken;
     await discover(store, fetcher);
     assert.equal(
@@ -92,6 +99,14 @@ test("only a complete Teamtailor scan may close an existing posting", async (t) 
     );
     assert.ok(!(await store.jobs())[0].closed);
   }
+  await store.enqueue("discovery-source", { sourceId: "board" });
+  const result = await runCloudQueue(store, {
+    fetcher,
+    budgetMs: 5000,
+    concurrency: 1,
+  });
+  assert.deepEqual(result, { completed: 0, failed: 1, queued: 0 });
+  assert.equal((await store.jobs())[0].closed, undefined);
   lastPage = rss("");
   await discover(store, fetcher);
   assert.equal((await store.jobs())[0].closed, true);

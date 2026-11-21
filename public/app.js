@@ -816,7 +816,10 @@ function companiesPage() {
           (b.sourceCount || 0) - (a.sourceCount || 0) ||
           a.name.localeCompare(b.name),
       ),
-    auto = all.filter(scannable).length,
+    employers = all.filter(
+      (c) => c.group !== "Job feed" && c.connector?.kind !== "himalayas",
+    ),
+    auto = employers.filter(scannable).length,
     coverage = (category, label) => {
       const counts = all.map((c) => matches(c, category)).filter(Boolean);
       const n = counts.reduce((a, b) => a + b, 0);
@@ -825,7 +828,7 @@ function companiesPage() {
   return (
     head(
       "Companies",
-      `${auto} companies have a connected job feed. ${all.length - auto} need a manual visit.`,
+      `${auto} companies have a connected job feed. ${employers.length - auto} need a manual visit.`,
       `<button class="btn primary" data-action="add-source">${icon("plus", 15)}Add company</button>`,
     ) +
     `<div class="stats">${coverage("Product management", "Product / APM")}${coverage("Strategy & Operations", "Strategy & Operations")}${coverage(FOUNDERS, FOUNDERS)}</div>` +

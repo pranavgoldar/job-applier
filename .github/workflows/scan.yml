@@ -25,4 +25,4 @@ jobs:
           curl --silent --show-error --fail --max-time 310 \
             --header "Authorization: Bearer ${CRON_SECRET}" \
             https://job-applier-beta.vercel.app/api/cron |
-            jq -e 'if .paused == true then {paused} elif (.completed | type) == "number" and (.queued | type) == "number" then {completed, queued} else error("Unexpected scan response") end'
+            jq -se 'if length != 1 then error("Expected one scan response") else .[0] end | if .paused == true then {paused} elif (.completed | type) == "number" and (.failed | type) == "number" and (.queued | type) == "number" then {completed, failed, queued} else error("Unexpected scan response") end'

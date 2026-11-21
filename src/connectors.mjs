@@ -1031,6 +1031,10 @@ export async function discover(
         "connector_error",
         `${s.company}: connector failed. Existing jobs remain unchanged.`,
       );
+      if (queueNewSources) {
+        await store.set("lastDiscovery", now());
+        throw e;
+      }
     }
   }
   await store.set("lastDiscovery", now());

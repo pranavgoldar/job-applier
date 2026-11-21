@@ -185,6 +185,29 @@ export function parseEmployerPage(source, xml) {
     throw new Error("Unrecognized employer feed");
   const entries = children(container, records);
   if (
+    rss &&
+    !entries.length &&
+    container.children.some(
+      (n) =>
+        ![
+          "title",
+          "description",
+          "link",
+          "language",
+          "pubdate",
+          "lastbuilddate",
+          "generator",
+          "ttl",
+          "image",
+          "copyright",
+          "docs",
+          "category",
+          "next",
+        ].includes(n.name),
+    )
+  )
+    throw new Error("Unrecognized empty RSS page");
+  if (
     !rss &&
     container.children.some((n) => ![records, "link", "next"].includes(n.name))
   )
@@ -207,7 +230,8 @@ export function parseEmployerPage(source, xml) {
     (n) => n.attributes.rel === "next",
   );
   const next = link?.attributes.href || value(container, "next");
-  if (link && !next) throw new Error("Invalid continuation link");
+  if ((link || child(container, "next")) && !next)
+    throw new Error("Invalid continuation link");
   return { jobs, next };
 }
 export async function readEmployerFeed(source, readPage, deadline = Infinity) {
