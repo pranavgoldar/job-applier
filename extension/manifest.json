@@ -1,10 +1,12 @@
 {
   "manifest_version": 3,
   "name": "Career OS Autofill",
-  "version": "2.0.0",
-  "description": "Fills job application forms from your Career OS dashboard. You review and press Submit yourself.",
-  "permissions": ["storage", "activeTab", "scripting"],
-  "background": { "service_worker": "background.js" },
+  "version": "2.1.0",
+  "description": "Fills job application forms from your Career OS dashboard, on any job site. You review and press Submit yourself.",
+  "permissions": ["storage", "activeTab", "scripting", "webNavigation"],
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
     "default_popup": "popup.html",
     "default_title": "Career OS Autofill"
@@ -18,21 +20,7 @@
       ],
       "js": ["bridge.js"],
       "run_at": "document_start"
-    },
-    {
-      "matches": [
-        "https://jobs.lever.co/*",
-        "https://boards.greenhouse.io/*",
-        "https://job-boards.greenhouse.io/*",
-        "https://boards.eu.greenhouse.io/*",
-        "https://job-boards.eu.greenhouse.io/*",
-        "https://jobs.ashbyhq.com/*",
-        "https://jobs.smartrecruiters.com/*",
-        "https://apply.workable.com/*"
-      ],
-      "js": ["fill.js", "content.js"],
-      "run_at": "document_idle",
-      "all_frames": true
     }
-  ]
+  ],
+  "host_permissions": ["<all_urls>"]
 }

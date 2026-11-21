@@ -20,6 +20,12 @@ export const docs = {
   smartrecruiters: "https://developers.smartrecruiters.com/docs/posting-api",
   workable: "https://workable.readme.io/reference/jobs",
   pinpoint: "https://developers.pinpointhq.com/docs/job-postings",
+  teamtailor:
+    "https://support.teamtailor.com/en/articles/11171756-rss-feed-how-to-guide",
+  // The public job list behind the employer's own BambooHR careers page.
+  bamboohr: "https://www.bamboohr.com/applicant-tracking/careers-page",
+  // The public job board behind the employer's own Rippling careers page.
+  rippling: "https://www.rippling.com/recruiting",
   ycombinator: "https://www.ycombinator.com/companies",
 };
 // Company boards a user can add by name.
@@ -39,9 +45,15 @@ export function sourceURL(source) {
   const validBoard =
     source.kind === "ashby"
       ? /^[a-zA-Z0-9_.-]{1,100}$/
-      : source.kind === "pinpoint" || source.kind === "ycombinator"
+      : source.kind === "pinpoint" ||
+          source.kind === "ycombinator" ||
+          source.kind === "bamboohr" ||
+          source.kind === "rippling"
         ? /^[a-z0-9-]{1,80}$/
-        : /^[a-zA-Z0-9_-]{1,100}$/;
+        : source.kind === "teamtailor"
+          ? // A careers-site host name, e.g. careers.example.com or example.teamtailor.com
+            /^(?=.{4,120}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}$/
+          : /^[a-zA-Z0-9_-]{1,100}$/;
   if (
     typeof source.board !== "string" ||
     source.board.includes("..") ||
@@ -62,6 +74,18 @@ export function sourceURL(source) {
       return `https://apply.workable.com/api/v1/widget/accounts/${b}?details=true`;
     case "pinpoint":
       return `https://${b}.pinpointhq.com/postings.json`;
+    case "teamtailor":
+      if (
+        /(?:^|\.)(?:local|localhost|internal|lan|home|corp|test|example|invalid)$/.test(
+          source.board,
+        )
+      )
+        throw new Error("Invalid board identifier");
+      return `https://${source.board}/jobs.rss`;
+    case "bamboohr":
+      return `https://${b}.bamboohr.com/careers/list`;
+    case "rippling":
+      return `https://ats.rippling.com/api/v2/board/${b}/jobs?page=0`;
     case "ycombinator":
       return `https://www.ycombinator.com/companies/${b}`;
     case "himalayas":
@@ -219,7 +243,8 @@ function normalizePinpoint(source, body) {
       isRemote: remote,
       workplaceType: j.workplace_type,
       originalUrl: j.url,
-      applyUrl: j.url || null,
+      // The posting page only links to the form; open the form itself.
+      applyUrl: j.url ? j.url.replace(/\/?$/, "/applications/new") : null,
       sourceId: String(j.id),
       postedAt: null,
       compensation: null,
@@ -299,7 +324,126 @@ function normalizeYC(source, props) {
     };
   });
 }
+const xmlText = (s = "") =>
+  s
+    .replace(/^<!\[CDATA\[([\s\S]*)\]\]>$/, "$1")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&amp;/g, "&")
+    .trim();
+const tag = (block, name) =>
+  xmlText(
+    (block.match(new RegExp(`<${name}>([\\s\\S]*?)</${name}>`)) || [])[1] || "",
+  );
+// Teamtailor's public RSS feed: one <item> per published job.
+export function teamtailorItems(xml) {
+  if (!/<rss[\s>]/.test(String(xml)))
+    throw new Error("Unexpected source schema; jobs were not changed");
+  return [...String(xml).matchAll(/<item>([\s\S]*?)<\/item>/g)].map(
+    (m) => m[1],
+  );
+}
+function normalizeTeamtailor(source, xml) {
+  return teamtailorItems(xml).map((item) => {
+    const places = [
+        ...item.matchAll(/<tt:location>([\s\S]*?)<\/tt:location>/g),
+      ].map((m) =>
+        joined(
+          tag(m[1], "tt:city") || tag(m[1], "tt:name"),
+          tag(m[1], "tt:country"),
+        ),
+      ),
+      remote = tag(item, "remoteStatus").toLowerCase(),
+      link = tag(item, "link");
+    return {
+      ...base(source),
+      title: tag(item, "title"),
+      location:
+        joined(places, remote === "fully" ? "Remote" : "") ||
+        (remote === "fully" ? "Remote" : "Unknown"),
+      description: plain(tag(item, "description")).slice(0, 12000),
+      employmentType: "Unknown",
+      isRemote: remote === "fully",
+      originalUrl: link,
+      applyUrl: link ? link.replace(/\/?$/, "/applications/new") : null,
+      sourceId: tag(item, "guid") || link,
+      postedAt: tag(item, "pubDate")
+        ? new Date(tag(item, "pubDate")).toISOString()
+        : null,
+      compensation: null,
+    };
+  });
+}
+function normalizeBamboo(source, body) {
+  if (!Array.isArray(body?.result))
+    throw new Error("Unexpected source schema; jobs were not changed");
+  return body.result.map((j) => {
+    const l = j.location || {},
+      a = j.atsLocation || {},
+      remote = j.isRemote === true || String(j.locationType) === "1",
+      url = `https://${source.board}.bamboohr.com/careers/${encodeURIComponent(j.id)}`;
+    return {
+      ...base(source),
+      title: j.jobOpeningName,
+      location:
+        joined(
+          l.city || a.city,
+          l.state || a.state,
+          a.country,
+          remote ? "Remote" : "",
+        ) || "Unknown",
+      description: "",
+      descriptionPartial: true,
+      employmentType: j.employmentStatusLabel || "Unknown",
+      isRemote: remote,
+      originalUrl: url,
+      applyUrl: url,
+      sourceId: String(j.id),
+      postedAt: null,
+      compensation: null,
+    };
+  });
+}
+function normalizeRippling(source, body) {
+  if (!Array.isArray(body?.items))
+    throw new Error("Unexpected source schema; jobs were not changed");
+  return body.items.map((j) => {
+    const places = (j.locations || []).map((l) =>
+        l.workplaceType === "REMOTE"
+          ? joined("Remote", l.country)
+          : l.name || joined(l.city, l.country),
+      ),
+      remote = (j.locations || []).some((l) => l.workplaceType === "REMOTE");
+    return {
+      ...base(source),
+      title: j.name,
+      location: joined(places) || "Unknown",
+      // The public board lists titles and places; the write-up is on the job page.
+      description: j.department?.name ? "Department: " + j.department.name : "",
+      descriptionPartial: true,
+      employmentType: "Unknown",
+      isRemote: remote,
+      originalUrl: j.url,
+      applyUrl: j.url ? j.url.replace(/\/?$/, "/apply") : null,
+      sourceId: String(j.id),
+      postedAt: null,
+      compensation: null,
+    };
+  });
+}
 export function normalize(source, body) {
+  if (source.kind === "teamtailor")
+    return normalizeTeamtailor(source, body).filter(
+      (j) => j.title && j.originalUrl,
+    );
+  if (source.kind === "bamboohr")
+    return normalizeBamboo(source, body).filter((j) => j.title);
+  if (source.kind === "rippling")
+    return normalizeRippling(source, body).filter(
+      (j) => j.title && j.originalUrl,
+    );
   if (source.kind === "pinpoint")
     return normalizePinpoint(source, body).filter(
       (j) => j.title && j.originalUrl,
@@ -541,6 +685,58 @@ export async function addSmartRecruitersDescriptions(
   }
   return fetched;
 }
+// The BambooHR list has titles and places only. Read the posting itself for
+// jobs that could fit, reusing descriptions stored by earlier scans.
+export async function addBambooDetails(
+  store,
+  source,
+  jobs,
+  fetcher = fetch,
+  deadline = Infinity,
+  limit = 25,
+) {
+  const stored = new Map(
+    (
+      await store.all("SELECT source_id,data FROM jobs WHERE source='bamboohr'")
+    ).map((r) => [r.source_id, JSON.parse(r.data)]),
+  );
+  let fetched = 0;
+  for (const job of jobs) {
+    if (blockedTitle(job)) continue;
+    const old = stored.get(job.sourceId);
+    if (old && !old.descriptionPartial && old.description) {
+      Object.assign(job, {
+        description: old.description,
+        descriptionPartial: false,
+        postedAt: old.postedAt,
+      });
+      continue;
+    }
+    if (fetched >= limit) continue;
+    fetched++;
+    try {
+      const d =
+        (
+          await fetchJSON(
+            `https://${source.board}.bamboohr.com/careers/${encodeURIComponent(job.sourceId)}/detail`,
+            fetcher,
+            { deadline },
+          )
+        )?.result?.jobOpening || {};
+      if (d.description) {
+        job.description = plain(d.description).slice(0, 12000);
+        job.descriptionPartial = false;
+      }
+      if (d.location?.addressCountry)
+        job.location = joined(job.location, d.location.addressCountry);
+      if (d.datePosted) job.postedAt = new Date(d.datePosted).toISOString();
+    } catch {
+      // Keep the list entry as it is.
+    }
+    await new Promise((r) => setTimeout(r, 150));
+  }
+  return fetched;
+}
 export async function discover(
   store,
   fetcher = fetch,
@@ -660,6 +856,40 @@ export async function discover(
           s,
           await readYC(store, sourceURL(s), fetcher, deadline),
         );
+      } else if (s.kind === "teamtailor") {
+        // The feed shows up to 100 jobs per page; read every page.
+        const seen = new Set();
+        for (let page = 1; page <= 10; page++) {
+          const rows = normalize(
+            s,
+            await fetchJSON(
+              sourceURL(s) + (page > 1 ? "?page=" + page : ""),
+              fetcher,
+              { deadline, text: true },
+            ),
+          ).filter((j) => !seen.has(j.sourceId) && seen.add(j.sourceId));
+          jobs.push(...rows);
+          if (rows.length < 100) break;
+          if (page === 10) complete = false;
+          await new Promise((r) => setTimeout(r, 300));
+        }
+      } else if (s.kind === "bamboohr") {
+        const body = await fetchJSON(sourceURL(s), fetcher, { deadline });
+        jobs = normalize(s, body);
+        if (Number(body?.meta?.totalCount) > jobs.length) complete = false;
+        await addBambooDetails(store, s, jobs, fetcher, deadline);
+      } else if (s.kind === "rippling") {
+        for (let page = 0; page < 20; page++) {
+          const body = await fetchJSON(
+            sourceURL(s).replace("page=0", "page=" + page),
+            fetcher,
+            { deadline },
+          );
+          jobs.push(...normalize(s, body));
+          if (page + 1 >= Number(body.totalPages || 1)) break;
+          if (page === 19) complete = false;
+          await new Promise((r) => setTimeout(r, 250));
+        }
       } else if (s.kind === "smartrecruiters") {
         // Ask the board only for the three target countries instead of every posting.
         for (const country of ["in", "ae", "sg"])

@@ -567,11 +567,16 @@ function ext(message) {
 }
 // Jobs the extension saw you submit. Recorded as "browser-detected", with the
 // resume the extension attached. If it attached none, you confirm it yourself.
-function collectResults(results = []) {
+async function collectResults(results = []) {
   if (!state || !results.length) return;
+  // A job the page has not loaded yet (added since it opened): reload first.
+  if (results.some((r) => !jobFor(r.jobId))) await refresh(false);
+  const handled = [];
   for (const r of results) {
     const j = jobFor(r.jobId);
-    if (!j || isApplied(appFor(j.id))) continue;
+    if (!j) continue; // Keep the report in the extension; try again later.
+    handled.push(r.jobId);
+    if (isApplied(appFor(j.id))) continue;
     if (r.resumeId)
       act(
         () =>
@@ -589,7 +594,7 @@ function collectResults(results = []) {
         `It looks like you applied to ${j.company}. Record it under Applications so the resume you sent is saved.`,
       );
   }
-  ext({ type: "ack", jobIds: results.map((r) => r.jobId) }).catch(() => {});
+  if (handled.length) ext({ type: "ack", jobIds: handled }).catch(() => {});
 }
 const askResults = () =>
   extVersion() &&
@@ -1149,7 +1154,7 @@ function addJob() {
 function addSource() {
   modal(
     "Add a company",
-    `<form id="source-form" class="stack"><p class="muted small">Works for companies whose careers page runs on one of these job boards. Open their careers page, click any job and look at the address bar.</p>${field("company", "Company name", "")}<div class="field"><label for="kind">Job board</label><select id="kind" name="kind" style="width:100%"><option value="greenhouse">Greenhouse (boards.greenhouse.io/NAME)</option><option value="lever">Lever (jobs.lever.co/NAME)</option><option value="ashby">Ashby (jobs.ashbyhq.com/NAME)</option><option value="smartrecruiters">SmartRecruiters (jobs.smartrecruiters.com/NAME)</option><option value="workable">Workable (apply.workable.com/NAME)</option></select></div>${field("board", "NAME from that address", "")}<button class="btn primary block">Add company</button></form>`,
+    `<form id="source-form" class="stack"><p class="muted small">Works for companies whose careers page runs on one of these job boards. Open their careers page, click any job and look at the address bar.</p>${field("company", "Company name", "")}<div class="field"><label for="kind">Job board</label><select id="kind" name="kind" style="width:100%"><option value="greenhouse">Greenhouse (boards.greenhouse.io/NAME)</option><option value="lever">Lever (jobs.lever.co/NAME)</option><option value="ashby">Ashby (jobs.ashbyhq.com/NAME)</option><option value="smartrecruiters">SmartRecruiters (jobs.smartrecruiters.com/NAME)</option><option value="workable">Workable (apply.workable.com/NAME)</option><option value="pinpoint">Pinpoint (NAME.pinpointhq.com)</option><option value="bamboohr">BambooHR (NAME.bamboohr.com/careers)</option><option value="rippling">Rippling (ats.rippling.com/NAME/jobs)</option><option value="teamtailor">Teamtailor (the careers site address, e.g. careers.example.com)</option></select></div>${field("board", "NAME from that address", "")}<button class="btn primary block">Add company</button></form>`,
   );
   $("#source-form").onsubmit = async (ev) => {
     ev.preventDefault();

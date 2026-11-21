@@ -1,16 +1,23 @@
 // Runs on application pages. Does nothing unless this tab was opened from the
 // Career OS dashboard for a specific job (or you pressed "Fill this page").
 (async () => {
+  // Run once per page. A page with nothing to fill stays open to a later
+  // "Fill this page" from the extension button.
   if (globalThis.__careerOsContent) return;
-  globalThis.__careerOsContent = true;
+  globalThis.__careerOsContent = "starting";
   let hello;
   try {
     hello = await chrome.runtime.sendMessage({ type: "hello" });
   } catch {
+    globalThis.__careerOsContent = false;
     return;
   }
   const packet = hello?.packet;
-  if (!packet) return;
+  if (!packet) {
+    globalThis.__careerOsContent = false;
+    return;
+  }
+  globalThis.__careerOsContent = true;
   const Fill = globalThis.CareerOsFill,
     send = (m) => chrome.runtime.sendMessage(m).catch(() => {});
   let reported = false;
@@ -48,7 +55,7 @@
       done
         ? `<b class="ok">Application sent</b><p>Career OS is recording ${esc(packet.company)} as applied, with the resume attached here. You can close this tab.</p>`
         : waiting
-          ? `<b>Career OS</b><p>Looking for the application form…</p>`
+          ? `<b>Career OS is ready</b><p>Waiting for the application form. If it doesn’t open by itself, press this page’s Apply button and it will be filled.</p>`
           : `<div class="row"><b>Career OS filled ${report.filled.length} field${report.filled.length === 1 ? "" : "s"}</b><button id="x">Hide</button></div>
              <p>${report.resume === "attached" ? "Resume attached. " : report.resume === "kept" ? "Resume already attached. " : ""}${needs.length ? `<span class="tag">${needs.length} left for you:</span>` : `<span class="ok">Nothing left to fill.</span>`}</p>
              <ul>${needs.map((n, i) => `<li data-i="${i}">${esc(n.question.slice(0, 110))}</li>`).join("")}</ul>
@@ -68,37 +75,58 @@
     document.documentElement.appendChild(host);
   }
 
+  // A form worth filling: an upload field, or at least three text fields.
   const hasForm = () =>
     document.querySelector('input[type="file"]') ||
     document.querySelectorAll(
-      "input:not([type=hidden]):not([type=search]), textarea",
+      "input:not([type=hidden]):not([type=search]):not([type=checkbox]):not([type=radio]), textarea",
     ).length >= 3;
+  const fieldCount = () =>
+    document.querySelectorAll("input:not([type=hidden]), textarea, select")
+      .length;
+  let lastFields = -1,
+    running = false,
+    pressedOpen = false;
   async function run() {
-    const report = await Fill.fill(packet, document);
-    send({
-      type: "filled",
-      filled: report.filled.length,
-      needs: report.needs.map((n) => n.question),
-      resume: report.resume,
-    });
-    panel({ report });
+    if (running) return;
+    running = true;
+    try {
+      const report = await Fill.fill(packet, document);
+      lastFields = fieldCount();
+      send({
+        type: "filled",
+        filled: report.filled.length,
+        needs: report.needs.map((n) => n.question),
+        resume: report.resume,
+      });
+      panel({ report });
+    } finally {
+      running = false;
+    }
   }
-
   if (packet.formSeen && checkSubmitted()) return;
-  // Wait for the form to appear (some pages draw it after loading).
   if (window === window.top) panel({ waiting: true });
-  for (let i = 0; i < 60 && !hasForm(); i++)
-    await new Promise((r) => setTimeout(r, 500));
-  if (!hasForm()) {
-    host?.remove();
-    return;
+  // Watch the page for as long as it is open:
+  // - when a form appears, fill it (it may load late, or after you press Apply);
+  // - when a multi-step form shows its next step, fill the new fields too
+  //   (filling never overwrites what is already there);
+  // - when the employer's confirmation appears, record it.
+  async function check() {
+    if (checkSubmitted()) return;
+    if (hasForm()) {
+      if (fieldCount() !== lastFields) await run();
+      return;
+    }
+    // No form yet: press the site's own "Apply" button once, if it has one.
+    if (!pressedOpen && window === window.top && Fill.openForm(document)) {
+      pressedOpen = true;
+      panel({ waiting: true });
+    }
   }
-  await new Promise((r) => setTimeout(r, 800));
-  await run();
-  // After you press Submit, the page changes to a confirmation: notice that.
   let timer;
   new MutationObserver(() => {
     clearTimeout(timer);
-    timer = setTimeout(checkSubmitted, 700);
+    timer = setTimeout(check, 800);
   }).observe(document.documentElement, { childList: true, subtree: true });
+  setTimeout(check, 1200);
 })();
