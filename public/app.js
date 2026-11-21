@@ -125,8 +125,7 @@ const nextStep = (a) =>
     : "Open the application, submit it, then record the confirmation.");
 const isSaved = (j) => ["Saved", "Shortlisted"].includes(j.collection);
 const isNew = (j) => Date.now() - new Date(j.firstSeen).getTime() < 2 * DAY;
-const jobType = (j) =>
-  j.assessment.employmentType === "Internship" ? "Internship" : "Full-time";
+const jobType = (j) => j.assessment.employmentType || "Other";
 const sectorOf = (j) => j.assessment.sector || "Other";
 function regionOf(j) {
   return j.assessment.region || "Other";
@@ -140,11 +139,7 @@ const resumeFor = (t) =>
 const trackLabel = (t) =>
   t === PRODUCT ? "Product / APM" : "Founder’s Office";
 function experience(j) {
-  const y = j.assessment.requiredYears;
-  if (jobType(j) === "Internship") return "Internship";
-  if (y === null || y === undefined)
-    return j.experienceLevel || "Experience not stated";
-  return y <= 1 ? "0–1 yrs" : y + "+ yrs · stretch";
+  return j.assessment.experienceLabel || "Experience not stated";
 }
 function fit(score) {
   return score >= 80
@@ -287,6 +282,20 @@ function head(title, sub, actions = "") {
 }
 
 // ---------- jobs ----------
+function officeInternship(job) {
+  return ["On-site", "Hybrid"].includes(job.assessment.internshipWorkplace);
+}
+function workplaceTag(job) {
+  const label = job.assessment.internshipWorkplace;
+  return label ? `<span class="tag">${e(label)}</span>` : "";
+}
+function comparePreferredJobs(a, b) {
+  return (
+    b.assessment.parts.location - a.assessment.parts.location ||
+    b.assessment.score - a.assessment.score ||
+    String(b.firstSeen).localeCompare(String(a.firstSeen))
+  );
+}
 function visibleJobs() {
   const q = filters.search.trim().toLowerCase();
   return state.jobs
@@ -301,16 +310,18 @@ function visibleJobs() {
         if (!isSaved(j)) return false;
       } else if (filters.tab === "dismissed" && j.collection !== "Dismissed")
         return false;
-      if (filters.track !== "All" && j.assessment.track !== filters.track)
+      if (filters.track !== "All" && j.assessment.category !== filters.track)
         return false;
       if (filters.type !== "All" && jobType(j) !== filters.type) return false;
       if (filters.sector !== "All" && sectorOf(j) !== filters.sector)
         return false;
       if (filters.company !== "All" && j.company !== filters.company)
         return false;
-      if (filters.region === "Remote" ? !isRemote(j) : false) return false;
+      if (filters.region === "Remote" && !isRemote(j)) return false;
+      if (filters.region === "All India" && !j.assessment.matchesIndia)
+        return false;
       if (
-        !["All", "Remote"].includes(filters.region) &&
+        !["All", "All India", "Remote"].includes(filters.region) &&
         regionOf(j) !== filters.region
       )
         return false;
@@ -319,13 +330,14 @@ function visibleJobs() {
         [j.title, j.company, j.location].join(" ").toLowerCase().includes(q)
       );
     })
-    .sort((a, b) =>
-      filters.sort === "newest"
-        ? String(b.postedAt || b.firstSeen).localeCompare(
-            String(a.postedAt || a.firstSeen),
-          )
-        : b.assessment.score - a.assessment.score ||
-          String(b.firstSeen).localeCompare(String(a.firstSeen)),
+    .sort(
+      (a, b) =>
+        officeInternship(a) - officeInternship(b) ||
+        (filters.sort === "newest"
+          ? String(b.postedAt || b.firstSeen).localeCompare(
+              String(a.postedAt || a.firstSeen),
+            )
+          : comparePreferredJobs(a, b)),
     );
 }
 function jobCard(j) {
@@ -333,14 +345,14 @@ function jobCard(j) {
     [, ring] = fit(m.score),
     a = appFor(j.id),
     sector = sectorOf(j);
-  return `<article class="card job" data-job="${j.id}" tabindex="0" role="button" aria-label="${e(j.title)} at ${e(j.company)}">${logo(j.company)}<div class="job-main"><div class="job-title"><span>${e(j.title)}</span>${isNew(j) ? '<span class="tag new">New</span>' : ""}</div><div class="job-meta">${e(j.company)} · ${e(j.location)}${j.postedAt ? " · posted " + ago(j.postedAt) : ""}</div><div class="tags">${sector !== "Other" ? `<span class="tag ${sector.toLowerCase()}">${sector}</span>` : ""}<span class="tag ${m.track === PRODUCT ? "product" : "founders"}">${trackLabel(m.track)}</span><span class="tag">${e(experience(j))}</span>${a ? statusTag(a) : ""}${j.closed ? '<span class="tag warn">No longer listed</span>' : j.unsuitable ? '<span class="tag warn">No longer matches</span>' : ""}</div></div><div class="job-side"><div class="score" style="--p:${m.score};--ring:${ring}" title="Match score ${m.score} of 100"><span>${m.score}</span></div><button class="icon-btn ${isSaved(j) ? "on" : ""}" data-save="${j.id}" aria-label="${isSaved(j) ? "Remove from saved" : "Save for later"}" title="${isSaved(j) ? "Saved" : "Save for later"}">${icon("bookmark", 18)}</button>${j.collection === "Dismissed" ? `<button class="icon-btn" data-restore="${j.id}" aria-label="Restore" title="Restore">${icon("undo", 18)}</button>` : `<button class="icon-btn hide-sm" data-dismiss="${j.id}" aria-label="Not interested" title="Not interested">${icon("x", 18)}</button>`}</div></article>`;
+  return `<article class="card job" data-job="${j.id}" tabindex="0" role="button" aria-label="${e(j.title)} at ${e(j.company)}">${logo(j.company)}<div class="job-main"><div class="job-title"><span>${e(j.title)}</span>${isNew(j) ? '<span class="tag new">New</span>' : ""}</div><div class="job-meta">${e(j.company)} · ${e(j.location)}${j.postedAt ? " · posted " + ago(j.postedAt) : ""}</div><div class="tags"><span class="tag ${sector.toLowerCase()}">${sector}</span><span class="tag ${m.track === PRODUCT ? "product" : "founders"}">${e(m.category || j.unsuitable || m.reason)}</span><span class="tag">${e(jobType(j))}</span>${workplaceTag(j)}<span class="tag">${e(experience(j))}</span>${a ? statusTag(a) : ""}${j.closed ? '<span class="tag warn">No longer listed</span>' : j.unsuitable ? `<span class="tag warn">${e(m.historyOnly ? j.unsuitable : "No longer matches")}</span>` : ""}</div></div><div class="job-side"><div class="score" style="--p:${m.score};--ring:${ring}" title="Match score ${m.score} of 100"><span>${m.score}</span></div><button class="icon-btn ${isSaved(j) ? "on" : ""}" data-save="${j.id}" aria-label="${isSaved(j) ? "Remove from saved" : "Save for later"}" title="${isSaved(j) ? "Saved" : "Save for later"}">${icon("bookmark", 18)}</button>${j.collection === "Dismissed" ? `<button class="icon-btn" data-restore="${j.id}" aria-label="Restore" title="Restore">${icon("undo", 18)}</button>` : `<button class="icon-btn hide-sm" data-dismiss="${j.id}" aria-label="Not interested" title="Not interested">${icon("x", 18)}</button>`}</div></article>`;
 }
 function setupBanner() {
   const missing = [PRODUCT, FOUNDERS].filter((t) => !resumeFor(t));
   if (missing.length)
     return `<div class="setup"><div><h3>Add your ${missing.length === 2 ? "two resumes" : trackLabel(missing[0]) + " resume"}</h3><p>Each job is paired with the right resume automatically, so it is one click away when you apply.</p></div><button class="btn primary" data-view="resumes">${icon("upload", 15)}Upload</button></div>`;
   if (!state.lastDiscovery)
-    return `<div class="setup"><div><h3>Run your first scan</h3><p>Checks every company job board on your list and keeps only early-career Product and Founder’s Office roles in India, Dubai and Singapore.</p></div><button class="btn primary" data-action="discover">${icon("refresh", 15)}Scan now</button></div>`;
+    return `<div class="setup"><div><h3>Run your first scan</h3><p>Checks every company job board on your list and keeps only early-career Product, Strategy &amp; Operations and Founder’s Office roles in India, Dubai and Singapore.</p></div><button class="btn primary" data-action="discover">${icon("refresh", 15)}Scan now</button></div>`;
   return "";
 }
 function jobsPage() {
@@ -356,11 +368,20 @@ function jobsPage() {
     count = (fn) => open.filter(fn).length,
     regions = [
       ["All", "Everywhere", open.length],
-      ["Bangalore", "Bangalore", count((j) => regionOf(j) === "Bangalore")],
-      ["Mumbai", "Mumbai", count((j) => regionOf(j) === "Mumbai")],
-      ["India", "Rest of India", count((j) => regionOf(j) === "India")],
-      ["Dubai / UAE", "Dubai", count((j) => regionOf(j) === "Dubai / UAE")],
-      ["Singapore", "Singapore", count((j) => regionOf(j) === "Singapore")],
+      ["All India", "All India", count((j) => j.assessment.matchesIndia)],
+      ...[
+        ...new Set(
+          [...open]
+            .sort(
+              (a, b) =>
+                b.assessment.parts.location - a.assessment.parts.location ||
+                regionOf(a).localeCompare(regionOf(b)),
+            )
+            .map(regionOf),
+        ),
+      ]
+        .filter((city) => city !== "Remote")
+        .map((city) => [city, city, count((j) => regionOf(j) === city)]),
       ["Remote", "Remote", count(isRemote)],
     ],
     select = (key, options) =>
@@ -389,15 +410,16 @@ function jobsPage() {
       ["open", "Open"],
       ["saved", "Saved"],
       ["dismissed", "Hidden"],
-      ["closed", "Closed"],
+      ["closed", "History"],
     ]
       .map(
         ([v, l]) =>
           `<button data-tab="${v}" class="${filters.tab === v ? "active" : ""}">${l}</button>`,
       )
       .join("")}</div>${select("track", [
-      ["All", "Both resumes"],
-      [PRODUCT, "Product / APM"],
+      ["All", "All categories"],
+      ["Product management", "Product management"],
+      ["Strategy & Operations", "Strategy & Operations"],
       [FOUNDERS, "Founder’s Office"],
     ])}${select("type", [
       ["All", "Job + internship"],
@@ -409,9 +431,9 @@ function jobsPage() {
       ["Consumer", "Consumer"],
       ["Other", "Other"],
     ])}${select("sort", [
-      ["best", "Best match"],
+      ["best", "Preferred cities"],
       ["newest", "Newest"],
-    ])}</div><div class="chips">${regions.map(([v, l, n]) => `<button class="chip ${filters.region === v ? "active" : ""}" data-region="${e(v)}">${l} <i>${n}</i></button>`).join("")}<button class="chip ${filters.type === "Internship" ? "active" : ""}" data-internships>Internships <i>${count((j) => jobType(j) === "Internship")}</i></button>${filters.company !== "All" ? `<button class="chip active" data-clear-company>${e(filters.company)} ✕</button>` : ""}</div><div id="job-list">${jobList(list)}</div>`
+    ])}</div><div class="chips">${regions.map(([v, l, n]) => `<button class="chip ${filters.region === v ? "active" : ""}" data-region="${e(v)}">${e(l)} <i>${n}</i></button>`).join("")}<button class="chip ${filters.type === "Internship" ? "active" : ""}" data-internships>Internships <i>${count((j) => jobType(j) === "Internship")}</i></button>${filters.company !== "All" ? `<button class="chip active" data-clear-company>${e(filters.company)} ✕</button>` : ""}</div><div id="job-list">${jobList(list)}</div>`
   );
 }
 function jobList(list) {
@@ -451,7 +473,7 @@ function applyRow(j) {
   const m = j.assessment,
     sector = sectorOf(j),
     asked = !!j.applyOpened;
-  return `<article class="card job" data-job="${j.id}" tabindex="0" role="button" aria-label="${e(j.title)} at ${e(j.company)}">${logo(j.company)}<div class="job-main"><div class="job-title"><span>${e(j.title)}</span>${isSaved(j) ? '<span class="tag founders">Saved</span>' : ""}</div><div class="job-meta">${e(j.company)} · ${e(j.location)}</div><div class="tags">${sector !== "Other" ? `<span class="tag ${sector.toLowerCase()}">${sector}</span>` : ""}<span class="tag ${m.track === PRODUCT ? "product" : "founders"}">${trackLabel(m.track)} resume</span><span class="tag">${m.score}/100 match</span>${asked ? `<span class="tag warn">Opened ${ago(j.applyOpened)} · did you submit?</span>` : ""}</div></div><div class="job-side">${asked ? `<button class="btn sm" data-mark-applied="${j.id}">${icon("check", 14)}Yes, record it</button><button class="btn ghost sm" data-not-yet="${j.id}">Not yet</button>` : ""}<button class="btn accent sm" data-apply="${j.id}">${icon("external", 14)}${asked ? "Open again" : "Apply"}</button><button class="icon-btn hide-sm" data-dismiss="${j.id}" aria-label="Not interested" title="Not interested">${icon("x", 18)}</button></div></article>`;
+  return `<article class="card job" data-job="${j.id}" tabindex="0" role="button" aria-label="${e(j.title)} at ${e(j.company)}">${logo(j.company)}<div class="job-main"><div class="job-title"><span>${e(j.title)}</span>${isSaved(j) ? '<span class="tag founders">Saved</span>' : ""}</div><div class="job-meta">${e(j.company)} · ${e(j.location)}</div><div class="tags"><span class="tag ${sector.toLowerCase()}">${sector}</span><span class="tag ${m.track === PRODUCT ? "product" : "founders"}">${trackLabel(m.track)} resume</span>${workplaceTag(j)}<span class="tag">${m.score}/100 match</span>${asked ? `<span class="tag warn">Opened ${ago(j.applyOpened)} · did you submit?</span>` : ""}</div></div><div class="job-side">${asked ? `<button class="btn sm" data-mark-applied="${j.id}">${icon("check", 14)}Yes, record it</button><button class="btn ghost sm" data-not-yet="${j.id}">Not yet</button>` : ""}<button class="btn accent sm" data-apply="${j.id}">${icon("external", 14)}${asked ? "Open again" : "Apply"}</button><button class="icon-btn hide-sm" data-dismiss="${j.id}" aria-label="Not interested" title="Not interested">${icon("x", 18)}</button></div></article>`;
 }
 function applicationsPage() {
   const apps = state.applications
@@ -459,9 +481,10 @@ function applicationsPage() {
       .filter(([j]) => j),
     todo = openJobs().sort(
       (a, b) =>
+        officeInternship(a) - officeInternship(b) ||
         !!b.applyOpened - !!a.applyOpened ||
         isSaved(b) - isSaved(a) ||
-        b.assessment.score - a.assessment.score,
+        comparePreferredJobs(a, b),
     ),
     waiting = attention(),
     missing = ["name", "email", "phone"].filter((k) => !state.profile[k]),
@@ -707,6 +730,7 @@ function uploadResume(file) {
 
 // ---------- companies ----------
 function companyStatus(c) {
+  if (c.sourceHealth === "Manual") return ["", "Manual check", c.sourceError];
   if (!c.sourceId) return ["manual", "Check manually", ""];
   if (!c.sourceEnabled) return ["", "Paused", ""];
   if (c.sourceHealth === "Error")
@@ -720,18 +744,6 @@ function companyStatus(c) {
   return ["", "Waiting for first scan", ""];
 }
 let companyFilter = "All";
-// Number of companies with at least one open role on a track.
-const matches2 = (all, state, t) =>
-  all.filter((c) =>
-    state.jobs.some(
-      (j) =>
-        j.company === c.name &&
-        j.assessment.track === t &&
-        j.collection !== "Dismissed" &&
-        !j.closed &&
-        !j.unsuitable,
-    ),
-  ).length;
 // Sourced facts about a company. Anything without a source is shown as not verified.
 function evidence(c) {
   const known = (s) => s && !/^(Unknown|Not )/.test(s),
@@ -764,21 +776,32 @@ function companiesPage() {
         : /^consumer/i.test(c.industry)
           ? "Consumer"
           : "Other",
+    matches = (company, category) =>
+      state.jobs.filter(
+        (j) =>
+          j.company === company.name &&
+          j.assessment.category === category &&
+          j.collection !== "Dismissed" &&
+          !j.closed &&
+          !j.unsuitable,
+      ).length,
     shown = all
       .filter((c) =>
         companyFilter === "All"
           ? true
           : companyFilter === "HasProduct"
-            ? matches(c, PRODUCT) > 0
-            : companyFilter === "HasFounders"
-              ? matches(c, FOUNDERS) > 0
-              : companyFilter === "YC"
-                ? c.ycBacked === true
-                : companyFilter === "Manual"
-                  ? !c.sourceId
-                  : companyFilter === "Auto"
-                    ? !!c.sourceId
-                    : sector(c) === companyFilter,
+            ? matches(c, "Product management") > 0
+            : companyFilter === "HasStrategy"
+              ? matches(c, "Strategy & Operations") > 0
+              : companyFilter === "HasFounders"
+                ? matches(c, FOUNDERS) > 0
+                : companyFilter === "YC"
+                  ? c.ycBacked === true
+                  : companyFilter === "Manual"
+                    ? !c.sourceId
+                    : companyFilter === "Auto"
+                      ? !!c.sourceId
+                      : sector(c) === companyFilter,
       )
       .sort(
         (a, b) =>
@@ -787,19 +810,10 @@ function companiesPage() {
           a.name.localeCompare(b.name),
       ),
     auto = all.filter((c) => c.sourceId).length,
-    // Open matches per company and track, so each track's coverage is visible.
-    matches = (c, t) =>
-      state.jobs.filter(
-        (j) =>
-          j.company === c.name &&
-          j.assessment.track === t &&
-          j.collection !== "Dismissed" &&
-          !j.closed &&
-          !j.unsuitable,
-      ).length,
-    coverage = (t) => {
-      const rows = all.map((c) => matches(c, t)).filter(Boolean);
-      return `${rows.reduce((a, b) => a + b, 0)} open role${rows.reduce((a, b) => a + b, 0) === 1 ? "" : "s"} at ${rows.length} compan${rows.length === 1 ? "y" : "ies"}`;
+    coverage = (category, label) => {
+      const counts = all.map((c) => matches(c, category)).filter(Boolean);
+      const n = counts.reduce((a, b) => a + b, 0);
+      return `<div class="stat" style="cursor:default"><b>${counts.length}</b><span>${e(label)}: ${n} open role${n === 1 ? "" : "s"} at ${counts.length} compan${counts.length === 1 ? "y" : "ies"}</span></div>`;
     };
   return (
     head(
@@ -807,7 +821,7 @@ function companiesPage() {
       `${auto} companies are checked automatically. ${all.length - auto} more have no public job feed and need a manual look.`,
       `<button class="btn primary" data-action="add-source">${icon("plus", 15)}Add company</button>`,
     ) +
-    `<div class="stats" style="grid-template-columns:repeat(2,1fr)"><div class="stat" style="cursor:default"><b>${matches2(all, state, PRODUCT)}</b><span>Product / APM: ${coverage(PRODUCT)}</span></div><div class="stat" style="cursor:default"><b>${matches2(all, state, FOUNDERS)}</b><span>Founder’s Office: ${coverage(FOUNDERS)}</span></div></div>` +
+    `<div class="stats">${coverage("Product management", "Product / APM")}${coverage("Strategy & Operations", "Strategy & Operations")}${coverage(FOUNDERS, FOUNDERS)}</div>` +
     `<div class="chips">${[
       ["All", "All"],
       ["Fintech", "Fintech"],
@@ -815,6 +829,7 @@ function companiesPage() {
       ["Auto", "Checked automatically"],
       ["Manual", "Check manually"],
       ["HasProduct", "Has Product roles"],
+      ["HasStrategy", "Has Strategy & Operations roles"],
       ["HasFounders", "Has Founder’s Office roles"],
       ["YC", "YC-backed"],
     ]
@@ -825,7 +840,7 @@ function companiesPage() {
       .join("")}</div><div class="company-grid">${shown
       .map((c) => {
         const [dot, label, err] = companyStatus(c);
-        return `<div class="card company"><div class="company-top">${logo(c.name)}<div style="flex:1;min-width:0"><div class="company-name">${e(c.name)}</div><div class="muted small">${e(String(c.industry || "").replace(/^(Fintech|Consumer|Software|Job feed)\s*\/\s*/i, ""))}</div></div>${c.sourceId ? `<button class="switch ${c.sourceEnabled ? "on" : ""}" data-source="${e(c.sourceId)}" data-enabled="${c.sourceEnabled ? "0" : "1"}" role="switch" aria-checked="${!!c.sourceEnabled}" aria-label="Check ${e(c.name)} automatically"></button>` : ""}</div><span class="status" title="${e(err)}"><span class="dot ${dot}"></span>${e(label)}</span><div class="tags"><span class="tag ${matches(c, PRODUCT) ? "product" : ""}">Product ${matches(c, PRODUCT)}</span><span class="tag ${matches(c, FOUNDERS) ? "founders" : ""}">Founder’s Office ${matches(c, FOUNDERS)}</span>${c.ycBacked === true ? `<a class="tag fintech" href="${e(c.ycEvidenceUrl)}" target="_blank" rel="noopener noreferrer" title="Listed in the YC directory">YC ${e((c.ycBatch || "").replace(/^(Winter|Summer|Fall|Spring) 20/, (m) => m[0]))}</a>` : ""}</div>${evidence(c)}<div class="company-links">${c.sourceCount ? `<button class="link" data-company-jobs="${e(c.name)}">View ${c.sourceCount} job${c.sourceCount === 1 ? "" : "s"}</button>` : ""}${c.careersUrl ? `<a class="link" href="${e(c.careersUrl)}" target="_blank" rel="noopener noreferrer">Careers page ↗</a>` : ""}</div></div>`;
+        return `<div class="card company"><div class="company-top">${logo(c.name)}<div style="flex:1;min-width:0"><div class="company-name">${e(c.name)}</div><div class="muted small">${e(String(c.industry || "").replace(/^(Fintech|Consumer|Software|Job feed)\s*\/\s*/i, ""))}</div></div>${c.sourceId ? `<button class="switch ${c.sourceEnabled ? "on" : ""}" data-source="${e(c.sourceId)}" data-enabled="${c.sourceEnabled ? "0" : "1"}" role="switch" aria-checked="${!!c.sourceEnabled}" aria-label="Check ${e(c.name)} automatically"></button>` : ""}</div><span class="status" title="${e(err)}"><span class="dot ${dot}"></span>${e(label)}</span><div class="tags"><span class="tag ${matches(c, "Product management") ? "product" : ""}">Product ${matches(c, "Product management")}</span><span class="tag">Strategy &amp; Operations ${matches(c, "Strategy & Operations")}</span><span class="tag ${matches(c, FOUNDERS) ? "founders" : ""}">Founder’s Office ${matches(c, FOUNDERS)}</span>${c.ycBacked === true ? `<a class="tag fintech" href="${e(c.ycEvidenceUrl)}" target="_blank" rel="noopener noreferrer" title="Listed in the YC directory">YC ${e((c.ycBatch || "").replace(/^(Winter|Summer|Fall|Spring) 20/, (m) => m[0]))}</a>` : ""}</div>${evidence(c)}<div class="company-links">${c.sourceCount ? `<button class="link" data-company-jobs="${e(c.name)}">View ${c.sourceCount} job${c.sourceCount === 1 ? "" : "s"}</button>` : ""}${c.careersUrl ? `<a class="link" href="${e(c.careersUrl)}" target="_blank" rel="noopener noreferrer">Careers page ↗</a>` : ""}</div></div>`;
       })
       .join("")}</div>`
   );
@@ -967,7 +982,7 @@ function openJob(id) {
   sheet(
     "drawer",
     j.title,
-    `<header class="sheet-head"><div class="spread" style="margin-bottom:12px"><span class="tag" style="color:${fitColor}">${fitLabel} · ${m.score}/100</span><button class="icon-btn" data-close aria-label="Close">${icon("x")}</button></div><div class="hero">${logo(j.company)}<div><h2>${e(j.title)}</h2><div class="muted" style="margin-top:3px">${e(j.company)} · ${e(j.location)}</div></div></div><div class="tags" style="margin-top:12px">${a ? statusTag(a) : ""}${sector !== "Other" ? `<span class="tag ${sector.toLowerCase()}">${sector}</span>` : ""}<span class="tag">${jobType(j)}</span><span class="tag">${e(experience(j))}</span>${isRemote(j) ? '<span class="tag">Remote</span>' : ""}${j.postedAt ? `<span class="tag">Posted ${ago(j.postedAt)}</span>` : ""}${j.closed ? '<span class="tag warn">No longer listed</span>' : j.unsuitable ? '<span class="tag warn">No longer matches</span>' : ""}</div><div class="row" style="margin-top:16px">${canApply ? `<button class="btn accent" style="flex:1" data-apply="${id}">${icon("external", 15)}${extVersion() ? "Apply with autofill" : "Apply on company site"}</button>` : `<a class="btn" style="flex:1" href="${e(j.applyUrl || j.originalUrl)}" target="_blank" rel="noopener noreferrer">${icon("external", 15)}Open job page</a>`}${a ? "" : `<button class="btn" data-prepare="${id}">Prepare packet</button><button class="btn" data-mark-applied="${id}">${icon("check", 15)}I applied</button>`}<button class="icon-btn ${isSaved(j) ? "on" : ""}" data-save="${id}" aria-label="${isSaved(j) ? "Remove from saved" : "Save for later"}">${icon("bookmark", 18)}</button></div></header><div class="sheet-body">${j.unsuitable ? `<div class="callout" style="margin-bottom:18px">Still listed, but it changed: ${e(j.unsuitable)}</div>` : ""}${
+    `<header class="sheet-head"><div class="spread" style="margin-bottom:12px"><span class="tag" style="color:${fitColor}">${fitLabel} · ${m.score}/100</span><button class="icon-btn" data-close aria-label="Close">${icon("x")}</button></div><div class="hero">${logo(j.company)}<div><h2>${e(j.title)}</h2><div class="muted" style="margin-top:3px">${e(j.company)} · ${e(j.location)}</div></div></div><div class="tags" style="margin-top:12px">${a ? statusTag(a) : ""}<span class="tag ${sector.toLowerCase()}">${sector}</span><span class="tag">${e(m.category || j.unsuitable || m.reason)}</span><span class="tag">${e(jobType(j))}</span>${workplaceTag(j)}<span class="tag">${e(experience(j))}</span>${m.employmentType === "Full-time" ? '<span class="tag">' + (m.startDate ? "Start date " + e(m.startDate) : "Start date not stated") + "</span>" : ""}${isRemote(j) ? '<span class="tag">Remote</span>' : ""}${j.postedAt ? `<span class="tag">Posted ${ago(j.postedAt)}</span>` : ""}${j.closed ? '<span class="tag warn">No longer listed</span>' : j.unsuitable ? `<span class="tag warn">${e(m.historyOnly ? j.unsuitable : "No longer matches")}</span>` : ""}</div><div class="row" style="margin-top:16px">${canApply ? `<button class="btn accent" style="flex:1" data-apply="${id}">${icon("external", 15)}${extVersion() ? "Apply with autofill" : "Apply on company site"}</button>` : `<a class="btn" style="flex:1" href="${e(j.applyUrl || j.originalUrl)}" target="_blank" rel="noopener noreferrer">${icon("external", 15)}Open job page</a>`}${a ? "" : `<button class="btn" data-prepare="${id}">Prepare packet</button><button class="btn" data-mark-applied="${id}">${icon("check", 15)}I applied</button>`}<button class="icon-btn ${isSaved(j) ? "on" : ""}" data-save="${id}" aria-label="${isSaved(j) ? "Remove from saved" : "Save for later"}">${icon("bookmark", 18)}</button></div></header><div class="sheet-body">${j.unsuitable ? `<div class="callout" style="margin-bottom:18px">Reason hidden: ${e(j.unsuitable)}</div>` : ""}${
       a
         ? packetSections(j, a)
         : `<section><h3>Resume to send</h3>${

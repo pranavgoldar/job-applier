@@ -384,3 +384,96 @@ test("closed and no-longer-matching jobs leave the open lists but stay in histor
   assert(text().includes("No longer listed"));
   assert(text().includes("No longer matches"));
 });
+
+test("strategy has its own category, uses the founder resume and labels unstated start dates", async () => {
+  const j = job("strategy", {
+    title: "Strategy Analyst",
+    location: "Noida",
+    employmentType: "Full-time",
+    description: "Own strategic initiatives and business planning.",
+  });
+  const { ui, $, modal } = await load(
+    state({ jobs: [j], resumes: [{ ...resume, track: "Founder’s Office" }] }),
+  );
+  ui.setView("jobs");
+  assert($('[data-filter="track"] option[value="Strategy & Operations"]'));
+  assert.match($('[data-job="strategy"]').textContent, /Strategy & Operations/);
+  assert($('[data-region="Noida"]'));
+  ui.openJob("strategy");
+  assert.match(modal().textContent, /Start date not stated/);
+  assert.match(modal().textContent, /Experience not stated/);
+  assert.match(modal().textContent, /Founder’s Office/);
+});
+
+test("All India includes remote India and displays priority cities in order", async () => {
+  const jobs = [
+    "Singapore",
+    "Pan India",
+    "New Delhi",
+    "Hyderabad",
+    "Mumbai",
+    "Bengaluru",
+    "Remote – India",
+  ].map((location, i) =>
+    job("city" + i, {
+      title: "Product Analyst",
+      employmentType: "Full-time",
+      location,
+    }),
+  );
+  // A higher fit score in another city must not displace a priority city.
+  jobs[5].assessment.score = 65;
+  jobs[1].assessment.score = 96;
+  const { ui, $, doc } = await load(state({ jobs }));
+  ui.setView("jobs");
+  const regions = [...doc.querySelectorAll("[data-region]")].map(
+    (b) => b.dataset.region,
+  );
+  assert.deepEqual(regions.slice(1, 6), [
+    "All India",
+    "Bangalore",
+    "Mumbai",
+    "Hyderabad",
+    "Delhi",
+  ]);
+  $('[data-region="All India"]').click();
+  assert.equal(doc.querySelectorAll(".jobs .job").length, 6);
+  assert(!$('[data-job="city0"]'));
+  const cards = () =>
+    [...doc.querySelectorAll("#app article[data-job]")].map(
+      (el) => el.dataset.job,
+    );
+  assert.deepEqual(cards().slice(0, 4), ["city5", "city4", "city3", "city2"]);
+  ui.setAppTab("todo");
+  assert.deepEqual(cards().slice(0, 4), ["city5", "city4", "city3", "city2"]);
+});
+
+test("remote internships lead the two permitted office cities, with other office internships in History", async () => {
+  const cities = ["Mumbai", "Bengaluru", "Gurugram", "Remote – India"];
+  const jobs = cities.map((location, i) => {
+    const j = job("intern" + i, {
+      title: "Founder’s Office - Intern",
+      location,
+    });
+    return { ...j, unsuitable: j.assessment.unsuitable };
+  });
+  const { ui, $, doc } = await load(state({ jobs }));
+  ui.setView("jobs");
+  const cards = () => [...doc.querySelectorAll(".jobs article")];
+  assert.deepEqual(
+    cards().map((c) => c.dataset.job),
+    ["intern3", "intern1", "intern0"],
+  );
+  assert.match(cards()[0].textContent, /Remote/);
+  assert.match(cards()[1].textContent, /On-site/);
+  $('[data-tab="closed"]').click();
+  assert.deepEqual(
+    cards().map((c) => c.dataset.job),
+    ["intern2"],
+  );
+  ui.openJob("intern2");
+  assert.match(
+    doc.querySelector("#modal-root").textContent,
+    /on-site.*outside Bangalore and Mumbai/,
+  );
+});

@@ -2,7 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { sha, uuid, now } from "./ids.mjs";
-import { watchlistFrom } from "./watchlist.mjs";
+import { canScanSource } from "./yc-discovery.mjs";
+import { watchlistFrom, rescoreJobs } from "./watchlist.mjs";
 import { jobRow, appRow } from "./sql-model.mjs";
 import {
   prepare,
@@ -196,23 +197,41 @@ export function createHandler(
         });
       }
       if (p === "/api/state" && req.method === "GET") {
-        const [config, jobs, apps, resumes, sources, events, queue, pending] =
-          await store.readMany([
-            {
-              sql: "SELECT key,value FROM config WHERE key IN ('profile','settings','answers','scanStarted','companyWatchlist','companySearchPreferences','lastDiscovery','nextDiscovery','workerHeartbeat')",
-            },
-            { sql: "SELECT * FROM jobs ORDER BY first_seen DESC" },
-            { sql: "SELECT * FROM applications ORDER BY updated DESC" },
-            {
-              sql: "SELECT id,track,version,name,sha256,mime,created,is_default FROM resumes",
-            },
-            { sql: "SELECT * FROM sources" },
-            { sql: "SELECT * FROM events ORDER BY id DESC LIMIT 60" },
-            { sql: "SELECT * FROM queue ORDER BY created DESC LIMIT 30" },
-            {
-              sql: "SELECT COUNT(*) AS n FROM queue WHERE status IN ('queued','running')",
-            },
-          ]);
+        const [
+          config,
+          jobs,
+          apps,
+          resumes,
+          sourceRows,
+          events,
+          queue,
+          pending,
+        ] = await store.readMany([
+          {
+            sql: "SELECT key,value FROM config WHERE key IN ('profile','settings','answers','scanStarted','companyWatchlist','companySearchPreferences','lastDiscovery','nextDiscovery','workerHeartbeat')",
+          },
+          { sql: "SELECT * FROM jobs ORDER BY first_seen DESC" },
+          { sql: "SELECT * FROM applications ORDER BY updated DESC" },
+          {
+            sql: "SELECT id,track,version,name,sha256,mime,created,is_default FROM resumes",
+          },
+          { sql: "SELECT * FROM sources" },
+          { sql: "SELECT * FROM events ORDER BY id DESC LIMIT 60" },
+          { sql: "SELECT * FROM queue ORDER BY created DESC LIMIT 30" },
+          {
+            sql: "SELECT COUNT(*) AS n FROM queue WHERE status IN ('queued','running')",
+          },
+        ]);
+        const sources = sourceRows.map((s) =>
+          canScanSource(s)
+            ? s
+            : {
+                ...s,
+                enabled: 0,
+                health: "Manual",
+                error: "YC authorization required for automated reads.",
+              },
+        );
         const c = Object.fromEntries(
           config.map((r) => [r.key, JSON.parse(r.value)]),
         );
@@ -224,7 +243,13 @@ export function createHandler(
           settings: c.settings ?? null,
           answers: c.answers || {},
           answerFields,
-          jobs: jobs.map(jobRow),
+          jobs: jobs.map((row) => {
+            const job = jobRow(row);
+            // A scan can finish after the user changes availability. The feed
+            // should immediately reflect the profile returned in this response.
+            const assessment = assess(job, c.profile || initialProfile);
+            return { ...job, assessment, unsuitable: assessment.unsuitable };
+          }),
           applications: apps.map(appRow),
           resumes,
           sources,
@@ -553,11 +578,7 @@ export function createHandler(
         ])
           if (typeof b[k] === "string") profile[k] = b[k].slice(0, 20000);
         await store.set("profile", profile);
-        const rescored = (await store.jobs()).map((j) => ({
-          sql: "UPDATE jobs SET data=json_set(data,'$.assessment',json(?)) WHERE id=?",
-          args: [JSON.stringify(assess(j, profile)), j.id],
-        }));
-        if (rescored.length) await store.batch(rescored);
+        await rescoreJobs(store, profile);
         await store.event(
           null,
           "profile",
@@ -638,6 +659,7 @@ export function createHandler(
           return {
             company: j.company,
             title: j.title,
+            category: j.assessment.category,
             track: j.assessment.track,
             employment_type: j.assessment.employmentType,
             location: j.location,
