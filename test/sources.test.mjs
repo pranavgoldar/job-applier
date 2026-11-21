@@ -237,3 +237,71 @@ test("Pinpoint jobs open straight on the application form", () => {
     "https://test.pinpointhq.com/en/postings/abc/applications/new",
   );
 });
+
+// Shaped like careers.kula.ai/<company>/ on 21 Nov 2026.
+const kulaPage = `<html><body><div id="__next"><h1>Open Positions</h1>
+<div class="chakra-card css-2vpafz"><span class="chakra-stack"><span class="css-1ct3vlm"><span class="css-3snkxd">Growth &amp; Strategy</span></span><div class="chakra-stack"><p class="chakra-text css-1ernmgu">Associate, Strategy &amp; Operations</p></div><div class="chakra-stack"><div class="chakra-stack"><svg viewBox="0 0 24 24"><path d="M12 13"></path></svg><p class="chakra-text">Bengaluru, Karnataka, India</p></div><div class="chakra-stack"><svg viewBox="0 0 24 24"><path d="M1 1"></path></svg><p class="chakra-text">Full time<!-- --> • On-Site</p></div></div><a class="chakra-link" href="/acme/24413-associate-strategy-operations"><span><span>Apply Now</span></span></a></span></div>
+<div class="chakra-card css-2vpafz"><span class="chakra-stack"><span class="css-1ct3vlm"><span class="css-3snkxd">Product</span></span><div class="chakra-stack"><p class="chakra-text css-1ernmgu">Product Management Intern</p></div><div class="chakra-stack"><div class="chakra-stack"><p class="chakra-text">India</p></div><div class="chakra-stack"><p class="chakra-text">Internship<!-- --> • Remote</p></div></div><a class="chakra-link" href="/acme/25001-product-management-intern"><span><span>Apply Now</span></span></a></span></div>
+<script src="https://careers-cdn.kula.ai/_next/static/chunks/main.js"></script></div></body></html>`;
+test("Kula careers pages are read card by card", () => {
+  const [ops, intern] = normalize(
+    { kind: "kula", company: "TEST", board: "acme" },
+    kulaPage,
+  );
+  assert.equal(ops.title, "Associate, Strategy & Operations");
+  assert.equal(ops.location, "Bengaluru, Karnataka, India");
+  assert.equal(ops.employmentType, "Full time");
+  assert.equal(ops.isRemote, false);
+  assert.equal(ops.description, "Team: Growth & Strategy");
+  assert.equal(
+    ops.originalUrl,
+    "https://careers.kula.ai/acme/24413-associate-strategy-operations",
+  );
+  assert.equal(ops.sourceId, "24413");
+  assert.equal(intern.title, "Product Management Intern");
+  assert.equal(intern.isRemote, true);
+  assert.match(intern.location, /India; Remote/);
+  assert.equal(
+    sourceURL({ kind: "kula", board: "cashfree" }),
+    "https://careers.kula.ai/cashfree",
+  );
+  assert.throws(() => sourceURL({ kind: "kula", board: "../api" }));
+  assert.throws(() =>
+    normalize(
+      { kind: "kula", company: "T", board: "acme" },
+      "<html>maintenance</html>",
+    ),
+  );
+});
+test("remote job feeds search product, founder's office and strategy roles as well as internships", () => {
+  const cat = JSON.parse(fs.readFileSync("src/target-companies.json", "utf8"));
+  const boards = cat
+    .filter((c) => c.connector?.kind === "himalayas")
+    .map((c) => c.connector.board)
+    .sort();
+  assert.deepEqual(boards, ["founder", "intern", "product", "strategy"]);
+  for (const b of boards)
+    assert.match(sourceURL({ kind: "himalayas", board: b }), /country=IN/);
+});
+test(
+  "a company that loses its readable source becomes a manual check and its old source is removed",
+  fixture(async (s) => {
+    const { seed } = await import("../src/seed.mjs");
+    await s.set("companyCatalogVersion", 6);
+    await s.set("companyWatchlist", [
+      { id: "alaan", name: "Alaan", sourceId: "watch-alaan" },
+    ]);
+    await s.run(
+      "INSERT INTO sources(id,kind,company,board) VALUES ('watch-alaan','ycombinator','Alaan','alaan')",
+    );
+    await seed(s);
+    assert.equal(
+      await s.get("SELECT id FROM sources WHERE id='watch-alaan'"),
+      undefined,
+    );
+    const alaan = (await s.config("companyWatchlist")).find(
+      (c) => c.id === "alaan",
+    );
+    assert.equal(alaan.sourceId, undefined);
+  }),
+);

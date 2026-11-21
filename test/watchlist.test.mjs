@@ -60,7 +60,18 @@ test(
     assert.match(alaan.fundingStage, /Series A/);
     assert.match(alaan.fundingEvidenceUrl, /^https:\/\//);
     assert.equal(alaan.ycBacked, true);
-    assert.equal(alaan.connector.kind, "ycombinator");
+    // YC pages are not read without YC's permission; Alaan's own board needs a private key.
+    assert.equal(alaan.connector, null);
+    assert.match(alaan.coverage, /^Manual/);
+    assert.match(alaan.note, /private API/);
+    assert.deepEqual(c.find((x) => x.id === "cashfree").connector, {
+      kind: "kula",
+      board: "cashfree",
+    });
+    assert(
+      !c.some((x) => x.connector?.kind === "ycombinator"),
+      "no company depends on YC pages",
+    );
     assert.equal(c.find((x) => x.id === "tabby").connector.kind, "pinpoint");
     assert(c.find((x) => x.id === "remitly").coverage.startsWith("Manual"));
     for (const x of c.filter((x) => x.ycBacked === true)) {

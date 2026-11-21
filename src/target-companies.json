@@ -316,20 +316,17 @@
     "group": "Your target",
     "industry": "Fintech / merchant payments",
     "careersUrl": "https://hitpayapp.com/careers",
-    "connector": {
-      "kind": "ycombinator",
-      "board": "hitpay"
-    },
+    "connector": null,
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-16",
+    "checkedOn": "2026-11-21",
     "ycBacked": true,
     "ycEvidenceUrl": "https://www.ycombinator.com/companies/hitpay",
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
     "indiaSignal": "Unknown — expansion plans not verified",
     "indiaEvidenceUrl": null,
-    "note": "Collected from its YC page (verified 16 Nov 2026). Roles posted only on its own site are missed.",
+    "note": "No public job board found (21 Nov 2026). Check by hand.",
     "ycBatch": "Summer 2021"
   },
   {
@@ -338,20 +335,17 @@
     "group": "Your target",
     "industry": "Fintech / international payments",
     "careersUrl": "https://www.ycombinator.com/companies/xpay/jobs",
-    "connector": {
-      "kind": "ycombinator",
-      "board": "xpay"
-    },
+    "connector": null,
     "aliases": ["Xpay", "xPay"],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-16",
+    "checkedOn": "2026-11-21",
     "ycBacked": true,
     "ycEvidenceUrl": "https://www.ycombinator.com/companies/xpay",
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
     "indiaSignal": "Based in Bengaluru (YC profile, 16 Nov 2026)",
     "indiaEvidenceUrl": "https://www.ycombinator.com/companies/xpay",
-    "note": "Collected from its YC page; it has no separate careers board.",
+    "note": "Lists roles on its own careers pages, not a job board. On 21 Nov 2026: Product Manager (4–7 years) and Chief of Staff (10+ years), both above your range. Check by hand.",
     "ycBatch": "Winter 2024"
   },
   {
@@ -469,20 +463,17 @@
     "group": "Your target",
     "industry": "Fintech / spend management",
     "careersUrl": "https://www.alaan.com/careers",
-    "connector": {
-      "kind": "ycombinator",
-      "board": "alaan"
-    },
+    "connector": null,
     "aliases": ["Alaam", "alaanpay"],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-16",
+    "checkedOn": "2026-11-21",
     "ycBacked": true,
     "ycEvidenceUrl": "https://www.ycombinator.com/companies/alaan",
     "fundingStage": "Series A: US$48M, August 2025, led by Peak XV Partners",
     "fundingEvidenceUrl": "https://www.wamda.com/en/2025/08/alaan-raises-48-million-series-transform-spend-management-mena",
     "indiaSignal": "Bengaluru roles listed on its YC page on 16 Nov 2026",
     "indiaEvidenceUrl": "https://www.ycombinator.com/companies/alaan",
-    "note": "Collected from its YC page. Its own careers board (Rippling) could not be read, so roles posted only there are missed.",
+    "note": "Its careers page loads jobs from a private API that needs Alaan's own key, so it cannot be read automatically. Check it by hand.",
     "ycBatch": "Winter 2023"
   },
   {
@@ -642,19 +633,19 @@
     "industry": "Fintech / payments and banking APIs",
     "careersUrl": "https://www.cashfree.com/careers/",
     "connector": {
-      "kind": "ycombinator",
-      "board": "cashfree-payments"
+      "kind": "kula",
+      "board": "cashfree"
     },
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-16",
+    "checkedOn": "2026-11-21",
     "ycBacked": true,
     "ycEvidenceUrl": "https://www.ycombinator.com/companies/cashfree-payments",
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
     "indiaSignal": "Unknown — expansion plans not verified",
     "indiaEvidenceUrl": null,
-    "note": "Collected from its YC page (verified 16 Nov 2026). Roles posted only on its own site are missed.",
+    "note": "Kula careers page linked from cashfree.com/careers (31 roles on 21 Nov 2026); robots.txt allows it.",
     "ycBatch": "Summer 2017"
   },
   {
@@ -663,20 +654,17 @@
     "group": "YC / India research",
     "industry": "Fintech / banking and payments APIs",
     "careersUrl": "https://www.ycombinator.com/companies/decentro/jobs",
-    "connector": {
-      "kind": "ycombinator",
-      "board": "decentro"
-    },
+    "connector": null,
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-16",
+    "checkedOn": "2026-11-21",
     "ycBacked": true,
     "ycEvidenceUrl": "https://www.ycombinator.com/companies/decentro",
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
     "indiaSignal": "Employer YC profile describes Indian banking infrastructure and a GIFT-based cross-border launch",
     "indiaEvidenceUrl": "https://www.ycombinator.com/companies/decentro",
-    "note": "Collected from its YC page (verified 16 Nov 2026). Roles posted only on its own site are missed.",
+    "note": "Posts jobs on Wellfound, which does not allow automated reading. Check by hand.",
     "ycBatch": "Summer 2020"
   },
   {
@@ -685,20 +673,17 @@
     "group": "YC / India research",
     "industry": "Fintech / corporate cards and payments",
     "careersUrl": "https://www.ycombinator.com/companies/volopay/jobs",
-    "connector": {
-      "kind": "ycombinator",
-      "board": "volopay"
-    },
+    "connector": null,
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-16",
+    "checkedOn": "2026-11-21",
     "ycBacked": true,
     "ycEvidenceUrl": "https://www.ycombinator.com/companies/volopay",
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
     "indiaSignal": "Bengaluru location shown; fresh expansion plans unknown",
     "indiaEvidenceUrl": "https://www.ycombinator.com/companies/volopay",
-    "note": "Collected from its YC page (verified 16 Nov 2026). Roles posted only on its own site are missed.",
+    "note": "No careers page or public job board found (21 Nov 2026). Check by hand.",
     "ycBatch": "Summer 2020"
   },
   {
@@ -707,20 +692,17 @@
     "group": "YC / India research",
     "industry": "Fintech / corporate cards",
     "careersUrl": "https://www.ycombinator.com/companies/karbon-card/jobs",
-    "connector": {
-      "kind": "ycombinator",
-      "board": "karbon-card"
-    },
+    "connector": null,
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-16",
+    "checkedOn": "2026-11-21",
     "ycBacked": true,
     "ycEvidenceUrl": "https://www.ycombinator.com/companies/karbon-card",
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
     "indiaSignal": "YC profile describes products for Indian businesses and Bengaluru location",
     "indiaEvidenceUrl": "https://www.ycombinator.com/companies/karbon-card",
-    "note": "Collected from its YC page (verified 16 Nov 2026). Roles posted only on its own site are missed.",
+    "note": "No careers page or public job board found (21 Nov 2026). The Greenhouse board named “karbon” belongs to a different company. Check by hand.",
     "ycBatch": "Summer 2021"
   },
   {
@@ -729,20 +711,17 @@
     "group": "YC / India research",
     "industry": "Fintech / cards and wealth",
     "careersUrl": "https://www.ycombinator.com/companies/gosats/jobs",
-    "connector": {
-      "kind": "ycombinator",
-      "board": "gosats"
-    },
+    "connector": null,
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-16",
+    "checkedOn": "2026-11-21",
     "ycBacked": true,
     "ycEvidenceUrl": "https://www.ycombinator.com/companies/gosats",
     "fundingStage": "Series A reported in employer posting; latest round unverified",
     "fundingEvidenceUrl": "https://www.ycombinator.com/companies/gosats/jobs/0TZL6W7-senior-product-manager-cards-payments",
     "indiaSignal": "Employer posting describes scaling in India",
     "indiaEvidenceUrl": "https://www.ycombinator.com/companies/gosats/jobs/0TZL6W7-senior-product-manager-cards-payments",
-    "note": "Collected from its YC page (verified 16 Nov 2026). Roles posted only on its own site are missed.",
+    "note": "No public job board found (21 Nov 2026); roles have appeared on its YC page. Check by hand.",
     "ycBatch": "Winter 2022"
   },
   {
@@ -751,20 +730,17 @@
     "group": "YC / India research",
     "industry": "Fintech / financial-product distribution",
     "careersUrl": "https://www.ycombinator.com/companies/gromo/jobs",
-    "connector": {
-      "kind": "ycombinator",
-      "board": "gromo"
-    },
+    "connector": null,
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-16",
+    "checkedOn": "2026-11-21",
     "ycBacked": true,
     "ycEvidenceUrl": "https://www.ycombinator.com/companies/gromo",
     "fundingStage": "Series A reported by company; latest round unverified",
     "fundingEvidenceUrl": "https://www.ycombinator.com/companies/gromo/jobs",
     "indiaSignal": "Unknown — expansion plans not verified",
     "indiaEvidenceUrl": null,
-    "note": "Collected from its YC page (verified 16 Nov 2026). Roles posted only on its own site are missed.",
+    "note": "Uses Zoho Recruit; its job feed needs Zoho's approval for each reader. Check by hand.",
     "ycBatch": "Winter 2021"
   },
   {
@@ -773,20 +749,17 @@
     "group": "YC / India research",
     "industry": "Fintech / cross-border banking",
     "careersUrl": "https://www.ycombinator.com/companies/location/india",
-    "connector": {
-      "kind": "ycombinator",
-      "board": "infinity"
-    },
+    "connector": null,
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
-    "checkedOn": "2026-11-16",
+    "checkedOn": "2026-11-21",
     "ycBacked": true,
     "ycEvidenceUrl": "https://www.ycombinator.com/companies/infinity",
     "fundingStage": "Unknown — latest funding round not verified",
     "fundingEvidenceUrl": null,
     "indiaSignal": "YC directory describes banking and payments for cross-border Indian businesses",
     "indiaEvidenceUrl": "https://www.ycombinator.com/companies/location/india",
-    "note": "Collected from its YC page (verified 16 Nov 2026). Roles posted only on its own site are missed.",
+    "note": "No careers page or public job board found (21 Nov 2026). Check by hand.",
     "ycBatch": "Winter 2024"
   },
   {
@@ -2046,5 +2019,68 @@
     "indiaSignal": "Remote roles open to India",
     "indiaEvidenceUrl": null,
     "note": "Many employers in one feed. Limited requests without a free API key (HIMALAYAS_API_KEY)."
+  },
+  {
+    "id": "himalayas-product",
+    "name": "Himalayas remote product roles",
+    "group": "Job feed",
+    "industry": "Job feed / remote product roles open to India",
+    "careersUrl": "https://himalayas.app/jobs/countries/india?q=product",
+    "connector": {
+      "kind": "himalayas",
+      "board": "product"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not applicable",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Remote roles open to India",
+    "indiaEvidenceUrl": null,
+    "note": "Remote roles from companies worldwide (US, Canada, Australia and more) that accept people based in India. Limited requests a day without a free Himalayas API key."
+  },
+  {
+    "id": "himalayas-founder",
+    "name": "Himalayas remote founder's office roles",
+    "group": "Job feed",
+    "industry": "Job feed / remote founder's office roles open to India",
+    "careersUrl": "https://himalayas.app/jobs/countries/india?q=founder",
+    "connector": {
+      "kind": "himalayas",
+      "board": "founder"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not applicable",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Remote roles open to India",
+    "indiaEvidenceUrl": null,
+    "note": "Remote roles from companies worldwide (US, Canada, Australia and more) that accept people based in India. Limited requests a day without a free Himalayas API key."
+  },
+  {
+    "id": "himalayas-strategy",
+    "name": "Himalayas remote strategy and operations roles",
+    "group": "Job feed",
+    "industry": "Job feed / remote strategy and operations roles open to India",
+    "careersUrl": "https://himalayas.app/jobs/countries/india?q=strategy",
+    "connector": {
+      "kind": "himalayas",
+      "board": "strategy"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "ycEvidenceUrl": null,
+    "fundingStage": "Not applicable",
+    "fundingEvidenceUrl": null,
+    "indiaSignal": "Remote roles open to India",
+    "indiaEvidenceUrl": null,
+    "note": "Remote roles from companies worldwide (US, Canada, Australia and more) that accept people based in India. Limited requests a day without a free Himalayas API key."
   }
 ]
