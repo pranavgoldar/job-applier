@@ -30,14 +30,18 @@ export const initialProfile = {
   facts: "",
 };
 
-const indianCities = [
+// This order chooses a single display city for multi-location postings.
+const preferredIndianCities = [
   ["Bangalore", /\b(?:bengaluru|bangalore|blr)\b/i],
-  ["Mumbai", /\b(?:mumbai|bombay)\b/i],
+  ["Mumbai", /\b(?:mumbai|bombay)\b|^(?:mum|bom)(?:$|[, /(-])/i],
+  ["Hyderabad", /\bhyderabad\b|^hyd(?:$|[, /(-])/i],
+  ["Delhi", /\b(?:new delhi|delhi)\b|^del(?:$|[, /(-])/i],
+];
+const indianCities = [
+  ...preferredIndianCities,
   ["Gurugram", /\b(?:gurgaon|gurugram)\b/i],
-  ["Delhi", /\b(?:new )?delhi\b/i],
   ...[
     "Noida",
-    "Hyderabad",
     "Pune",
     "Chennai",
     "Kolkata",
@@ -48,14 +52,74 @@ const indianCities = [
     "Thane",
     "Chandigarh",
     "Coimbatore",
+    "Lucknow",
+    "Bhubaneswar",
+    "Visakhapatnam",
+    "Surat",
+    "Patna",
+    "Bhopal",
+    "Nagpur",
+    "Guwahati",
+    "Faridabad",
+    "Mysuru",
+    "Vadodara",
   ].map((city) => [city, new RegExp("\\b" + city + "\\b", "i")]),
 ];
+
+const indianState =
+  /\b(?:andhra pradesh|arunachal pradesh|assam|bihar|chhattisgarh|goa|gujarat|haryana|himachal pradesh|jharkhand|karnataka|kerala|madhya pradesh|maharashtra|manipur|meghalaya|mizoram|nagaland|odisha|orissa|punjab|jammu (?:and|&) kashmir|rajasthan|sikkim|tamil nadu|telangana|tripura|uttar pradesh|uttarakhand|west bengal|ladakh|puducherry|lakshadweep|andaman and nicobar islands|dadra and nagar haveli|daman and diu)\b/i;
+function indiaLocation(job, loc) {
+  // Country codes from an ATS are authoritative. In free text, “IN” can also mean Indiana.
+  if (job.locationCountry && !/^(?:in|ind|india)$/i.test(job.locationCountry))
+    return null;
+  if (Array.isArray(job.remoteCountries) && job.remoteCountries.length) {
+    return job.remoteCountries.some((country) =>
+      /^(?:in|india)$/i.test(country),
+    )
+      ? "India (city not stated)"
+      : null;
+  }
+  const places = loc
+    .split(";")
+    .map((s) => s.trim())
+    .filter(
+      (s) =>
+        !/\b(?:pakistan|sindh|louisiana|new york state|ontario|united states)\b|,\s*(?:NY|LA|OH|CA|US|USA)\s*$/i.test(
+          s,
+        ),
+    );
+  // Only interpret the short airport codes as location fields (e.g. DEL, not Mar del Plata).
+  const known = indianCities.find(([, pattern]) =>
+    places.some((place) => pattern.test(place)),
+  );
+  if (known) return known[0];
+  if (job.locationCity && job.locationCountry) return job.locationCity;
+  let countryOnly = !!job.locationCountry;
+  for (const place of places) {
+    if (!/\bindia\b/i.test(place) && !indianState.test(place)) continue;
+    countryOnly = true;
+    const fields = place
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const city = fields.find(
+      (field) =>
+        !/\b(?:india|remote|anywhere|nationwide|hybrid|onsite)\b/i.test(
+          field,
+        ) &&
+        !indianState.test(field) &&
+        !/^[A-Z]{2}$/.test(field),
+    );
+    if (city) return city;
+  }
+  return countryOnly ? "India (city not stated)" : null;
+}
 
 export function geo(job) {
   const loc = String(job.location || "");
   const d = String(job.description || "");
-  const indianCity = indianCities.find(([, pattern]) => pattern.test(loc))?.[0];
-  const india = !!indianCity || /\bindia\b/i.test(loc);
+  const indianCity = indiaLocation(job, loc);
+  const india = !!indianCity;
   const remote =
     !/hybrid|on[- ]?site|in[- ]office|not remote/i.test(
       [job.workplaceType, loc].join(" "),
@@ -102,18 +166,7 @@ export function geo(job) {
         : "Remote eligibility unknown";
 
   let region = indianCity;
-  // Employers sometimes publish just a country. Preserve that distinction.
-  if (!region && india) {
-    const part = loc
-      .match(/(?:^|;)\s*([\p{L} .'-]+),\s*(?:[^,;]+,\s*)?India\b/iu)?.[1]
-      ?.trim();
-    region =
-      part && !/remote|india/i.test(part)
-        ? part
-        : remote
-          ? "Remote · India"
-          : "India (city not stated)";
-  }
+  if (region === "India (city not stated)" && remote) region = "Remote · India";
   if (!region)
     region =
       ["Dubai", "Singapore", "Abu Dhabi", "Sharjah"].find((city) =>
@@ -123,20 +176,21 @@ export function geo(job) {
         ? "UAE (city not stated)"
         : null);
   if (!region && indiaRemote) region = "Remote";
+  const preferredIndex = preferredIndianCities.findIndex(
+    ([city]) => city === region,
+  );
   const points =
-    region === "Bangalore"
-      ? 20
-      : region === "Mumbai"
-        ? 17
-        : india
-          ? 14
-          : region === "Dubai"
-            ? 13
-            : region === "Singapore"
-              ? 11
-              : region
-                ? 10
-                : 0;
+    preferredIndex >= 0
+      ? 20 - preferredIndex
+      : india || indiaRemote
+        ? 14
+        : region === "Dubai"
+          ? 13
+          : region === "Singapore"
+            ? 11
+            : region
+              ? 10
+              : 0;
   // An overseas remote board can be a full-time destination in its own right.
   const foreignRegion = [
     "Dubai",
@@ -163,6 +217,7 @@ export function geo(job) {
     points,
     remote,
     indiaRemote,
+    matchesIndia: remote ? indiaRemote : india,
     foreignTargetRemote,
     remoteEligibility,
   };

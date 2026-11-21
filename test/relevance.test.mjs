@@ -128,7 +128,15 @@ test("full-time availability follows the profile and only a required start affec
 });
 test("cities remain specific and use the preferred order", () => {
   let previous = Infinity;
-  for (const city of ["Bangalore", "Mumbai", "Noida", "Dubai", "Singapore"]) {
+  for (const city of [
+    "Bangalore",
+    "Mumbai",
+    "Hyderabad",
+    "Delhi",
+    "Noida",
+    "Dubai",
+    "Singapore",
+  ]) {
     const place = geo({ location: city });
     assert.equal(place.region, city);
     assert.ok(place.points < previous);
@@ -216,4 +224,42 @@ test("Agoda's six-month assignment is a contract; internships need a title or ze
     assert.equal(assess(role).employmentType, "Internship");
     assert.equal(assess(role).unsuitable, null);
   }
+});
+
+test("full-time search covers India with priority for BLR, Mumbai, Hyderabad and Delhi", () => {
+  for (const [location, city] of [
+    ["Delhi; HYD; MUM; BLR", "Bangalore"],
+    ["New Delhi; HYD; Mumbai", "Mumbai"],
+    ["DEL; Hyderabad", "Hyderabad"],
+    ["Pune; New Delhi", "Delhi"],
+    ["Pan-India", "India (city not stated)"],
+    ["Silchar, Assam", "Silchar"],
+    ["Aizawl, Mizoram, India", "Aizawl"],
+    ["Lucknow", "Lucknow"],
+  ]) {
+    const a = assess({ title: "Strategy Analyst", location });
+    assert.equal(a.unsuitable, null, location);
+    assert.equal(a.region, city, location);
+    assert.equal(a.matchesIndia, true, location);
+  }
+  const ats = assess({
+    title: "Product Analyst",
+    location: "Tezpur",
+    locationCountry: "in",
+    locationCity: "Tezpur",
+  });
+  assert.equal(ats.region, "Tezpur");
+  for (const location of [
+    "Hyderabad, Pakistan",
+    "Delhi, NY",
+    "Mar del Plata",
+    "Indianapolis, IN",
+  ]) {
+    assert.equal(geo({ location }).matchesIndia, false, location);
+  }
+  assert.ok(
+    assess({ title: "Product Management Intern", location: "Pan-India" })
+      .unsuitable,
+  );
+  assert.equal(geo({ location: "Remote – Singapore" }).matchesIndia, false);
 });

@@ -303,9 +303,11 @@ function visibleJobs() {
         return false;
       if (filters.company !== "All" && j.company !== filters.company)
         return false;
-      if (filters.region === "Remote" ? !isRemote(j) : false) return false;
+      if (filters.region === "Remote" && !isRemote(j)) return false;
+      if (filters.region === "All India" && !j.assessment.matchesIndia)
+        return false;
       if (
-        !["All", "Remote"].includes(filters.region) &&
+        !["All", "All India", "Remote"].includes(filters.region) &&
         regionOf(j) !== filters.region
       )
         return false;
@@ -351,6 +353,7 @@ function jobsPage() {
     count = (fn) => open.filter(fn).length,
     regions = [
       ["All", "Everywhere", open.length],
+      ["All India", "All India", count((j) => j.assessment.matchesIndia)],
       ...[
         ...new Set(
           [...open]

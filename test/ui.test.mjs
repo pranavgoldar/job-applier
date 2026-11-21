@@ -404,3 +404,36 @@ test("strategy has its own category, uses the founder resume and labels unstated
   assert.match(modal().textContent, /Experience not stated/);
   assert.match(modal().textContent, /Founder’s Office/);
 });
+
+test("All India includes remote India and displays priority cities in order", async () => {
+  const jobs = [
+    "Singapore",
+    "Pan India",
+    "New Delhi",
+    "Hyderabad",
+    "Mumbai",
+    "Bengaluru",
+    "Remote – India",
+  ].map((location, i) =>
+    job("city" + i, {
+      title: "Product Analyst",
+      employmentType: "Full-time",
+      location,
+    }),
+  );
+  const { ui, $, doc } = await load(state({ jobs }));
+  ui.setView("jobs");
+  const regions = [...doc.querySelectorAll("[data-region]")].map(
+    (b) => b.dataset.region,
+  );
+  assert.deepEqual(regions.slice(1, 6), [
+    "All India",
+    "Bangalore",
+    "Mumbai",
+    "Hyderabad",
+    "Delhi",
+  ]);
+  $('[data-region="All India"]').click();
+  assert.equal(doc.querySelectorAll(".jobs .job").length, 6);
+  assert(!$('[data-job="city0"]'));
+});

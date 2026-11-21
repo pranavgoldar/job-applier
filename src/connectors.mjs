@@ -97,6 +97,8 @@ function normalizeSmartRecruiters(source, body) {
     return {
       ...base(source),
       title: j.name,
+      locationCountry: l.country || null,
+      locationCity: l.city || null,
       location:
         joined(
           l.fullLocation || [l.city, l.region, l.country],

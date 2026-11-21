@@ -57,7 +57,7 @@ Open `http://127.0.0.1:4173`. Local development binds to loopback. Set `APP_PASS
 
 ## What works
 
-- **Jobs:** one feed of matched roles with search, location chips (Bangalore, Mumbai, rest of India, Dubai, Singapore, remote) and filters for resume track, job or internship, and sector. Save, hide, or open a role to see why it matched.
+- **Jobs:** one feed of matched roles with search, an All India filter and city chips. Bangalore, Mumbai, Hyderabad and Delhi get the highest location scores, in that order. Other Indian locations, Dubai and Singapore are also eligible. Filter by category, job or internship, and sector. Save, hide, or open a role to see why it matched.
 - **Applications:** a four-column board (To apply, Applied, Interviewing, Outcome). Mark a job applied in one click, then update its stage, notes and follow-up date.
 - **Resumes:** one slot each for Product / APM and Founder’s Office. Drag in a PDF or DOCX. A file named like `… APM resume.pdf` or `… founder office resume.pdf` is filed automatically. Old versions are kept.
 - **Companies:** every watched company with its scan status, an on/off switch and its matches. Add your own by job-board name.
