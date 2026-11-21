@@ -24,3 +24,21 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npx prettier --check public src test extension scripts api
+      - name: Verify the new employer feeds using their published policies
+        run: |
+          node --input-type=module <<'JS'
+          import { catalog } from './src/watchlist.mjs';
+          import { readEmployerFeed, employerFeedDocs } from './src/employer-feeds.mjs';
+          import { fetchJSON, plain } from './src/connectors.mjs';
+          import { assess } from './src/matching.mjs';
+          for (const c of catalog.filter(c=>c.connector && Object.hasOwn(employerFeedDocs,c.connector.kind))) {
+            try {
+              const rows=await readEmployerFeed(c.connector,async (url,Accept)=>{
+                const xml=await fetchJSON(url,fetch,{headers:{Accept},text:true,attempts:1});
+                if(!url.endsWith('robots.txt')) console.log(c.name, 'XML elements', [...new Set(Array.from(xml.slice(0,30000).matchAll(/<([\w:-]+)(?:\s|>)/g),m=>m[1]))].slice(0,55).join(','));
+                return xml;
+              },Date.now()+90000);
+              console.log(c.name,rows.length,'listed;',rows.filter(j=>!assess({...j,company:c.name,description:plain(j.description)}).unsuitable).length,'matching');
+            } catch(e){ console.log(c.name,'unverified:',e.message); }
+          }
+          JS

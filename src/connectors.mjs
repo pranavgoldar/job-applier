@@ -1,4 +1,9 @@
 import {
+  employerFeedDocs,
+  employerFeedURL,
+  readEmployerFeed,
+} from "./employer-feeds.mjs";
+import {
   ycProps,
   readYC,
   hiringCompanies,
@@ -14,6 +19,7 @@ import {
   blockedTitle,
 } from "./matching.mjs";
 export const docs = {
+  ...employerFeedDocs,
   greenhouse: "https://docs.greenhouse.io/job-board.html",
   lever: "https://github.com/lever/postings-api",
   ashby: "https://developers.ashbyhq.com/docs/public-job-posting-api",
@@ -36,6 +42,8 @@ export function canonical(url) {
   return u.toString().replace(/\/$/, "");
 }
 export function sourceURL(source) {
+  if (Object.hasOwn(employerFeedDocs, source.kind))
+    return employerFeedURL(source);
   const validBoard =
     source.kind === "ashby"
       ? /^[a-zA-Z0-9_.-]{1,100}$/
@@ -445,10 +453,10 @@ export { isTargetRole, isTargetLocation };
 export async function fetchJSON(
   url,
   fetcher = fetch,
-  { deadline = Infinity, headers = {}, text = false } = {},
+  { deadline = Infinity, headers = {}, text = false, attempts = 3 } = {},
 ) {
   let error;
-  for (let n = 0; n < 3; n++) {
+  for (let n = 0; n < attempts; n++) {
     try {
       const remaining = deadline - Date.now();
       if (remaining < 200)
@@ -467,7 +475,9 @@ export async function fetchJSON(
         },
       });
       if (!r.ok) {
-        const e = new Error(`HTTP ${r.status}`);
+        const e = Object.assign(new Error(`HTTP ${r.status}`), {
+          status: r.status,
+        });
         if (r.status < 500 && r.status !== 429) {
           e.permanent = true;
           throw e;
@@ -481,7 +491,8 @@ export async function fetchJSON(
     } catch (e) {
       error = e;
       if (e.permanent || deadline - Date.now() < 1000) break;
-      if (n < 2) await new Promise((r) => setTimeout(r, 500 * 2 ** n));
+      if (n + 1 < attempts)
+        await new Promise((r) => setTimeout(r, 500 * 2 ** n));
     }
   }
   throw error;
@@ -614,7 +625,24 @@ export async function discover(
         );
         continue;
       }
-      if (s.kind === "lever") {
+      if (Object.hasOwn(employerFeedDocs, s.kind)) {
+        const rows = await readEmployerFeed(
+          s,
+          (url, accept) =>
+            fetchJSON(url, fetcher, {
+              deadline,
+              text: true,
+              attempts: 1,
+              headers: { Accept: accept },
+            }),
+          deadline,
+        );
+        jobs = rows.map((row) => ({
+          ...base(s),
+          ...row,
+          description: plain(row.description).slice(0, 12000),
+        }));
+      } else if (s.kind === "lever") {
         for (let skip = 0; skip < 2000; skip += 100) {
           const body = await fetchJSON(
             sourceURL(s).replace("skip=0", `skip=${skip}`),

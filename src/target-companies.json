@@ -2034,5 +2034,569 @@
     "indiaSignal": "Remote roles open to India",
     "indiaEvidenceUrl": null,
     "note": "Many employers in one feed. Limited requests without a free API key (HIMALAYAS_API_KEY)."
+  },
+  {
+    "id": "phonepe",
+    "name": "PhonePe",
+    "group": "Fintech",
+    "industry": "Fintech / payment services",
+    "careersUrl": "https://www.phonepe.com/careers/job-openings/",
+    "connector": {
+      "kind": "smartrecruiters",
+      "board": "PHONEPELIMITED"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "Business Operations Analyst",
+      "url": "https://careers.smartrecruiters.com/PHONEPELIMITED"
+    }
+  },
+  {
+    "id": "stable-money",
+    "name": "Stable Money",
+    "group": "Fintech",
+    "industry": "Fintech / savings and deposits",
+    "careersUrl": "https://jobs.lever.co/stable-money1",
+    "connector": {
+      "kind": "lever",
+      "board": "stable-money1"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "Finance Trainee",
+      "url": "https://jobs.lever.co/stable-money1"
+    }
+  },
+  {
+    "id": "glomopay",
+    "name": "Glomopay",
+    "group": "Fintech",
+    "industry": "Fintech / cross-border payments",
+    "careersUrl": "https://jobs.ashbyhq.com/glomo",
+    "connector": {
+      "kind": "ashby",
+      "board": "glomo"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "Associate Product Manager / Product Manager",
+      "url": "https://jobs.ashbyhq.com/glomo/cd9dd2e4-47f7-4b9c-85f0-e985d62128c1"
+    }
+  },
+  {
+    "id": "tilt-finance",
+    "name": "Tilt Finance",
+    "group": "Fintech",
+    "industry": "Fintech / consumer credit",
+    "careersUrl": "https://jobs.ashbyhq.com/tilthq",
+    "connector": {
+      "kind": "ashby",
+      "board": "tilthq"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "Compliance Analyst, NIRA",
+      "url": "https://jobs.ashbyhq.com/tilthq/7e522953-4d49-459f-82bc-1ea6a7fe6bd5"
+    }
+  },
+  {
+    "id": "onepay",
+    "name": "OnePay",
+    "group": "Fintech",
+    "industry": "Fintech / consumer banking",
+    "careersUrl": "https://jobs.ashbyhq.com/oneapp",
+    "connector": {
+      "kind": "ashby",
+      "board": "oneapp"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "Backend Engineer, Banking",
+      "url": "https://jobs.ashbyhq.com/oneapp/3d950f2f-4ec6-4817-a0be-0fbfe809561c"
+    }
+  },
+  {
+    "id": "tether",
+    "name": "Tether",
+    "group": "Fintech",
+    "industry": "Fintech / digital currencies",
+    "careersUrl": "https://tether.recruitee.com",
+    "connector": {
+      "kind": "recruitee",
+      "board": "tether"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "Frontend Desktop Engineer",
+      "url": "https://tether.recruitee.com/o/frontend-desktop-engineer-india"
+    }
+  },
+  {
+    "id": "payjoy",
+    "name": "PayJoy",
+    "group": "Fintech",
+    "industry": "Fintech / consumer lending",
+    "careersUrl": "https://jobs.lever.co/payjoy",
+    "connector": {
+      "kind": "lever",
+      "board": "payjoy"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "Fraud Operations Analyst",
+      "url": "https://jobs.lever.co/payjoy/?location=Bangalore"
+    }
+  },
+  {
+    "id": "moonpay",
+    "name": "MoonPay",
+    "group": "Fintech",
+    "industry": "Fintech / digital payments",
+    "careersUrl": "https://jobs.lever.co/moonpay",
+    "connector": {
+      "kind": "lever",
+      "board": "moonpay"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "Fraud Investigator",
+      "url": "https://jobs.lever.co/moonpay?location=Bengaluru%2C+Karnataka"
+    }
+  },
+  {
+    "id": "zynga",
+    "name": "Zynga",
+    "group": "Consumer",
+    "industry": "Consumer / mobile games",
+    "careersUrl": "https://job-boards.greenhouse.io/zyngacareers",
+    "connector": {
+      "kind": "greenhouse",
+      "board": "zyngacareers"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "Senior Producer",
+      "url": "https://job-boards.greenhouse.io/zyngacareers/jobs/6264940004"
+    }
+  },
+  {
+    "id": "scopely",
+    "name": "Scopely",
+    "group": "Consumer",
+    "industry": "Consumer / mobile games",
+    "careersUrl": "https://job-boards.greenhouse.io/scopely",
+    "connector": {
+      "kind": "greenhouse",
+      "board": "scopely"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "Community Marketing Manager, Pokémon GO",
+      "url": "https://job-boards.greenhouse.io/scopely/jobs/5475582008"
+    }
+  },
+  {
+    "id": "skillz",
+    "name": "Skillz",
+    "group": "Consumer",
+    "industry": "Consumer / mobile games",
+    "careersUrl": "https://job-boards.greenhouse.io/skillzinc",
+    "connector": {
+      "kind": "greenhouse",
+      "board": "skillzinc"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "Product Manager",
+      "url": "https://job-boards.greenhouse.io/skillzinc/jobs/6813800"
+    }
+  },
+  {
+    "id": "plum",
+    "name": "Plum",
+    "group": "Fintech",
+    "industry": "Fintech / insurance",
+    "careersUrl": "https://careers.kula.ai/plumhq",
+    "connector": null,
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "Director / Senior Director, Enterprise Sales",
+      "url": "https://careers.kula.ai/plumhq"
+    }
+  },
+  {
+    "id": "slice",
+    "name": "slice",
+    "group": "Fintech",
+    "industry": "Fintech / consumer banking",
+    "careersUrl": "https://slice.bank.in/careers/",
+    "connector": null,
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "Customer Experience Executive",
+      "url": "https://careers.kula.ai/slice/51786-customer-experience-executive"
+    }
+  },
+  {
+    "id": "kreditbee",
+    "name": "KreditBee",
+    "group": "Fintech",
+    "industry": "Fintech / consumer lending",
+    "careersUrl": "https://krazybee.freshteam.com/jobs",
+    "connector": null,
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "Program Manager",
+      "url": "https://krazybee.freshteam.com/jobs"
+    }
+  },
+  {
+    "id": "sfpay",
+    "name": "sfpay",
+    "group": "Fintech",
+    "industry": "Fintech / merchant payments",
+    "careersUrl": "https://sfpay.in/careers/",
+    "connector": null,
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "Founder’s Office Intern",
+      "url": "https://sfpay.in/careers/"
+    }
+  },
+  {
+    "id": "jai-finance",
+    "name": "Jai Finance",
+    "group": "Fintech",
+    "industry": "Fintech / consumer lending",
+    "careersUrl": "https://jaifinance.in/careers",
+    "connector": null,
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "Senior Finance Manager",
+      "url": "https://jaifinance.in/careers"
+    }
+  },
+  {
+    "id": "bookmyshow",
+    "name": "BookMyShow",
+    "group": "Consumer",
+    "industry": "Consumer / ticketing",
+    "careersUrl": "https://in.bookmyshow.com/careers/",
+    "connector": null,
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Mumbai",
+      "title": "Executive, Customer Experience",
+      "url": "https://bookmyshow.hire.trakstar.com/jobs/fk0zj9e/"
+    }
+  },
+  {
+    "id": "dream11",
+    "name": "Dream11",
+    "group": "Consumer",
+    "industry": "Consumer / fantasy sports",
+    "careersUrl": "https://dream11.hire.trakstar.com/",
+    "connector": null,
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Mumbai",
+      "title": "Product Manager (Mobile)",
+      "url": "https://dream11.hire.trakstar.com/"
+    }
+  },
+  {
+    "id": "drip-capital",
+    "name": "Drip Capital",
+    "group": "Fintech",
+    "industry": "Fintech / trade finance",
+    "careersUrl": "https://www.dripcapital.com/en-in/careers/",
+    "connector": null,
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Mumbai",
+      "title": "Finance Manager",
+      "url": "https://dripcapital.hire.trakstar.com/"
+    }
+  },
+  {
+    "id": "upstox",
+    "name": "Upstox",
+    "group": "Fintech",
+    "industry": "Fintech / investing",
+    "careersUrl": "https://upstox.com/careers/",
+    "connector": null,
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Mumbai",
+      "title": "Application Security Engineer-2",
+      "url": "https://upstox.com/careers/"
+    }
+  },
+  {
+    "id": "sure",
+    "name": "Sure",
+    "group": "Fintech",
+    "industry": "Fintech / consumer finance",
+    "careersUrl": "https://www.sure.financial/careers",
+    "connector": null,
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Mumbai",
+      "title": "Founder’s Office",
+      "url": "https://www.sure.financial/careers"
+    }
+  },
+  {
+    "id": "acko",
+    "name": "ACKO",
+    "group": "Fintech",
+    "industry": "Fintech / insurance",
+    "careersUrl": "https://careers.kula.ai/acko",
+    "connector": null,
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Mumbai",
+      "title": "City Lead, Mumbai",
+      "url": "https://careers.kula.ai/acko?jobs=true"
+    }
+  },
+  {
+    "id": "the-bombay-store",
+    "name": "The Bombay Store",
+    "group": "Consumer",
+    "industry": "Consumer / retail",
+    "careersUrl": "https://thebombaystore.com/pages/career",
+    "connector": null,
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Mumbai",
+      "title": "Counter Sales Intern",
+      "url": "https://thebombaystore.com/pages/career"
+    }
+  },
+  {
+    "id": "zouk",
+    "name": "Zouk",
+    "group": "Consumer",
+    "industry": "Consumer / fashion and accessories",
+    "careersUrl": "https://zouk.co.in/pages/zouk-career",
+    "connector": null,
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Mumbai",
+      "title": "Team Lead, Category Growth",
+      "url": "https://zouk.co.in/pages/zouk-career"
+    }
+  },
+  {
+    "id": "earthful",
+    "name": "Earthful",
+    "group": "Consumer",
+    "industry": "Consumer / nutrition",
+    "careersUrl": "https://earthful.me/pages/careers",
+    "connector": null,
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Mumbai",
+      "title": "Marketing Intern",
+      "url": "https://earthful.me/pages/careers"
+    }
+  },
+  {
+    "id": "payu",
+    "name": "PayU",
+    "group": "Fintech",
+    "industry": "Fintech / payments",
+    "careersUrl": "https://careers.payu.in/",
+    "connector": null,
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Mumbai",
+      "title": "Key Account Manager, Sales",
+      "url": "https://careers.payu.in/PayU/job/Mumbai-P4-Key-Account-Manager-Sales/3052080/"
+    }
+  },
+  {
+    "id": "360t",
+    "name": "360T",
+    "group": "Fintech",
+    "industry": "Fintech / foreign exchange trading",
+    "careersUrl": "https://360t.jobs.personio.de/",
+    "connector": {
+      "kind": "personio",
+      "board": "360t.jobs.personio.de"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Singapore",
+      "title": "People Operations Intern",
+      "url": "https://360t.jobs.personio.de/job/2742201?language=en"
+    }
+  },
+  {
+    "id": "osome",
+    "name": "Osome",
+    "group": "Fintech",
+    "industry": "Fintech / digital accounting",
+    "careersUrl": "https://careers.osome.com/jobs",
+    "connector": {
+      "kind": "teamtailor",
+      "board": "careers.osome.com"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Singapore",
+      "title": "Senior Product Manager, Core Accounting",
+      "url": "https://careers.osome.com/jobs"
+    }
+  },
+  {
+    "id": "chalhoub-group",
+    "name": "Chalhoub Group",
+    "group": "Consumer",
+    "industry": "Consumer / luxury retail",
+    "careersUrl": "https://careers.chalhoubgroup.com/jobs",
+    "connector": {
+      "kind": "teamtailor",
+      "board": "careers.chalhoubgroup.com"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-21",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Dubai",
+      "title": "Senior Associate, E-Tailers",
+      "url": "https://careers.chalhoubgroup.com/jobs"
+    }
   }
 ]
