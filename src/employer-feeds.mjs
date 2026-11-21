@@ -2,11 +2,6 @@ import robotsParser from "robots-parser";
 import { setTimeout as delay } from "node:timers/promises";
 import { SaxesParser } from "saxes";
 
-// Branded Teamtailor sites verified on the employer's careers page.
-const brandedBoards = new Set([
-  "careers.chalhoubgroup.com",
-  "careers.osome.com",
-]);
 export const employerFeedDocs = {
   recruitee: "https://support.recruitee.com/en/articles/8213076-faq-api",
   teamtailor:
@@ -16,8 +11,18 @@ export const employerFeedDocs = {
 export function employerFeedURL({ kind, board }) {
   if (typeof board !== "string") throw new Error("Invalid board identifier");
   const slug = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i;
-  if (kind === "teamtailor" && brandedBoards.has(board))
+  if (kind === "teamtailor") {
+    if (
+      !/^(?=.{4,120}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}$/.test(
+        board,
+      ) ||
+      /(?:^|\.)(?:local|localhost|internal|lan|home|corp|test|example|invalid)$/.test(
+        board,
+      )
+    )
+      throw new Error("Invalid board identifier");
     return "https://" + board + "/jobs.rss";
+  }
   if (
     kind === "personio" &&
     /^[a-z0-9-]{1,63}\.jobs\.personio\.(?:de|com)$/i.test(board)
@@ -26,8 +31,6 @@ export function employerFeedURL({ kind, board }) {
   if (!slug.test(board)) throw new Error("Invalid board identifier");
   if (kind === "recruitee")
     return "https://" + board + ".recruitee.com/api/feeds/offers.xml";
-  if (kind === "teamtailor")
-    return "https://" + board + ".teamtailor.com/jobs.rss";
   return "https://" + board + ".jobs.personio.com/xml";
 }
 
@@ -65,7 +68,7 @@ const children = (node, name) =>
 const child = (node, name) => children(node, name)[0];
 const value = (node, name) => child(node, name)?.text.trim() || "";
 const join = (...parts) =>
-  [...new Set(parts.flat().filter(Boolean))].join(", ");
+  [...new Set(parts.flat().filter(Boolean))].join("; ");
 function location(node) {
   const country = value(node, "country");
   return (
@@ -126,6 +129,7 @@ function posting(kind, node, origin) {
   }
   const remote = value(node, "remotestatus").toLowerCase();
   return {
+    applyUrl: value(node, "link").replace(/\/?$/, "/applications/new"),
     id: value(node, "guid") || value(node, "link"),
     title: value(node, "title"),
     originalUrl: value(node, "link"),
@@ -135,8 +139,61 @@ function posting(kind, node, origin) {
     ),
     workplaceType:
       remote === "fully" ? "Remote" : remote === "hybrid" ? "Hybrid" : "",
-    postedAt: value(node, "pubdate"),
+    postedAt: value(node, "pubdate")
+      ? new Date(value(node, "pubdate")).toISOString()
+      : null,
   };
+}
+export function parseEmployerPage(source, xml) {
+  const root = parseXML(xml),
+    rss = source.kind === "teamtailor",
+    first = new URL(employerFeedURL(source)),
+    jobs = [];
+  const container = rss ? child(root, "channel") : root;
+  const records = rss
+    ? "item"
+    : source.kind === "personio"
+      ? "position"
+      : root?.name === "offers"
+        ? "offer"
+        : "job";
+  const allowedRoot = rss
+    ? ["rss"]
+    : source.kind === "personio"
+      ? ["workzag-jobs"]
+      : ["jobs", "offers"];
+  if (
+    !allowedRoot.includes(root?.name) ||
+    !container ||
+    (rss && !value(container, "title"))
+  )
+    throw new Error("Unrecognized employer feed");
+  const entries = children(container, records);
+  if (
+    !rss &&
+    container.children.some((n) => ![records, "link", "next"].includes(n.name))
+  )
+    throw new Error("Unexpected employer feed contents");
+  for (const n of entries) {
+    const { id, ...job } = posting(source.kind, n, first.origin);
+    if (!id || !job.title || !/^https?:\/\//i.test(job.originalUrl))
+      throw new Error("Incomplete or repeated posting");
+
+    jobs.push({
+      ...job,
+      sourceId: rss ? id : source.board + ":" + id,
+      location:
+        [job.location, job.workplaceType].filter(Boolean).join("; ") ||
+        "Unknown",
+      isRemote: job.workplaceType === "Remote",
+    });
+  }
+  const link = children(container, "link").find(
+    (n) => n.attributes.rel === "next",
+  );
+  const next = link?.attributes.href || value(container, "next");
+  if (link && !next) throw new Error("Invalid continuation link");
+  return { jobs, next };
 }
 export async function readEmployerFeed(source, readPage, deadline = Infinity) {
   const first = new URL(employerFeedURL(source));
@@ -166,61 +223,20 @@ export async function readEmployerFeed(source, readPage, deadline = Infinity) {
         throw new Error("Feed crawl delay exceeds the scan window");
       await delay(pause);
     }
-    const root = parseXML(
+    const page = parseEmployerPage(
+      source,
       await readPage(
         url.href,
         "application/rss+xml, application/xml, text/xml",
       ),
     );
-    const container = rss ? child(root, "channel") : root;
-    const records = rss
-      ? "item"
-      : source.kind === "personio"
-        ? "position"
-        : root?.name === "offers"
-          ? "offer"
-          : "job";
-    const allowedRoot = rss
-      ? ["rss"]
-      : source.kind === "personio"
-        ? ["workzag-jobs"]
-        : ["jobs", "offers"];
-    if (
-      !allowedRoot.includes(root?.name) ||
-      !container ||
-      (rss && !value(container, "title"))
-    )
-      throw new Error("Unrecognized employer feed");
-    const entries = children(container, records);
-    if (
-      !rss &&
-      container.children.some(
-        (n) => ![records, "link", "next"].includes(n.name),
-      )
-    )
-      throw new Error("Unexpected employer feed contents");
-    for (const n of entries) {
-      const { id, ...job } = posting(source.kind, n, first.origin);
-      if (
-        !id ||
-        !job.title ||
-        !/^https?:\/\//i.test(job.originalUrl) ||
-        seen.has(id)
-      )
-        throw new Error("Incomplete or repeated posting");
-      seen.add(id);
-      jobs.push({
-        ...job,
-        sourceId: source.board + ":" + id,
-        location: join(job.location, job.workplaceType) || "Unknown",
-        isRemote: job.workplaceType === "Remote",
-      });
+    for (const job of page.jobs) {
+      if (seen.has(job.sourceId))
+        throw new Error("Repeated posting in employer feed");
+      seen.add(job.sourceId);
+      jobs.push(job);
     }
-    const link = children(container, "link").find(
-      (n) => n.attributes.rel === "next",
-    );
-    const next = link?.attributes.href || value(container, "next");
-    if (link && !next) throw new Error("Invalid continuation link");
+    const next = page.next;
     if (next) {
       url = new URL(next, url);
       if (
@@ -231,7 +247,7 @@ export async function readEmployerFeed(source, readPage, deadline = Infinity) {
         url.hash
       )
         throw new Error("Unexpected continuation link");
-    } else if (rss && entries.length >= 100) {
+    } else if (rss && page.jobs.length >= 100) {
       url = new URL(first);
       url.searchParams.set("offset", String(jobs.length));
     } else return jobs;

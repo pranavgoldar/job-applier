@@ -381,6 +381,8 @@ export function createHandler(
           company: j.company,
           title: j.title,
           applyUrl: j.applyUrl || j.originalUrl,
+          // Lets the filler pick internship or full-time answers (expected pay).
+          employmentType: j.assessment?.employmentType || null,
           profile: {
             name: c.profile?.name || "",
             email: c.profile?.email || "",
