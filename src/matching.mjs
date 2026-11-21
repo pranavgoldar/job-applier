@@ -378,7 +378,8 @@ function classifyRole(job, years) {
     /\bfounder[’'s]* (?:office|associate)|office of (?:the )?ceo|ceo[’'s]* office|associate to (?:the )?founder/;
   const eligibleChief = !chief || (years ? years.min <= 2 : junior);
   const manager = /\bproduct manager\b/.test(title);
-  const eligibleManager = !manager || junior || (!!years && years.min <= 2);
+  const eligibleManager =
+    !manager || junior || internWord.test(title) || (!!years && years.min <= 2);
   const outsideFamily = blockedTitle(job);
   const missingLevel = !outsideFamily && (!eligibleChief || !eligibleManager);
   if (!outsideFamily && !missingLevel) {
@@ -438,7 +439,9 @@ export function isTargetRole(job) {
 function locationIssue(place, type) {
   if (type === "Internship") {
     if (!place.remote)
-      return "Internship requires an on-site or hybrid schedule.";
+      return ["Bangalore", "Mumbai"].includes(place.region)
+        ? null
+        : "This internship is on-site or hybrid outside Bangalore and Mumbai.";
     if (!place.indiaRemote)
       return place.remoteEligibility + ". Remote work must be open to India.";
   } else if (place.remote && !place.indiaRemote && !place.foreignTargetRemote) {
@@ -560,6 +563,20 @@ export function assess(job, profile = initialProfile) {
     experienceLabel,
     sector,
     employmentType: type,
+    internshipWorkplace:
+      type !== "Internship"
+        ? null
+        : place.remote
+          ? "Remote"
+          : /hybrid/i.test([job.workplaceType, job.location].join(" "))
+            ? "Hybrid"
+            : "On-site",
+    historyOnly:
+      !!c.category &&
+      type === "Internship" &&
+      !place.remote &&
+      !!locationReason &&
+      blocked.length === 1,
     startDate: start,
     workAuthorization: auth,
     decision: unsuitable

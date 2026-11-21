@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { sha, uuid, now } from "./ids.mjs";
+import { canScanSource } from "./yc-discovery.mjs";
 import { watchlistFrom, rescoreJobs } from "./watchlist.mjs";
 import { jobRow, appRow } from "./sql-model.mjs";
 import {
@@ -196,23 +197,41 @@ export function createHandler(
         });
       }
       if (p === "/api/state" && req.method === "GET") {
-        const [config, jobs, apps, resumes, sources, events, queue, pending] =
-          await store.readMany([
-            {
-              sql: "SELECT key,value FROM config WHERE key IN ('profile','settings','answers','scanStarted','companyWatchlist','companySearchPreferences','lastDiscovery','nextDiscovery','workerHeartbeat')",
-            },
-            { sql: "SELECT * FROM jobs ORDER BY first_seen DESC" },
-            { sql: "SELECT * FROM applications ORDER BY updated DESC" },
-            {
-              sql: "SELECT id,track,version,name,sha256,mime,created,is_default FROM resumes",
-            },
-            { sql: "SELECT * FROM sources" },
-            { sql: "SELECT * FROM events ORDER BY id DESC LIMIT 60" },
-            { sql: "SELECT * FROM queue ORDER BY created DESC LIMIT 30" },
-            {
-              sql: "SELECT COUNT(*) AS n FROM queue WHERE status IN ('queued','running')",
-            },
-          ]);
+        const [
+          config,
+          jobs,
+          apps,
+          resumes,
+          sourceRows,
+          events,
+          queue,
+          pending,
+        ] = await store.readMany([
+          {
+            sql: "SELECT key,value FROM config WHERE key IN ('profile','settings','answers','scanStarted','companyWatchlist','companySearchPreferences','lastDiscovery','nextDiscovery','workerHeartbeat')",
+          },
+          { sql: "SELECT * FROM jobs ORDER BY first_seen DESC" },
+          { sql: "SELECT * FROM applications ORDER BY updated DESC" },
+          {
+            sql: "SELECT id,track,version,name,sha256,mime,created,is_default FROM resumes",
+          },
+          { sql: "SELECT * FROM sources" },
+          { sql: "SELECT * FROM events ORDER BY id DESC LIMIT 60" },
+          { sql: "SELECT * FROM queue ORDER BY created DESC LIMIT 30" },
+          {
+            sql: "SELECT COUNT(*) AS n FROM queue WHERE status IN ('queued','running')",
+          },
+        ]);
+        const sources = sourceRows.map((s) =>
+          canScanSource(s)
+            ? s
+            : {
+                ...s,
+                enabled: 0,
+                health: "Manual",
+                error: "YC authorization required for automated reads.",
+              },
+        );
         const c = Object.fromEntries(
           config.map((r) => [r.key, JSON.parse(r.value)]),
         );

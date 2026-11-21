@@ -447,3 +447,33 @@ test("All India includes remote India and displays priority cities in order", as
   ui.setAppTab("todo");
   assert.deepEqual(cards().slice(0, 4), ["city5", "city4", "city3", "city2"]);
 });
+
+test("remote internships lead the two permitted office cities, with other office internships in History", async () => {
+  const cities = ["Mumbai", "Bengaluru", "Gurugram", "Remote – India"];
+  const jobs = cities.map((location, i) => {
+    const j = job("intern" + i, {
+      title: "Founder’s Office - Intern",
+      location,
+    });
+    return { ...j, unsuitable: j.assessment.unsuitable };
+  });
+  const { ui, $, doc } = await load(state({ jobs }));
+  ui.setView("jobs");
+  const cards = () => [...doc.querySelectorAll(".jobs article")];
+  assert.deepEqual(
+    cards().map((c) => c.dataset.job),
+    ["intern3", "intern1", "intern0"],
+  );
+  assert.match(cards()[0].textContent, /Remote/);
+  assert.match(cards()[1].textContent, /On-site/);
+  $('[data-tab="closed"]').click();
+  assert.deepEqual(
+    cards().map((c) => c.dataset.job),
+    ["intern2"],
+  );
+  ui.openJob("intern2");
+  assert.match(
+    doc.querySelector("#modal-root").textContent,
+    /on-site.*outside Bangalore and Mumbai/,
+  );
+});
