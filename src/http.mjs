@@ -17,6 +17,7 @@ import {
   trackFromName,
 } from "./applications.mjs";
 import { upsertJob, sourceURL, kinds } from "./connectors.mjs";
+import { importJobLink, LinkError } from "./job-link.mjs";
 import { initialProfile, assess } from "./matching.mjs";
 import { nextCloudRun } from "./cloud-worker.mjs";
 import { answerFields, cleanAnswers } from "./answers.mjs";
@@ -248,7 +249,16 @@ export function createHandler(
             // A scan can finish after the user changes availability. The feed
             // should immediately reflect the profile returned in this response.
             const assessment = assess(job, c.profile || initialProfile);
-            return { ...job, assessment, unsuitable: assessment.unsuitable };
+            // A job you added yourself stays in view; the reason it falls
+            // outside your filters is shown on it instead.
+            return job.addedByYou
+              ? {
+                  ...job,
+                  assessment,
+                  unsuitable: null,
+                  outsideFilters: assessment.unsuitable,
+                }
+              : { ...job, assessment, unsuitable: assessment.unsuitable };
           }),
           applications: apps.map(appRow),
           resumes,
@@ -264,6 +274,20 @@ export function createHandler(
           workerHeartbeat: c.workerHeartbeat ?? null,
           authEnabled: !!password,
         });
+      }
+      if (p === "/api/jobs/from-link" && req.method === "POST") {
+        const b = await body(req);
+        try {
+          return json(
+            res,
+            200,
+            await importJobLink(store, b.url, { company: b.company }),
+          );
+        } catch (e) {
+          if (e instanceof LinkError)
+            return json(res, 422, { error: e.message });
+          throw e;
+        }
       }
       if (p === "/api/jobs" && req.method === "POST") {
         const b = await body(req);

@@ -549,6 +549,15 @@ export function assess(job, profile = initialProfile) {
   return {
     ...c,
     ...place,
+    // A job you added yourself may sit outside the three categories; it still
+    // gets a resume, chosen from its title.
+    track:
+      c.track ??
+      (job.addedByYou
+        ? /\bproduct\b/i.test(job.title || "")
+          ? "Product"
+          : FOUNDERS
+        : null),
     remoteEligibility:
       type === "Full-time" && place.foreignTargetRemote && !place.indiaRemote
         ? "Remote · " + place.region
