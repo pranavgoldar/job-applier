@@ -282,6 +282,13 @@ function head(title, sub, actions = "") {
 }
 
 // ---------- jobs ----------
+function comparePreferredJobs(a, b) {
+  return (
+    b.assessment.parts.location - a.assessment.parts.location ||
+    b.assessment.score - a.assessment.score ||
+    String(b.firstSeen).localeCompare(String(a.firstSeen))
+  );
+}
 function visibleJobs() {
   const q = filters.search.trim().toLowerCase();
   return state.jobs
@@ -321,8 +328,7 @@ function visibleJobs() {
         ? String(b.postedAt || b.firstSeen).localeCompare(
             String(a.postedAt || a.firstSeen),
           )
-        : b.assessment.score - a.assessment.score ||
-          String(b.firstSeen).localeCompare(String(a.firstSeen)),
+        : comparePreferredJobs(a, b),
     );
 }
 function jobCard(j) {
@@ -416,7 +422,7 @@ function jobsPage() {
       ["Consumer", "Consumer"],
       ["Other", "Other"],
     ])}${select("sort", [
-      ["best", "Best match"],
+      ["best", "Preferred cities"],
       ["newest", "Newest"],
     ])}</div><div class="chips">${regions.map(([v, l, n]) => `<button class="chip ${filters.region === v ? "active" : ""}" data-region="${e(v)}">${e(l)} <i>${n}</i></button>`).join("")}<button class="chip ${filters.type === "Internship" ? "active" : ""}" data-internships>Internships <i>${count((j) => jobType(j) === "Internship")}</i></button>${filters.company !== "All" ? `<button class="chip active" data-clear-company>${e(filters.company)} ✕</button>` : ""}</div><div id="job-list">${jobList(list)}</div>`
   );
@@ -468,7 +474,7 @@ function applicationsPage() {
       (a, b) =>
         !!b.applyOpened - !!a.applyOpened ||
         isSaved(b) - isSaved(a) ||
-        b.assessment.score - a.assessment.score,
+        comparePreferredJobs(a, b),
     ),
     waiting = attention(),
     missing = ["name", "email", "phone"].filter((k) => !state.profile[k]),

@@ -421,6 +421,9 @@ test("All India includes remote India and displays priority cities in order", as
       location,
     }),
   );
+  // A higher fit score in another city must not displace a priority city.
+  jobs[5].assessment.score = 65;
+  jobs[1].assessment.score = 96;
   const { ui, $, doc } = await load(state({ jobs }));
   ui.setView("jobs");
   const regions = [...doc.querySelectorAll("[data-region]")].map(
@@ -436,4 +439,11 @@ test("All India includes remote India and displays priority cities in order", as
   $('[data-region="All India"]').click();
   assert.equal(doc.querySelectorAll(".jobs .job").length, 6);
   assert(!$('[data-job="city0"]'));
+  const cards = () =>
+    [...doc.querySelectorAll("#app article[data-job]")].map(
+      (el) => el.dataset.job,
+    );
+  assert.deepEqual(cards().slice(0, 4), ["city5", "city4", "city3", "city2"]);
+  ui.setAppTab("todo");
+  assert.deepEqual(cards().slice(0, 4), ["city5", "city4", "city3", "city2"]);
 });
