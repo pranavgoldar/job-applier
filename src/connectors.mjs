@@ -26,6 +26,8 @@ export const docs = {
   bamboohr: "https://www.bamboohr.com/applicant-tracking/careers-page",
   // The public job board behind the employer's own Rippling careers page.
   rippling: "https://www.rippling.com/recruiting",
+  // The employer's public careers page hosted by Kula (robots.txt allows it).
+  kula: "https://www.kula.ai",
   ycombinator: "https://www.ycombinator.com/companies",
 };
 // Company boards a user can add by name.
@@ -48,7 +50,8 @@ export function sourceURL(source) {
       : source.kind === "pinpoint" ||
           source.kind === "ycombinator" ||
           source.kind === "bamboohr" ||
-          source.kind === "rippling"
+          source.kind === "rippling" ||
+          source.kind === "kula"
         ? /^[a-z0-9-]{1,80}$/
         : source.kind === "teamtailor"
           ? // A careers-site host name, e.g. careers.example.com or example.teamtailor.com
@@ -84,6 +87,8 @@ export function sourceURL(source) {
       return `https://${source.board}/jobs.rss`;
     case "bamboohr":
       return `https://${b}.bamboohr.com/careers/list`;
+    case "kula":
+      return `https://careers.kula.ai/${b}`;
     case "rippling":
       return `https://ats.rippling.com/api/v2/board/${b}/jobs?page=0`;
     case "ycombinator":
@@ -433,7 +438,53 @@ function normalizeRippling(source, body) {
     };
   });
 }
+// Kula careers pages list each opening as a card: team, title, place, type, link.
+function normalizeKula(source, page) {
+  const html = String(page);
+  if (!/careers\.kula\.ai|chakra-card/.test(html))
+    throw new Error("Unexpected source schema; jobs were not changed");
+  // Each piece starts inside the card's opening tag: drop the rest of that tag.
+  const cards = html
+    .split(/<div class="chakra-card\b/)
+    .slice(1)
+    .map((c) => c.slice(c.indexOf(">") + 1));
+  return cards
+    .map((card) => {
+      const href = (card.match(
+        new RegExp(`href="(/${source.board}/[^"#?]+)"`),
+      ) || [])[1];
+      const parts = xmlText(
+        card
+          .replace(/<svg[\s\S]*?<\/svg>/g, " ")
+          .replace(/<!--[\s\S]*?-->/g, "")
+          .replace(/<[^>]+>/g, "\n"),
+      )
+        .split("\n")
+        .map((x) => x.trim())
+        .filter((x) => x && !/^apply now$/i.test(x));
+      // [team, title, place, "Full time • On-Site"]
+      const [team, title, place, kind = ""] = parts;
+      if (!href || !title) return null;
+      const url = "https://careers.kula.ai" + href;
+      return {
+        ...base(source),
+        title,
+        location: joined(place, /remote/i.test(kind) ? "Remote" : ""),
+        description: team ? "Team: " + team : "",
+        descriptionPartial: true,
+        employmentType: kind.split("•")[0].trim() || "Unknown",
+        isRemote: /remote/i.test(kind),
+        originalUrl: url,
+        applyUrl: url,
+        sourceId: href.split("/").pop().split("-")[0] || href,
+        postedAt: null,
+        compensation: null,
+      };
+    })
+    .filter(Boolean);
+}
 export function normalize(source, body) {
+  if (source.kind === "kula") return normalizeKula(source, body);
   if (source.kind === "teamtailor")
     return normalizeTeamtailor(source, body).filter(
       (j) => j.title && j.originalUrl,
@@ -873,6 +924,11 @@ export async function discover(
           if (page === 10) complete = false;
           await new Promise((r) => setTimeout(r, 300));
         }
+      } else if (s.kind === "kula") {
+        jobs = normalize(
+          s,
+          await fetchJSON(sourceURL(s), fetcher, { deadline, text: true }),
+        );
       } else if (s.kind === "bamboohr") {
         const body = await fetchJSON(sourceURL(s), fetcher, { deadline });
         jobs = normalize(s, body);

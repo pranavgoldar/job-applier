@@ -20,7 +20,7 @@ export const defaultSearchPreferences = {
   fullTimeFrom: "2027-05-15",
   remoteInternshipsRequireIndiaEligibility: true,
 };
-export const catalogVersion = 6;
+export const catalogVersion = 7;
 export async function ensureWatchlist(store) {
   if ((await store.config("companyCatalogVersion")) === catalogVersion) return;
   const old = await store.config("companyWatchlist", []),
@@ -35,6 +35,10 @@ export async function ensureWatchlist(store) {
       enabled: existing?.enabled ?? true,
     };
     delete c.sourceId;
+    // A company that no longer has a readable source becomes a manual check;
+    // its old source row goes, so it is not shown as a failing scan.
+    if (!c.connector && existing?.sourceId)
+      await store.run("DELETE FROM sources WHERE id=?", existing.sourceId);
     if (c.connector) {
       let source = await store.get(
         "SELECT * FROM sources WHERE kind=? AND lower(board)=lower(?)",
