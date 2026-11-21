@@ -2620,10 +2620,7 @@
     "group": "Fintech",
     "industry": "Fintech / digital accounting",
     "careersUrl": "https://careers.osome.com/jobs",
-    "connector": {
-      "kind": "teamtailor",
-      "board": "careers.osome.com"
-    },
+    "connector": null,
     "aliases": [],
     "tracks": ["Product", "Founder’s Office"],
     "checkedOn": "2026-11-21",
@@ -2633,7 +2630,8 @@
       "city": "Singapore",
       "title": "Senior Product Manager, Core Accounting",
       "url": "https://careers.osome.com/jobs"
-    }
+    },
+    "note": "Manual visit. The careers site disallows automatic reading of its jobs feed."
   },
   {
     "id": "chalhoub-group",

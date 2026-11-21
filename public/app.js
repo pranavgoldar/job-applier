@@ -1140,30 +1140,46 @@ function editAnswers(a, jobId) {
 function alertDrafts(text) {
   const drafts = [];
   const seen = new Set();
-  let lines = [];
-  for (const line of text
+  const linkPattern =
+    /\b(?:https?:\/\/|(?:www\.)?ycombinator\.com\/)[^\s<>"\]]+/i;
+  const content = text
     .split(/\r?\n/)
-    .map((s) => s.trim())
-    .filter(Boolean)) {
-    if (
-      /^(?:from|to|cc|sent|subject|date):|unsubscribe|manage (?:your )?(?:alerts|preferences)|view (?:this )?email|privacy policy/i.test(
-        line,
-      )
-    )
-      continue;
-    const url = line
-      .match(/https?:\/\/[^\s<>"\]]+/i)?.[0]
-      ?.replace(/[).,;]+$/, "");
-    if (!url) {
+    .map((line) => line.trim())
+    .filter(
+      (line) =>
+        line &&
+        !/^(?:from|to|cc|sent|subject|date):|unsubscribe|manage (?:your )?(?:alerts|preferences)|view (?:this )?email|privacy policy/i.test(
+          line,
+        ),
+    );
+  // Some single-job alerts put the link above the job details.
+  const links = content.filter((line) => linkPattern.test(line));
+  if (links.length === 1) {
+    content.splice(content.indexOf(links[0]), 1);
+    content.push(links[0]);
+  }
+  let lines = [];
+  for (const line of content) {
+    const match = line.match(linkPattern);
+    if (!match) {
       lines.push(line);
       continue;
     }
-    const prefix = line.slice(0, line.indexOf(url)).trim();
+    const prefix = line.slice(0, match.index).trim();
     if (
       prefix &&
       !/^(?:link|url|view job|apply(?: now)?)[\s:–-]*$/i.test(prefix)
     )
       lines.push(prefix);
+    const raw = match[0]
+      .replace(/[.,;]+$/, "")
+      .replace(/\)$/, (s) => (match[0].includes("(") ? s : ""));
+    let url;
+    try {
+      url = new URL(/^https?:\/\//i.test(raw) ? raw : "https://" + raw).href;
+    } catch {
+      continue;
+    }
     if (seen.has(url)) {
       lines = [];
       continue;
@@ -1200,7 +1216,11 @@ function alertDrafts(text) {
       if (company) draft.company ||= company;
       if (location) draft.location ||= location;
     }
-    draft.company ||= free.shift() || "";
+    if (!draft.company && free.length) {
+      const [company, place] = free.shift().split(/\s+[·•|]\s+/);
+      draft.company = company;
+      if (place) draft.location ||= place;
+    }
     draft.location ||= free.shift() || "";
     const type = draft.employmentType || draft.title || "";
     draft.employmentType = /intern|trainee|apprentice/i.test(type)

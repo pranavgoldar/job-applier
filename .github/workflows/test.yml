@@ -24,21 +24,24 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npx prettier --check public src test extension scripts api
-      - name: Verify the new employer feeds using their published policies
+      - name: Check the new employer boards against their published feeds
         run: |
           node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import os from 'node:os';
+          import path from 'node:path';
+          import { Store } from './src/store.mjs';
           import { catalog } from './src/watchlist.mjs';
-          import { readEmployerFeed, employerFeedDocs } from './src/employer-feeds.mjs';
-          import { fetchJSON, plain } from './src/connectors.mjs';
-          import { assess } from './src/matching.mjs';
-          for (const c of catalog.filter(c=>c.connector && Object.hasOwn(employerFeedDocs,c.connector.kind))) {
-            try {
-              const rows=await readEmployerFeed(c.connector,async (url,Accept)=>{
-                const xml=await fetchJSON(url,fetch,{headers:{Accept},text:true,attempts:1});
-                if(!url.endsWith('robots.txt')) console.log(c.name, 'XML elements', [...new Set(Array.from(xml.slice(0,30000).matchAll(/<([\w:-]+)(?:\s|>)/g),m=>m[1]))].slice(0,55).join(','));
-                return xml;
-              },Date.now()+90000);
-              console.log(c.name,rows.length,'listed;',rows.filter(j=>!assess({...j,company:c.name,description:plain(j.description)}).unsuitable).length,'matching');
-            } catch(e){ console.log(c.name,'unverified:',e.message); }
+          import { discover } from './src/connectors.mjs';
+          const store=new Store(fs.mkdtempSync(path.join(os.tmpdir(),'board-check-')));
+          const additions=catalog.filter(c=>c.hiringEvidence && c.connector);
+          await store.set("companyWatchlist",additions.map(c=>({...c,sourceId:c.id})));
+          for(const {id,name,connector} of additions){
+            await store.run("INSERT INTO sources(id,company,kind,board) VALUES (?,?,?,?)",id,name,connector.kind,connector.board);
+            await discover(store,fetch,{sourceIds:[id],deadline:Date.now()+90000});
+            const s=await store.get("SELECT health,error,count FROM sources WHERE id=?",id);
+            console.log("Board result",name,JSON.stringify(s));
           }
+          for(const j of await store.jobs()) if(!j.closed&&!j.unsuitable)console.log("Board match",JSON.stringify([j.company,j.title,j.assessment.category,j.assessment.region,j.assessment.employmentType]));
+          store.close();
           JS

@@ -477,3 +477,39 @@ test("remote internships lead the two permitted office cities, with other office
     /on-site.*outside Bangalore and Mumbai/,
   );
 });
+
+test("pasted alerts create editable drafts and a bare YC job link is never fetched", async () => {
+  const calls = [];
+  const data = state();
+  const { ui, $ } = await load(data, {
+    fetchImpl: async (url) => {
+      calls.push(url);
+      return { ok: true, json: async () => data };
+    },
+  });
+  ui.addJob();
+  const fill = (text) => {
+    $("#alert-text").value = text;
+    $("#read-alert").onclick();
+  };
+  const yc = "https://www.ycombinator.com/companies/example/jobs/product";
+  fill(yc);
+  assert.equal($("#originalUrl").value, yc);
+  assert.equal($("#company").value, "");
+  $("#company").value = "Example";
+  $("#title").value = "Product Analyst";
+  assert.equal($("#title").value, "Product Analyst");
+  fill(
+    "ycombinator.com/companies/example/jobs/product\nRole: Product Intern\nCompany: Example\nLocation: Bengaluru",
+  );
+  assert.equal($("#company").value, "Example");
+  assert.equal($("#location").value, "Bengaluru");
+  assert.match($("#originalUrl").value, /^https:\/\//);
+  fill(
+    "Subject: Your job alert\nProduct Analyst at Example\nMumbai\nhttps://example.test/a\nRole: Founder’s Office Intern\nCompany: Example Two\nLocation: Bangalore\nhttps://example.test/b\nUnsubscribe https://example.test/unsubscribe",
+  );
+  assert.equal($("#company").value, "Example");
+  assert.equal($("#location").value, "Mumbai");
+  assert.equal($("#alert-job").querySelectorAll("option").length, 2);
+  assert.deepEqual(calls, ["/api/state"]);
+});

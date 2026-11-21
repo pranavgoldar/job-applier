@@ -43,7 +43,7 @@ test("Recruitee and Personio preserve requirements, locations and employment typ
   const [p] = await readEmployerFeed(
     source,
     read(
-      "<workzag-jobs><position><id>24</id><name>Product Analyst</name><office>Singapore</office><additionalOffices><office>Bangalore</office></additionalOffices><jobDescriptions><jobDescription><value>Requires 5+ years of product management.</value></jobDescription></jobDescriptions><employmentType>permanent</employmentType><schedule>full-time</schedule></position></workzag-jobs>",
+      "<workzag-jobs><position><id>24</id><name>Product Analyst</name><office>Singapore</office><additionalOffices><office>Bangalore</office></additionalOffices><jobDescriptions><jobDescription><value><p>Requires <strong>5+ years</strong> of product management.</p></value></jobDescription></jobDescriptions><employmentType>permanent</employmentType><schedule>full-time</schedule></position></workzag-jobs>",
     ),
   );
   assert.equal(p.originalUrl, "https://fixture.jobs.personio.de/job/24");
@@ -147,4 +147,17 @@ test("new watchlist records link a dated target-city vacancy to an official boar
     assert.match(c.industry, /^(Fintech|Consumer) \//);
     if (c.connector) assert.ok(sourceURL(c.connector));
   }
+});
+
+test("Recruitee's public offers export preserves nested duties and employment codes", async () => {
+  const [row] = await readEmployerFeed(
+    { kind: "recruitee", board: "fixture" },
+    read(
+      "<offers><offer><id>24</id><title>Product Manager</title><careers_url>https://example.test/o/24</careers_url><description><p>Own the roadmap.</p></description><requirements><ul><li>5+ years of product management</li></ul></requirements><employment_type_code>full_time</employment_type_code><experience_code>entry_level</experience_code><city>Mumbai</city><country_code>IN</country_code></offer></offers>",
+    ),
+  );
+  assert.equal(row.employmentType, "full time");
+  assert.equal(row.experienceLevel, "entry level");
+  assert.match(row.description, /Own the roadmap/);
+  assert.match(assess(row).unsuitable, /experience/i);
 });

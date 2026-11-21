@@ -45,6 +45,11 @@ function parseXML(xml) {
     const node = {
       name: name.split(":").pop().toLowerCase(),
       attributes,
+      richText:
+        stack.at(-1)?.richText ||
+        /^(?:value|description|description_requirements|requirements)$/i.test(
+          name,
+        ),
       text: "",
       children: [],
     };
@@ -58,7 +63,8 @@ function parseXML(xml) {
   parser.on("text", append);
   parser.on("cdata", append);
   parser.on("closetag", () => {
-    stack.pop();
+    const node = stack.pop();
+    if (stack.at(-1)?.richText) stack.at(-1).text += " " + node.text + " ";
   });
   parser.write(xml).close();
   return root;
@@ -70,7 +76,7 @@ const value = (node, name) => child(node, name)?.text.trim() || "";
 const join = (...parts) =>
   [...new Set(parts.flat().filter(Boolean))].join("; ");
 function location(node) {
-  const country = value(node, "country");
+  const country = value(node, "country") || value(node, "country_code");
   return (
     join(
       value(node, "city") || value(node, "name"),
@@ -82,6 +88,10 @@ function location(node) {
 function posting(kind, node, origin) {
   const places = children(child(node, "locations"), "location").map(location);
   if (kind === "personio") {
+    const rawYears = value(node, "yearsofexperience");
+    const years = rawYears
+      .replace(/_/g, " ")
+      .replace(/^(\d+(?:\s*[-–]\s*\d+|\+)?)$/, "$1 years");
     const id = value(node, "id");
     if (!/^\d+$/.test(id)) throw new Error("Missing Personio position ID");
     return {
@@ -102,7 +112,7 @@ function posting(kind, node, origin) {
       )
         ? "Internship"
         : value(node, "schedule") || value(node, "employmenttype"),
-      experienceLevel: value(node, "seniority"),
+      experienceLevel: join(years, value(node, "seniority")),
       postedAt: value(node, "createdat"),
     };
   }
@@ -122,9 +132,13 @@ function posting(kind, node, origin) {
           : value(node, "hybrid") === "true"
             ? "Hybrid"
             : "",
-      experienceLevel: value(node, "experience"),
-      employmentType: value(node, "contract_type"),
-      postedAt: value(node, "posted"),
+      experienceLevel:
+        value(node, "experience") ||
+        value(node, "experience_code").replace(/_/g, " "),
+      employmentType:
+        value(node, "contract_type") ||
+        value(node, "employment_type_code").replace(/_/g, " "),
+      postedAt: value(node, "posted") || value(node, "published_at"),
     };
   }
   const remote = value(node, "remotestatus").toLowerCase();
@@ -165,6 +179,7 @@ export function parseEmployerPage(source, xml) {
   if (
     !allowedRoot.includes(root?.name) ||
     !container ||
+    container.text.trim() ||
     (rss && !value(container, "title"))
   )
     throw new Error("Unrecognized employer feed");
@@ -177,7 +192,7 @@ export function parseEmployerPage(source, xml) {
   for (const n of entries) {
     const { id, ...job } = posting(source.kind, n, first.origin);
     if (!id || !job.title || !/^https?:\/\//i.test(job.originalUrl))
-      throw new Error("Incomplete or repeated posting");
+      throw new Error("Incomplete job posting");
 
     jobs.push({
       ...job,
