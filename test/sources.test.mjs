@@ -238,9 +238,10 @@ test("Pinpoint jobs open straight on the application form", () => {
   );
 });
 
-// Shaped like careers.kula.ai/<company>/ on 21 Nov 2026.
+// Shaped like careers.kula.ai/<company>/ on 21 Nov 2026, including the style
+// blocks the page puts inside each card.
 const kulaPage = `<html><body><div id="__next"><h1>Open Positions</h1>
-<div class="chakra-card css-2vpafz"><span class="chakra-stack"><span class="css-1ct3vlm"><span class="css-3snkxd">Growth &amp; Strategy</span></span><div class="chakra-stack"><p class="chakra-text css-1ernmgu">Associate, Strategy &amp; Operations</p></div><div class="chakra-stack"><div class="chakra-stack"><svg viewBox="0 0 24 24"><path d="M12 13"></path></svg><p class="chakra-text">Bengaluru, Karnataka, India</p></div><div class="chakra-stack"><svg viewBox="0 0 24 24"><path d="M1 1"></path></svg><p class="chakra-text">Full time<!-- --> • On-Site</p></div></div><a class="chakra-link" href="/acme/24413-associate-strategy-operations"><span><span>Apply Now</span></span></a></span></div>
+<div class="chakra-card css-2vpafz"><span class="chakra-stack"><span class="css-1ct3vlm"><span class="css-3snkxd">Growth &amp; Strategy</span></span><div class="chakra-stack"><style data-emotion="css 1aab61a">.css-1aab61a{display:inline-block;-webkit-line-clamp:2;}</style><p class="chakra-text css-1ernmgu">Associate, Strategy &amp; Operations</p></div><div class="chakra-stack"><div class="chakra-stack"><svg viewBox="0 0 24 24"><path d="M12 13"></path></svg><p class="chakra-text">Bengaluru, Karnataka, India</p></div><div class="chakra-stack"><svg viewBox="0 0 24 24"><path d="M1 1"></path></svg><p class="chakra-text">Full time<!-- --> • On-Site</p></div></div><a class="chakra-link" href="/acme/24413-associate-strategy-operations"><span><span>Apply Now</span></span></a></span></div>
 <div class="chakra-card css-2vpafz"><span class="chakra-stack"><span class="css-1ct3vlm"><span class="css-3snkxd">Product</span></span><div class="chakra-stack"><p class="chakra-text css-1ernmgu">Product Management Intern</p></div><div class="chakra-stack"><div class="chakra-stack"><p class="chakra-text">India</p></div><div class="chakra-stack"><p class="chakra-text">Internship<!-- --> • Remote</p></div></div><a class="chakra-link" href="/acme/25001-product-management-intern"><span><span>Apply Now</span></span></a></span></div>
 <script src="https://careers-cdn.kula.ai/_next/static/chunks/main.js"></script></div></body></html>`;
 test("Kula careers pages are read card by card", () => {

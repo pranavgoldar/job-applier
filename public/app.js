@@ -152,7 +152,10 @@ function toast(s) {
   const t = $("#toast");
   t.textContent = s;
   t.style.display = "block";
-  setTimeout(() => (t.style.display = "none"), 4200);
+  setTimeout(
+    () => (t.style.display = "none"),
+    Math.max(4200, String(s).length * 60),
+  );
 }
 async function api(path, body) {
   const r = await fetch(
@@ -987,7 +990,7 @@ function openJob(id) {
   sheet(
     "drawer",
     j.title,
-    `<header class="sheet-head"><div class="spread" style="margin-bottom:12px"><span class="tag" style="color:${fitColor}">${fitLabel} · ${m.score}/100</span><button class="icon-btn" data-close aria-label="Close">${icon("x")}</button></div><div class="hero">${logo(j.company)}<div><h2>${e(j.title)}</h2><div class="muted" style="margin-top:3px">${e(j.company)} · ${e(j.location)}</div></div></div><div class="tags" style="margin-top:12px">${a ? statusTag(a) : ""}<span class="tag ${sector.toLowerCase()}">${sector}</span><span class="tag">${e(m.category || j.unsuitable || m.reason)}</span><span class="tag">${e(jobType(j))}</span>${workplaceTag(j)}<span class="tag">${e(experience(j))}</span>${m.employmentType === "Full-time" ? '<span class="tag">' + (m.startDate ? "Start date " + e(m.startDate) : "Start date not stated") + "</span>" : ""}${isRemote(j) ? '<span class="tag">Remote</span>' : ""}${j.postedAt ? `<span class="tag">Posted ${ago(j.postedAt)}</span>` : ""}${j.closed ? '<span class="tag warn">No longer listed</span>' : j.unsuitable ? `<span class="tag warn">${e(m.historyOnly ? j.unsuitable : "No longer matches")}</span>` : ""}</div><div class="row" style="margin-top:16px">${canApply ? `<button class="btn accent" style="flex:1" data-apply="${id}">${icon("external", 15)}${extVersion() ? "Apply with autofill" : "Apply on company site"}</button>` : `<a class="btn" style="flex:1" href="${e(j.applyUrl || j.originalUrl)}" target="_blank" rel="noopener noreferrer">${icon("external", 15)}Open job page</a>`}${a ? "" : `<button class="btn" data-prepare="${id}">Prepare packet</button><button class="btn" data-mark-applied="${id}">${icon("check", 15)}I applied</button>`}<button class="icon-btn ${isSaved(j) ? "on" : ""}" data-save="${id}" aria-label="${isSaved(j) ? "Remove from saved" : "Save for later"}">${icon("bookmark", 18)}</button></div></header><div class="sheet-body">${j.unsuitable ? `<div class="callout" style="margin-bottom:18px">Reason hidden: ${e(j.unsuitable)}</div>` : ""}${
+    `<header class="sheet-head"><div class="spread" style="margin-bottom:12px"><span class="tag" style="color:${fitColor}">${fitLabel} · ${m.score}/100</span><button class="icon-btn" data-close aria-label="Close">${icon("x")}</button></div><div class="hero">${logo(j.company)}<div><h2>${e(j.title)}</h2><div class="muted" style="margin-top:3px">${e(j.company)} · ${e(j.location)}</div></div></div><div class="tags" style="margin-top:12px">${a ? statusTag(a) : ""}<span class="tag ${sector.toLowerCase()}">${sector}</span><span class="tag">${e(m.category || j.unsuitable || m.reason)}</span><span class="tag">${e(jobType(j))}</span>${workplaceTag(j)}<span class="tag">${e(experience(j))}</span>${m.employmentType === "Full-time" ? '<span class="tag">' + (m.startDate ? "Start date " + e(m.startDate) : "Start date not stated") + "</span>" : ""}${isRemote(j) ? '<span class="tag">Remote</span>' : ""}${j.postedAt ? `<span class="tag">Posted ${ago(j.postedAt)}</span>` : ""}${j.closed ? '<span class="tag warn">No longer listed</span>' : j.unsuitable ? `<span class="tag warn">${e(m.historyOnly ? j.unsuitable : "No longer matches")}</span>` : ""}</div><div class="row" style="margin-top:16px">${canApply ? `<button class="btn accent" style="flex:1" data-apply="${id}">${icon("external", 15)}${extVersion() ? "Apply with autofill" : "Apply on company site"}</button>` : `<a class="btn" style="flex:1" href="${e(j.applyUrl || j.originalUrl)}" target="_blank" rel="noopener noreferrer">${icon("external", 15)}Open job page</a>`}${a ? "" : `<button class="btn" data-prepare="${id}">Prepare packet</button><button class="btn" data-mark-applied="${id}">${icon("check", 15)}I applied</button>`}<button class="icon-btn ${isSaved(j) ? "on" : ""}" data-save="${id}" aria-label="${isSaved(j) ? "Remove from saved" : "Save for later"}">${icon("bookmark", 18)}</button></div></header><div class="sheet-body">${j.unsuitable ? `<div class="callout" style="margin-bottom:18px">Reason hidden: ${e(j.unsuitable)}</div>` : j.outsideFilters ? `<div class="callout" style="margin-bottom:18px">You added this yourself. It is outside your usual filters: ${e(j.outsideFilters)}</div>` : ""}${
       a
         ? packetSections(j, a)
         : `<section><h3>Resume to send</h3>${
@@ -1137,8 +1140,30 @@ function editAnswers(a, jobId) {
 function addJob() {
   modal(
     "Add a job you found",
-    `<form id="job-form" class="stack">${field("company", "Company", "")}${field("title", "Job title", "")}${field("originalUrl", "Link to the job", "", "url")}${field("location", "Location", "")}<div class="field"><label for="employmentType">Type</label><select id="employmentType" name="employmentType" style="width:100%"><option>Full-time</option><option>Internship</option></select></div>${field("description", "Job description (paste it for a better score)", "", "textarea")}<button class="btn primary block">Add job</button></form>`,
+    `<form id="link-form" class="stack"><p class="muted small">Found a role on LinkedIn or anywhere else? Open the company's own job page (on LinkedIn, press <b>Apply</b> where it says “on company website”) and paste that address here. The app reads the title, place and description from the company's job board, and checks that company in every scan from then on.</p><div class="field"><label for="link-url">Company job link</label><input id="link-url" name="url" type="url" required placeholder="https://jobs.lever.co/…"></div><div class="field"><label for="link-company">Company name (optional)</label><input id="link-company" name="company" type="text"></div><p class="muted small">Works with job pages on Greenhouse, Lever, Ashby, SmartRecruiters, Workable, Pinpoint, BambooHR, Rippling, Kula and Teamtailor. LinkedIn links themselves can't be read: LinkedIn doesn't allow it.</p><button class="btn primary block">Add from link</button></form><details style="margin-top:18px"><summary>Or fill it in by hand</summary><form id="job-form" class="stack" style="margin-top:14px">${field("company", "Company", "")}${field("title", "Job title", "")}${field("originalUrl", "Link to the job", "", "url")}${field("location", "Location", "")}<div class="field"><label for="employmentType">Type</label><select id="employmentType" name="employmentType" style="width:100%"><option>Full-time</option><option>Internship</option></select></div>${field("description", "Job description (paste it for a better score)", "", "textarea")}<button class="btn primary block">Add job</button></form></details>`,
   );
+  $("#link-form").onsubmit = async (ev) => {
+    ev.preventDefault();
+    const button = ev.target.querySelector("button");
+    button.disabled = true;
+    button.textContent = "Reading the job page…";
+    try {
+      const r = await api(
+        "jobs/from-link",
+        Object.fromEntries(new FormData(ev.target)),
+      );
+      closeModal();
+      await refresh();
+      if (r.id) openJob(r.id);
+      toast(r.message);
+    } catch (err) {
+      toast(err.message);
+      button.disabled = false;
+      button.textContent = "Add from link";
+      // The message points to the by-hand form, so show it.
+      $("#job-form").closest("details").open = true;
+    }
+  };
   $("#job-form").onsubmit = async (ev) => {
     ev.preventDefault();
     const data = Object.fromEntries(new FormData(ev.target));

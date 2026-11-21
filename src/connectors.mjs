@@ -455,7 +455,7 @@ function normalizeKula(source, page) {
       ) || [])[1];
       const parts = xmlText(
         card
-          .replace(/<svg[\s\S]*?<\/svg>/g, " ")
+          .replace(/<(svg|style|script)\b[\s\S]*?<\/\1>/g, " ")
           .replace(/<!--[\s\S]*?-->/g, "")
           .replace(/<[^>]+>/g, "\n"),
       )
@@ -588,6 +588,7 @@ export async function upsertJobs(store, jobs, profile) {
         // What the person did with this job survives every re-scan.
         ...(previous.collection ? { collection: previous.collection } : {}),
         ...(previous.applyOpened ? { applyOpened: previous.applyOpened } : {}),
+        ...(previous.addedByYou ? { addedByYou: previous.addedByYou } : {}),
         ...(previous.closed || (previous.unsuitable && !assessment.unsuitable)
           ? { reopenedAt: now() }
           : previous.reopenedAt
@@ -788,6 +789,120 @@ export async function addBambooDetails(
   }
   return fetched;
 }
+// Read every posting on one company board. complete is false when the board
+// could not be read to the end.
+export async function readSource(
+  store,
+  s,
+  fetcher = fetch,
+  deadline = Infinity,
+) {
+  let jobs = [],
+    complete = true;
+  if (s.kind === "lever") {
+    for (let skip = 0; skip < 2000; skip += 100) {
+      const body = await fetchJSON(
+        sourceURL(s).replace("skip=0", `skip=${skip}`),
+        fetcher,
+        { deadline },
+      );
+      const page = normalize(s, body);
+      jobs.push(...page);
+      if (body.length < 100) break;
+      if (skip === 1900)
+        throw new Error("Pagination safety limit; board incomplete");
+      await new Promise((r) => setTimeout(r, 250));
+    }
+  } else if (s.kind === "himalayas") {
+    // The feed allows few requests without a key. A free key (optional,
+    // HIMALAYAS_API_KEY) raises the limit. If the limit is hit part-way,
+    // keep the pages already read instead of failing the whole source.
+    const headers = process.env.HIMALAYAS_API_KEY
+      ? { Authorization: "Bearer " + process.env.HIMALAYAS_API_KEY }
+      : {};
+    for (let page = 1; page <= 10; page++) {
+      let body;
+      try {
+        body = await fetchJSON(
+          sourceURL(s).replace("page=1", "page=" + page),
+          fetcher,
+          { deadline, headers },
+        );
+      } catch (e) {
+        if (!jobs.length) throw e;
+        complete = false;
+        break;
+      }
+      const rows = normalize(s, body);
+      jobs.push(...rows);
+      if (!(page * 20 < Number(body.totalCount)) || !body.jobs.length) break;
+      if (page === 10) complete = false;
+      await new Promise((r) => setTimeout(r, 1200));
+    }
+  } else if (s.kind === "ycombinator") {
+    jobs = normalize(s, await readYC(store, sourceURL(s), fetcher, deadline));
+  } else if (s.kind === "teamtailor") {
+    // The feed shows up to 100 jobs per page; read every page.
+    const seen = new Set();
+    for (let page = 1; page <= 10; page++) {
+      const rows = normalize(
+        s,
+        await fetchJSON(
+          sourceURL(s) + (page > 1 ? "?page=" + page : ""),
+          fetcher,
+          { deadline, text: true },
+        ),
+      ).filter((j) => !seen.has(j.sourceId) && seen.add(j.sourceId));
+      jobs.push(...rows);
+      if (rows.length < 100) break;
+      if (page === 10) complete = false;
+      await new Promise((r) => setTimeout(r, 300));
+    }
+  } else if (s.kind === "kula") {
+    jobs = normalize(
+      s,
+      await fetchJSON(sourceURL(s), fetcher, { deadline, text: true }),
+    );
+  } else if (s.kind === "bamboohr") {
+    const body = await fetchJSON(sourceURL(s), fetcher, { deadline });
+    jobs = normalize(s, body);
+    if (Number(body?.meta?.totalCount) > jobs.length) complete = false;
+    await addBambooDetails(store, s, jobs, fetcher, deadline);
+  } else if (s.kind === "rippling") {
+    for (let page = 0; page < 20; page++) {
+      const body = await fetchJSON(
+        sourceURL(s).replace("page=0", "page=" + page),
+        fetcher,
+        { deadline },
+      );
+      jobs.push(...normalize(s, body));
+      if (page + 1 >= Number(body.totalPages || 1)) break;
+      if (page === 19) complete = false;
+      await new Promise((r) => setTimeout(r, 250));
+    }
+  } else if (s.kind === "smartrecruiters") {
+    // Ask the board only for the three target countries instead of every posting.
+    for (const country of ["in", "ae", "sg"])
+      for (let offset = 0; offset < 1000; offset += 100) {
+        const body = await fetchJSON(
+          sourceURL(s).replace("offset=0", `offset=${offset}`) +
+            "&country=" +
+            country,
+          fetcher,
+          { deadline },
+        );
+        jobs.push(...normalize(s, body));
+        if (!(offset + 100 < Number(body.totalFound))) break;
+        if (offset === 900) complete = false;
+        await new Promise((r) => setTimeout(r, 250));
+      }
+  } else
+    jobs = normalize(s, await fetchJSON(sourceURL(s), fetcher, { deadline }));
+  for (const job of jobs) job.sourceRef = s.id;
+  if (s.kind === "smartrecruiters")
+    await addSmartRecruitersDescriptions(store, s, jobs, fetcher, deadline);
+  return { jobs, complete };
+}
 export async function discover(
   store,
   fetcher = fetch,
@@ -806,10 +921,9 @@ export async function discover(
       industry: target?.industry || "Unknown",
     };
     try {
-      let jobs = [],
-        // False when the board could not be read to the end, so absence of a
-        // posting proves nothing.
-        complete = true;
+      // complete is false when the board could not be read to the end, so
+      // absence of a posting proves nothing.
+      let jobs, complete;
       if (s.kind === "yc-directory") {
         const companies = await hiringCompanies(
           store,
@@ -861,115 +975,7 @@ export async function discover(
         );
         continue;
       }
-      if (s.kind === "lever") {
-        for (let skip = 0; skip < 2000; skip += 100) {
-          const body = await fetchJSON(
-            sourceURL(s).replace("skip=0", `skip=${skip}`),
-            fetcher,
-            { deadline },
-          );
-          const page = normalize(s, body);
-          jobs.push(...page);
-          if (body.length < 100) break;
-          if (skip === 1900)
-            throw new Error("Pagination safety limit; board incomplete");
-          await new Promise((r) => setTimeout(r, 250));
-        }
-      } else if (s.kind === "himalayas") {
-        // The feed allows few requests without a key. A free key (optional,
-        // HIMALAYAS_API_KEY) raises the limit. If the limit is hit part-way,
-        // keep the pages already read instead of failing the whole source.
-        const headers = process.env.HIMALAYAS_API_KEY
-          ? { Authorization: "Bearer " + process.env.HIMALAYAS_API_KEY }
-          : {};
-        for (let page = 1; page <= 10; page++) {
-          let body;
-          try {
-            body = await fetchJSON(
-              sourceURL(s).replace("page=1", "page=" + page),
-              fetcher,
-              { deadline, headers },
-            );
-          } catch (e) {
-            if (!jobs.length) throw e;
-            complete = false;
-            break;
-          }
-          const rows = normalize(s, body);
-          jobs.push(...rows);
-          if (!(page * 20 < Number(body.totalCount)) || !body.jobs.length)
-            break;
-          if (page === 10) complete = false;
-          await new Promise((r) => setTimeout(r, 1200));
-        }
-      } else if (s.kind === "ycombinator") {
-        jobs = normalize(
-          s,
-          await readYC(store, sourceURL(s), fetcher, deadline),
-        );
-      } else if (s.kind === "teamtailor") {
-        // The feed shows up to 100 jobs per page; read every page.
-        const seen = new Set();
-        for (let page = 1; page <= 10; page++) {
-          const rows = normalize(
-            s,
-            await fetchJSON(
-              sourceURL(s) + (page > 1 ? "?page=" + page : ""),
-              fetcher,
-              { deadline, text: true },
-            ),
-          ).filter((j) => !seen.has(j.sourceId) && seen.add(j.sourceId));
-          jobs.push(...rows);
-          if (rows.length < 100) break;
-          if (page === 10) complete = false;
-          await new Promise((r) => setTimeout(r, 300));
-        }
-      } else if (s.kind === "kula") {
-        jobs = normalize(
-          s,
-          await fetchJSON(sourceURL(s), fetcher, { deadline, text: true }),
-        );
-      } else if (s.kind === "bamboohr") {
-        const body = await fetchJSON(sourceURL(s), fetcher, { deadline });
-        jobs = normalize(s, body);
-        if (Number(body?.meta?.totalCount) > jobs.length) complete = false;
-        await addBambooDetails(store, s, jobs, fetcher, deadline);
-      } else if (s.kind === "rippling") {
-        for (let page = 0; page < 20; page++) {
-          const body = await fetchJSON(
-            sourceURL(s).replace("page=0", "page=" + page),
-            fetcher,
-            { deadline },
-          );
-          jobs.push(...normalize(s, body));
-          if (page + 1 >= Number(body.totalPages || 1)) break;
-          if (page === 19) complete = false;
-          await new Promise((r) => setTimeout(r, 250));
-        }
-      } else if (s.kind === "smartrecruiters") {
-        // Ask the board only for the three target countries instead of every posting.
-        for (const country of ["in", "ae", "sg"])
-          for (let offset = 0; offset < 1000; offset += 100) {
-            const body = await fetchJSON(
-              sourceURL(s).replace("offset=0", `offset=${offset}`) +
-                "&country=" +
-                country,
-              fetcher,
-              { deadline },
-            );
-            jobs.push(...normalize(s, body));
-            if (!(offset + 100 < Number(body.totalFound))) break;
-            if (offset === 900) complete = false;
-            await new Promise((r) => setTimeout(r, 250));
-          }
-      } else
-        jobs = normalize(
-          s,
-          await fetchJSON(sourceURL(s), fetcher, { deadline }),
-        );
-      for (const job of jobs) job.sourceRef = s.id;
-      if (s.kind === "smartrecruiters")
-        await addSmartRecruitersDescriptions(store, s, jobs, fetcher, deadline);
+      ({ jobs, complete } = await readSource(store, s, fetcher, deadline));
       const assessments = new Map(
         jobs.map((job) => [job, assess(job, profile)]),
       );
