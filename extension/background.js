@@ -15,9 +15,11 @@ async function startApplication(packet) {
   // Resumes are large and shared by many jobs: keep each one once.
   if (resume?.id) resumes[resume.id] = resume;
   jobs[job.jobId] = { ...job, resumeId: resume?.id || null, formSeen: false };
-  const tab = await chrome.tabs.create({ url: packet.applyUrl });
+  // Record the tab before it loads, so its first page is already recognised.
+  const tab = await chrome.tabs.create({ url: "about:blank" });
   tabs[tab.id] = job.jobId;
   await session.set({ jobs, resumes, tabs, latest: job.jobId });
+  await chrome.tabs.update(tab.id, { url: packet.applyUrl });
   return { ok: true };
 }
 async function packetFor(jobId) {
@@ -115,3 +117,26 @@ chrome.tabs.onRemoved.addListener(async (tabId) => {
     await session.set({ tabs });
   }
 });
+
+// Fill application pages on any site, but only in tabs this extension opened
+// for an application (or that you chose with "Fill this page"). Each page and
+// frame gets the filler once it has loaded; the filler then watches the page.
+async function inject(tabId, frameId) {
+  try {
+    await chrome.scripting.executeScript({
+      target:
+        frameId === undefined
+          ? { tabId, allFrames: true }
+          : { tabId, frameIds: [frameId] },
+      files: ["fill.js", "content.js"],
+    });
+  } catch {
+    // Pages the browser protects (chrome://, the Web Store) cannot be filled.
+  }
+}
+chrome.webNavigation.onCompleted.addListener(
+  async ({ tabId, frameId, url }) => {
+    if (!/^https?:/.test(url || "")) return;
+    if (await jobIdForTab(tabId)) await inject(tabId, frameId);
+  },
+);

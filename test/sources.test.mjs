@@ -216,3 +216,24 @@ test("the four companies moved off manual checks have verified sources; the rest
   for (const c of cat.filter((c) => c.connector))
     assert.doesNotThrow(() => sourceURL(c.connector), c.name);
 });
+
+test("Pinpoint jobs open straight on the application form", () => {
+  const [job] = normalize(
+    { kind: "pinpoint", company: "TEST", board: "test" },
+    {
+      data: [
+        {
+          id: "1",
+          title: "Product Analyst",
+          url: "https://test.pinpointhq.com/en/postings/abc",
+          location: { city: "Dubai", name: "UAE" },
+        },
+      ],
+    },
+  );
+  assert.equal(job.originalUrl, "https://test.pinpointhq.com/en/postings/abc");
+  assert.equal(
+    job.applyUrl,
+    "https://test.pinpointhq.com/en/postings/abc/applications/new",
+  );
+});

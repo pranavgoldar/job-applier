@@ -567,11 +567,16 @@ function ext(message) {
 }
 // Jobs the extension saw you submit. Recorded as "browser-detected", with the
 // resume the extension attached. If it attached none, you confirm it yourself.
-function collectResults(results = []) {
+async function collectResults(results = []) {
   if (!state || !results.length) return;
+  // A job the page has not loaded yet (added since it opened): reload first.
+  if (results.some((r) => !jobFor(r.jobId))) await refresh(false);
+  const handled = [];
   for (const r of results) {
     const j = jobFor(r.jobId);
-    if (!j || isApplied(appFor(j.id))) continue;
+    if (!j) continue; // Keep the report in the extension; try again later.
+    handled.push(r.jobId);
+    if (isApplied(appFor(j.id))) continue;
     if (r.resumeId)
       act(
         () =>
@@ -589,7 +594,7 @@ function collectResults(results = []) {
         `It looks like you applied to ${j.company}. Record it under Applications so the resume you sent is saved.`,
       );
   }
-  ext({ type: "ack", jobIds: results.map((r) => r.jobId) }).catch(() => {});
+  if (handled.length) ext({ type: "ack", jobIds: handled }).catch(() => {});
 }
 const askResults = () =>
   extVersion() &&

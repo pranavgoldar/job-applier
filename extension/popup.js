@@ -21,17 +21,7 @@ const $ = (id) => document.getElementById(id);
       await chrome.runtime.sendMessage({ type: "adopt", tabId: tab.id });
       await chrome.scripting.executeScript({
         target: { tabId: tab.id, allFrames: true },
-        files: ["fill.js"],
-      });
-      await chrome.scripting.executeScript({
-        target: { tabId: tab.id, allFrames: true },
-        func: () => {
-          globalThis.__careerOsContent = false;
-        },
-      });
-      await chrome.scripting.executeScript({
-        target: { tabId: tab.id, allFrames: true },
-        files: ["content.js"],
+        files: ["fill.js", "content.js"],
       });
       $("out").textContent =
         "Done. Look at the panel in the corner of the page.";

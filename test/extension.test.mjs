@@ -175,7 +175,9 @@ test("a confirmation page is recognised and a form page is not", () => {
 test("every saved answer has a matching form rule, and the extension package is complete", () => {
   const { Fill } = page("");
   const keys = new Set(Fill.RULES.map((r) => r.key));
-  for (const f of answerFields) assert(keys.has(f.id), "no rule for " + f.id);
+  // expectedCtcInternship has no rule of its own: it feeds the expected-pay rule for internships.
+  for (const f of answerFields.filter((f) => f.id !== "expectedCtcInternship"))
+    assert(keys.has(f.id), "no rule for " + f.id);
   for (const r of Fill.RULES.filter((r) => r.yesno))
     assert.equal(
       answerFields.find((f) => f.id === r.key)?.type,
@@ -188,6 +190,22 @@ test("every saved answer has a matching form rule, and the extension package is 
   assert.equal(manifest.manifest_version, 3);
   for (const script of manifest.content_scripts.flatMap((c) => c.js))
     assert(fs.existsSync("extension/" + script), script);
+  // The filler is injected by the background script into tabs the extension
+  // opened, on any site (employers' own careers domains included); it is not
+  // a content script on a fixed list of job sites.
+  assert.deepEqual(
+    manifest.content_scripts.flatMap((c) => c.js),
+    ["bridge.js"],
+  );
+  assert.deepEqual(manifest.host_permissions, ["<all_urls>"]);
+  assert(manifest.permissions.includes("webNavigation"));
+  const background = fs.readFileSync("extension/background.js", "utf8");
+  assert.match(background, /files: \["fill\.js", "content\.js"\]/);
+  assert.match(
+    background,
+    /jobIdForTab\(tabId\)/,
+    "injects only into tabs opened for an application",
+  );
   assert(fs.existsSync("extension/" + manifest.background.service_worker));
   // The filler has no way to press submit.
   for (const f of ["fill.js", "content.js"])
@@ -201,4 +219,109 @@ test("every saved answer has a matching form rule, and the extension package is 
   assert.equal(zip.readUInt32LE(0), 0x04034b50);
   assert(zip.includes(Buffer.from("career-os-extension/manifest.json")));
   assert(zip.includes(Buffer.from("career-os-extension/fill.js")));
+});
+
+test("internships use the internship pay answer; full-time jobs use the full-time one", async () => {
+  const form = `<form><div class="field-wrapper"><label for="q1">What are your expected salary / stipend expectations?*</label><input id="q1" type="text" required></div></form>`;
+  const answers = {
+    expectedCtc: "20-24 LPA",
+    expectedCtcInternship: "4-12 LPA",
+  };
+  const intern = page(form);
+  await intern.Fill.fill(
+    { ...data, answers, employmentType: "Internship" },
+    intern.document,
+  );
+  assert.equal(intern.document.getElementById("q1").value, "4-12 LPA");
+  const job = page(form);
+  await job.Fill.fill(
+    { ...data, answers, employmentType: "Full-time" },
+    job.document,
+  );
+  assert.equal(job.document.getElementById("q1").value, "20-24 LPA");
+  // With no internship answer saved, the full-time one is used.
+  const fallback = page(form);
+  await fallback.Fill.fill(
+    {
+      ...data,
+      answers: { expectedCtc: "20-24 LPA" },
+      employmentType: "Internship",
+    },
+    fallback.document,
+  );
+  assert.equal(fallback.document.getElementById("q1").value, "20-24 LPA");
+});
+test("a notice period of 0 picks an Immediate option in a list", async () => {
+  const { document, Fill } = page(
+    `<form><div class="field-wrapper"><label for="np">Notice period*</label><select id="np" required><option value="">Select</option><option value="a">Immediate</option><option value="b">15 days</option><option value="c">30 days</option></select></div></form>`,
+  );
+  await Fill.fill({ ...data, answers: { noticePeriod: "0" } }, document);
+  assert.equal(document.getElementById("np").value, "a");
+});
+test("the site's own Apply button is pressed to open a form, never a submit, LinkedIn or off-site link", () => {
+  const press = (html) => {
+    const { document, Fill } = page(html);
+    const clicked = [];
+    for (const el of document.querySelectorAll("a, button"))
+      el.addEventListener("click", (e) => {
+        clicked.push(el.textContent.trim());
+        e.preventDefault?.();
+      });
+    return { opened: Fill.openForm(document), clicked };
+  };
+  // BambooHR-style button that reveals the form.
+  assert.deepEqual(
+    press(
+      `<main><h1>Analyst</h1><button type="button">Apply for This Job</button></main>`,
+    ),
+    { opened: true, clicked: ["Apply for This Job"] },
+  );
+  // Pinpoint-style link to the form on the same site.
+  assert.deepEqual(
+    press(
+      `<main><a href="/en/postings/1/applications/new">Apply Now</a></main>`,
+    ).clicked,
+    ["Apply Now"],
+  );
+  // Never: apply-with-LinkedIn, links to other sites, or a form's own submit button.
+  assert.deepEqual(
+    press(
+      `<main><a href="https://www.linkedin.com/jobs">Apply with LinkedIn</a><a href="https://other.example/apply">Apply</a></main>`,
+    ),
+    { opened: false, clicked: [] },
+  );
+  assert.deepEqual(
+    press(
+      `<form><input name="name"><textarea name="why"></textarea><button type="submit">Apply</button><button type="button">Apply now</button></form>`,
+    ),
+    { opened: false, clicked: [] },
+  );
+});
+
+test("a rupee pay answer is not typed into a question asking in another currency", async () => {
+  const form = (q) =>
+    `<form><div class="field-wrapper"><label for="q">${q}*</label><input id="q" type="text" required></div></form>`;
+  const answers = { expectedCtc: "20-24 LPA" };
+  const aed = page(form("What is your salary expectation? (in AED)"));
+  const r = await aed.Fill.fill({ ...data, answers }, aed.document);
+  assert.equal(aed.document.getElementById("q").value, "");
+  assert(r.needs.some((n) => /AED/.test(n.question)));
+  const inr = page(form("What is your expected CTC?"));
+  await inr.Fill.fill({ ...data, answers }, inr.document);
+  assert.equal(inr.document.getElementById("q").value, "20-24 LPA");
+});
+test("BambooHR-style forms: a star on the label marks a required field, and option text is not a question", async () => {
+  const { document, Fill } = page(`<form>
+    <div class="MuiFormControl-root"><label for="addr">Address *</label><div><input id="addr" type="text"></div></div>
+    <div class="MuiFormControl-root"><label for="share">Link to This Job</label><input id="share" type="text" readonly value="https://example.test/careers/1"></div>
+    <div><p>Do you have experience in fintech?</p><div><label><span><input type="radio" name="q.yes_no" value="yes"></span><span class="MuiFormControlLabel-label">Yes</span></label><label><span><input type="radio" name="q.yes_no" value="no"></span><span class="MuiFormControlLabel-label">No</span></label></div></div>
+  </form>`);
+  const r = await Fill.fill({ ...data, resume: null }, document);
+  const needs = r.needs.map((n) => n.question);
+  assert(needs.includes("Address"), needs.join(" | "));
+  assert(!needs.includes("Yes") && !r.filled.some((f) => f.question === "Yes"));
+  assert(
+    !r.filled.some((f) => /Link to This Job/.test(f.question)),
+    "read-only fields are not counted as filled",
+  );
 });

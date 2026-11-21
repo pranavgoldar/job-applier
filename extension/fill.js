@@ -33,7 +33,7 @@
     },
     {
       key: "expectedCtc",
-      q: /expect(ed|ation)s?.{0,20}(ctc|salary|compensation)|(ctc|salary|compensation) expect/,
+      q: /expect(ed|ation)s?.{0,20}(ctc|salary|compensation|stipend|pay)|(ctc|salary|compensation|stipend) expect/,
     },
     { key: "noticePeriod", q: /notice period/ },
     {
@@ -108,8 +108,12 @@
     const p = data.profile || {},
       a = data.answers || {},
       parts = clean(p.name).split(" ").filter(Boolean);
+    // Internships use their own pay expectation when one is saved.
+    const internship = /intern/i.test(data.employmentType || "");
     return {
       ...a,
+      expectedCtc:
+        (internship && a.expectedCtcInternship) || a.expectedCtc || "",
       fullName: clean(p.name),
       firstName: parts[0] || "",
       lastName: parts.slice(1).join(" "),
@@ -147,7 +151,11 @@
         if (
           clean(node.textContent) &&
           !controls.some((c) => node.contains(c) || c.contains(node)) &&
-          !node.closest("[role=option], [role=listbox]")
+          !node.closest("[role=option], [role=listbox]") &&
+          // The text of one option ("Yes", "No") is not the question.
+          !node
+            .closest("label")
+            ?.querySelector("input[type=radio], input[type=checkbox]")
         )
           return clean(node.textContent);
     return "";
@@ -222,6 +230,11 @@
     if (!t || !v) return false;
     if (YES.test(v)) return YES.test(t);
     if (NO.test(v)) return NO.test(t);
+    // A notice period of "0" is the same answer as "Immediate".
+    const now =
+      /^(0|0 days?|none|immediate(ly)?|immediate joiner|can join immediately)$/;
+    if (now.test(v))
+      return now.test(t) || /^immediate/.test(t) || /^0\b/.test(t);
     return t === v || t.startsWith(v) || v.startsWith(t);
   };
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -277,6 +290,16 @@
     for (let i = 0; i < 10 && !chosen(); i++) await sleep(60);
     return chosen() ? "filled" : "no-option";
   }
+  // A pay answer in rupees (LPA, lakh, ₹) is not entered into a question that
+  // asks in another currency (AED, SGD, USD…); that one is left for you.
+  function payInOtherCurrency(rule, question, value) {
+    if (!rule || !/ctc/i.test(rule.key) || !value) return false;
+    return (
+      /\b(aed|usd|sgd|eur|gbp|dirhams?|dollars?|euros?|pounds?)\b|[$€£]/i.test(
+        question,
+      ) && /lpa|lakh|lac\b|inr|₹|\brs\.?\b/i.test(value)
+    );
+  }
   // When the form has its own country-code picker next to the phone box, enter
   // the number without the code so it is not written twice.
   function localPhone(el, phone) {
@@ -314,10 +337,17 @@
     input.dispatchEvent(new View.Event("change", { bubbles: true }));
     return "attached";
   }
+  const ownLabel = (el) =>
+    (el.id &&
+      el.ownerDocument.querySelector(`label[for="${CSS_escape(el.id)}"]`)
+        ?.textContent) ||
+    "";
   const required = (el) =>
     el.required ||
     el.hasAttribute("required") ||
     el.getAttribute("aria-required") === "true" ||
+    // Some forms mark a required field only with "*" on its own label.
+    /[*✱]\s*$/.test(ownLabel(el).trim()) ||
     /[*✱]\s*$/.test(
       (
         el.closest(GROUP)?.querySelector(".application-label, legend, label")
@@ -342,6 +372,8 @@
     ].filter(
       (el) =>
         visible(el) &&
+        !el.readOnly &&
+        !el.hasAttribute("readonly") &&
         !["file", "submit", "button", "hidden", "search"].includes(el.type) &&
         !/captcha/i.test(el.name + el.id),
     );
@@ -358,7 +390,10 @@
       }
       const question = questionOf(el),
         rule = ruleFor(el, question),
-        value = rule && v[rule.key],
+        value =
+          rule && payInOtherCurrency(rule, question, v[rule.key])
+            ? ""
+            : rule && v[rule.key],
         combo = el.getAttribute("role") === "combobox";
       let done = false;
       if (combo) {
@@ -370,6 +405,7 @@
           matches(o.textContent, value),
         );
         if (option) {
+          option.selected = true;
           setValue(el, option.value);
           done = true;
         }
@@ -422,5 +458,42 @@
       (said && !doc.querySelector('input[type="file"]'))
     );
   }
-  globalThis.CareerOsFill = { fill, detectSubmitted, questionOf, RULES };
+  // Some sites show the form only after their own "Apply" button is pressed
+  // (BambooHR, Pinpoint, Teamtailor job pages). Press that one button, never
+  // anything that sends the application.
+  const OPENERS =
+    /^(apply|apply now|apply here|apply for this (job|position|role)|i'?m interested|start (your )?application)$/i;
+  function openForm(doc = document) {
+    const candidates = [...doc.querySelectorAll("a, button")].filter((el) => {
+      if (!OPENERS.test(clean(el.textContent))) return false;
+      if (
+        el.type === "submit" ||
+        el.closest("form")?.querySelector("input:not([type=hidden]), textarea")
+      )
+        return false;
+      if (el.disabled || !visible(el)) return false;
+      const href = el.getAttribute("href") || "";
+      // Stay on the employer's site: no links to LinkedIn, email or other hosts.
+      if (/^(mailto:|tel:|javascript:)/i.test(href)) return false;
+      if (href && /^https?:/i.test(href)) {
+        try {
+          if (new URL(href).host !== doc.location.host) return false;
+        } catch {
+          return false;
+        }
+      }
+      return true;
+    });
+    const el = candidates[0];
+    if (!el) return false;
+    el.click();
+    return true;
+  }
+  globalThis.CareerOsFill = {
+    openForm,
+    fill,
+    detectSubmitted,
+    questionOf,
+    RULES,
+  };
 })();

@@ -243,7 +243,8 @@ function normalizePinpoint(source, body) {
       isRemote: remote,
       workplaceType: j.workplace_type,
       originalUrl: j.url,
-      applyUrl: j.url || null,
+      // The posting page only links to the form; open the form itself.
+      applyUrl: j.url ? j.url.replace(/\/?$/, "/applications/new") : null,
       sourceId: String(j.id),
       postedAt: null,
       compensation: null,
