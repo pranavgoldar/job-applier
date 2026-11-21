@@ -1,6 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { assess, geo, isTargetRole } from "../src/matching.mjs";
+import {
+  assess,
+  geo,
+  isTargetRole,
+  isTargetLocation,
+} from "../src/matching.mjs";
 
 // Public titles and qualification excerpts from the 16 November snapshot.
 test("off-target titles from the labelled snapshot stay outside discovery", () => {
@@ -86,12 +91,7 @@ test("internship eligibility respects the remote workplace and real allowed coun
     "Bengaluru (Remote)",
     "Remote – Worldwide",
   ]) {
-    for (const suffix of [
-      "Intern",
-      "Trainee",
-      "Apprentice",
-      "(3-month contract)",
-    ]) {
+    for (const suffix of ["Intern", "Trainee", "Apprentice"]) {
       const a = assess({ title: "Product Analyst " + suffix, location });
       assert.equal(a.unsuitable, null);
       assert.equal(a.employmentType, "Internship");
@@ -139,4 +139,81 @@ test("cities remain specific and use the preferred order", () => {
     geo({ location: "Abu Dhabi, UAE; Kuala Lumpur, Malaysia" }).region,
     "Abu Dhabi",
   );
+});
+
+test("Coinbase Singapore is eligible for full-time work while remote internships require India", () => {
+  const job = {
+    company: "Coinbase",
+    title: "Product Manager I – International",
+    location: "Remote – Singapore",
+    description: "2+ years of product management experience.",
+  };
+  for (const location of [
+    "Remote – Singapore",
+    "Remote – Dubai",
+    "Singapore",
+    "Dubai",
+  ]) {
+    const fullTime = { ...job, location };
+    assert.ok(isTargetLocation(fullTime), location);
+    assert.equal(assess(fullTime).unsuitable, null);
+    const internship = { ...fullTime, employmentType: "Internship" };
+    assert.equal(isTargetLocation(internship), false);
+    assert.ok(assess(internship).unsuitable);
+  }
+  assert.equal(assess(job).remoteEligibility, "Remote · Singapore");
+  assert.ok(assess({ ...job, location: "Remote – Canada" }).unsuitable);
+});
+test("FamPay is a stretch at the lower end of a stated range", () => {
+  const job = {
+    company: "FamPay",
+    title: "Product Manager",
+    location: "Bengaluru",
+    description: "2–4 years of experience in Product Management.",
+  };
+  const a = assess(job);
+  assert.equal(a.unsuitable, null);
+  assert.equal(a.category, "Product management");
+  assert.equal(a.experienceLabel, "Stretch: asks 2–4 years");
+  assert.match(
+    assess({
+      ...job,
+      description: job.description + " Minimum 3 years in fintech operations.",
+    }).unsuitable,
+    /3 years/,
+  );
+});
+test("level is the reason for hiding unlevelled Binance and Tide roles", () => {
+  for (const [company, title, location] of [
+    ["Binance", "Product Manager, AI Agent & Harness", "Singapore"],
+    ["Tide", "Chief of Staff", "Hyderabad"],
+  ]) {
+    const a = assess({ company, title, location });
+    assert.equal(a.reason, "Not marked as early-career");
+    assert.equal(a.unsuitable, a.reason);
+  }
+});
+test("Agoda's six-month assignment is a contract; internships need a title or zero-experience evidence", () => {
+  const agoda = assess({
+    company: "Agoda",
+    title:
+      "Manager, Strategic Projects (Marketing Procurement) (Bangkok Based, 6 Months Contract)",
+    location: "Bangkok",
+    description:
+      "More than 8 years of relevant professional experience in management consulting.",
+  });
+  assert.notEqual(agoda.employmentType, "Internship");
+  assert.match(agoda.unsuitable, /8 years/);
+  const job = {
+    title: "Product Analyst (six-month contract)",
+    location: "Bengaluru (Remote)",
+  };
+  assert.ok(assess(job).unsuitable);
+  for (const role of [
+    { ...job, description: "No experience required." },
+    { ...job, title: "Product Analyst Trainee (six-month contract)" },
+  ]) {
+    assert.equal(assess(role).employmentType, "Internship");
+    assert.equal(assess(role).unsuitable, null);
+  }
 });

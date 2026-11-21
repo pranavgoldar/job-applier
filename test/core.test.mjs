@@ -159,14 +159,14 @@ test("greater than two years and missing mandatory Figma hard block", () => {
     ).decision,
     "Skip",
   );
-  // An explicitly stated range must fit the two-year ceiling.
+  // A stated range is eligible when its lower bound is within the ceiling.
   assert.equal(
     assess(
       job({
         description: "Product discovery. 1–3 years required.",
       }),
     ).decision,
-    "Skip",
+    "Review",
   );
   assert.equal(
     assess(

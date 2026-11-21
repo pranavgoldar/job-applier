@@ -137,7 +137,35 @@ export function geo(job) {
               : region
                 ? 10
                 : 0;
-  return { region, points, remote, indiaRemote, remoteEligibility };
+  // An overseas remote board can be a full-time destination in its own right.
+  const foreignRegion = [
+    "Dubai",
+    "Singapore",
+    "Abu Dhabi",
+    "Sharjah",
+    "UAE (city not stated)",
+  ].includes(region);
+  const allowedCountries = Array.isArray(countryList) ? countryList : [];
+  const foreignTargetRemote =
+    remote &&
+    foreignRegion &&
+    (!allowedCountries.length ||
+      allowedCountries.some((country) =>
+        region === "Singapore"
+          ? /^(singapore|sg)$/i.test(country)
+          : /^(united arab emirates|uae|ae)$/i.test(country),
+      )) &&
+    !/\b(?:us|usa|uk|united states|united kingdom|canada|europe)[- ]only|must be (?:based|located) in (?:the )?(?:us\b|uk\b|united states|united kingdom|canada|europe)/i.test(
+      loc + " " + d,
+    );
+  return {
+    region,
+    points,
+    remote,
+    indiaRemote,
+    foreignTargetRemote,
+    remoteEligibility,
+  };
 }
 export function sectorOf(job, text = "") {
   const industry = String(job.industry || "").toLowerCase();
@@ -170,16 +198,17 @@ export function blockedTitle(job) {
 }
 const internWord =
   /\bintern(?:ship)?s?\b|\btrainee\b|\bapprentice(?:ship)?\b|working student|\bco-?op\b/i;
-function employment(job) {
+function employment(job, years) {
   const label = job.employmentType || "";
   const title = job.title || "";
   const fixedTerm =
-    /\b(?:[1-6])[- ]months?\s+(?:fixed[- ]term|contract|placement)|(?:contract|fixed[- ]term|placement)\s*(?:of|for|:)?\s*[1-6][- ]months?\b/i;
-  if (
-    internWord.test(title + " " + label) ||
-    fixedTerm.test([title, label, job.description].join(" "))
-  )
-    return "Internship";
+    /\b(?:[1-6]|one|two|three|four|five|six)[- ]months?\s+(?:fixed[- ]term|contract(?:or)?|assignment|placement)|(?:contract|fixed[- ]term|placement)\s*(?:of|for|:)?\s*(?:[1-6]|one|two|three|four|five|six)[- ]months?\b/i;
+  if (fixedTerm.test([title, label, job.description].join(" "))) {
+    const explicitIntern =
+      /\bintern(?:ship)?s?\b|\btrainee\b|\bapprentice(?:ship)?\b/i.test(title);
+    return explicitIntern || years?.min === 0 ? "Internship" : null;
+  }
+  if (internWord.test(title + " " + label)) return "Internship";
   if (/part[- ]?time|contract|freelance|temporary/i.test(label)) return null;
   return "Full-time";
 }
@@ -217,7 +246,7 @@ function experienceAsked(title = "", description = "", level = "") {
     if (history || (!lead && !qualification && !standalone)) continue;
     const min = Number(m[1]);
     const max = m[2] ? Number(m[2]) : min;
-    if (!best || max > best.max || (max === best.max && min > best.min))
+    if (!best || min > best.min || (min === best.min && max > best.max))
       best = { min, max, label: m[0] };
   }
   if (best) return best;
@@ -292,10 +321,12 @@ function classifyRole(job, years) {
     /\b(?:strategy (?:&|and) operations|business operations|biz\s?ops|strategic initiatives|(?:business|strategic) planning|strategy (?:associate|analyst|intern)|(?:associate|analyst|intern)[, /-]+strategy)\b/;
   const foundersTitle =
     /\bfounder[’'s]* (?:office|associate)|office of (?:the )?ceo|ceo[’'s]* office|associate to (?:the )?founder/;
-  const eligibleChief = !chief || (years ? years.max <= 2 : junior);
+  const eligibleChief = !chief || (years ? years.min <= 2 : junior);
   const manager = /\bproduct manager\b/.test(title);
   const eligibleManager = !manager || junior || (!!years && years.min <= 2);
-  if (!blockedTitle(job) && eligibleChief && eligibleManager) {
+  const outsideFamily = blockedTitle(job);
+  const missingLevel = !outsideFamily && (!eligibleChief || !eligibleManager);
+  if (!outsideFamily && !missingLevel) {
     if (chief || foundersTitle.test(title)) category = FOUNDERS;
     else if (productTitle.test(title) || manager) category = PRODUCT;
     else if (strategyTitle.test(title) && !/\bmanager\b/.test(title))
@@ -328,7 +359,9 @@ function classifyRole(job, years) {
     ambiguous,
     track: category === PRODUCT ? "Product" : category ? FOUNDERS : null,
     reason: !category
-      ? "Outside the three target roles."
+      ? missingLevel
+        ? "Not marked as early-career"
+        : "Outside the three target roles."
       : matchedBy === "responsibilities"
         ? "The role involves " + found[category].slice(0, 3).join(", ") + "."
         : "The title matches " + category + ".",
@@ -347,11 +380,24 @@ export function isTargetRole(job) {
   return !!roleMatch(job);
 }
 
+function locationIssue(place, type) {
+  if (type === "Internship") {
+    if (!place.remote)
+      return "Internship requires an on-site or hybrid schedule.";
+    if (!place.indiaRemote)
+      return place.remoteEligibility + ". Remote work must be open to India.";
+  } else if (place.remote && !place.indiaRemote && !place.foreignTargetRemote) {
+    return "Remote location is outside the target locations or not stated.";
+  }
+  return place.region ? null : "Outside the target locations.";
+}
+
 export function isTargetLocation(job) {
-  const place = geo(job);
-  if (place.remote || employment(job) === "Internship")
-    return place.indiaRemote;
-  return !!place.region;
+  const type = employment(
+    job,
+    experienceAsked(job.title, job.description, job.experienceLevel),
+  );
+  return !locationIssue(geo(job), type);
 }
 
 // Only dates tied to a start or joining requirement qualify. Ignore posting dates and deadlines.
@@ -380,7 +426,7 @@ export function assess(job, profile = initialProfile) {
   );
   const c = classifyRole(job, years);
   const place = geo(job);
-  const type = employment(job);
+  const type = employment(job, years);
   const start = type === "Full-time" ? startDate(job) : null;
   const text = [job.title, job.description].join(" ");
   const blocked = [],
@@ -390,7 +436,11 @@ export function assess(job, profile = initialProfile) {
     /mid.?senior|director|executive/i.test(job.experienceLevel || "")
   )
     blocked.push("Seniority is outside early-career targets.");
-  if (years?.max > 2)
+  const experienceLabel =
+    years?.min <= 2 && years.max > 2
+      ? `Stretch: asks ${years.min}–${years.max} years`
+      : years?.label || "Experience not stated";
+  if (years?.min > 2)
     blocked.push("Experience requirement: " + years.label + ".");
   else if (years?.min >= 1)
     review.push("Experience requested: " + years.label + ".");
@@ -402,12 +452,8 @@ export function assess(job, profile = initialProfile) {
         profile.fullTimeStart +
         ".",
     );
-  if (place.remote && !place.indiaRemote)
-    blocked.push(
-      place.remoteEligibility + ". Remote work must be open to India.",
-    );
-  if (type === "Internship" && !place.remote)
-    blocked.push("Internship requires an on-site or hybrid schedule.");
+  const locationReason = locationIssue(place, type);
+  if (locationReason) blocked.push(locationReason);
   if (!type) blocked.push("Outside full-time and internship employment types.");
   const cohort = text.match(
     /\b(20\d{2}) (?:graduates?|graduation|batch) only\b/i,
@@ -433,13 +479,7 @@ export function assess(job, profile = initialProfile) {
       /[^.!?\n]*(?:work authori[sz]ation|visa sponsorship|right to work|work permit|citizenship requirement)[^.!?\n]*/gi,
     ) || [];
   review.push(...auth.map((line) => line.trim()));
-  const unsuitable =
-    blocked[0] ||
-    (!c.category
-      ? "Outside the three target roles."
-      : !place.region
-        ? "Outside the target locations."
-        : null);
+  const unsuitable = blocked[0] || (!c.category ? c.reason : null);
   const sector = sectorOf(job, text.toLowerCase());
   const parts = {
     role: c.category ? 30 : 0,
@@ -451,6 +491,10 @@ export function assess(job, profile = initialProfile) {
   return {
     ...c,
     ...place,
+    remoteEligibility:
+      type === "Full-time" && place.foreignTargetRemote && !place.indiaRemote
+        ? "Remote · " + place.region
+        : place.remoteEligibility,
     parts,
     score: Object.values(parts).reduce((a, b) => a + b, 0),
     blocked,
@@ -458,7 +502,7 @@ export function assess(job, profile = initialProfile) {
     unsuitable,
     evidence: c.category ? [c.reason] : [],
     requiredYears: years?.min ?? null,
-    experienceLabel: years?.label || "Experience not stated",
+    experienceLabel,
     sector,
     employmentType: type,
     startDate: start,
