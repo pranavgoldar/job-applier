@@ -2674,5 +2674,404 @@
       "title": "Operations Analyst",
       "url": "https://jobs.lever.co/wahed.com/b8a2f81e-956b-4daf-943d-322f7045e1b3"
     }
+  },
+  {
+    "id": "apna",
+    "name": "apna",
+    "group": "Consumer",
+    "industry": "Consumer / jobs and professional networking app",
+    "careersUrl": "https://apply.workable.com/apna/",
+    "connector": {
+      "kind": "workable",
+      "board": "apna"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-25",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "Admission Counsellor",
+      "url": "https://apply.workable.com/j/5211B21BC2"
+    }
+  },
+  {
+    "id": "headout",
+    "name": "Headout",
+    "group": "Consumer",
+    "industry": "Consumer / travel experiences marketplace",
+    "careersUrl": "https://jobs.ashbyhq.com/headout",
+    "connector": {
+      "kind": "ashby",
+      "board": "headout"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-25",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "Engineering Manager",
+      "url": "https://jobs.ashbyhq.com/headout/5a03150b-3557-4a55-8ab5-d56a60b6d221"
+    }
+  },
+  {
+    "id": "smallest-ai",
+    "name": "Smallest.ai",
+    "group": "Other",
+    "industry": "AI / voice agents",
+    "careersUrl": "https://jobs.ashbyhq.com/smallest",
+    "connector": {
+      "kind": "ashby",
+      "board": "smallest"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-25",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "Software Engineer - Systems and Reliablity",
+      "url": "https://jobs.ashbyhq.com/smallest/f0879803-4119-4278-bcfc-4f0b25df943b"
+    }
+  },
+  {
+    "id": "sarvam-ai",
+    "name": "Sarvam AI",
+    "group": "Other",
+    "industry": "AI / Indian-language models",
+    "careersUrl": "https://jobs.ashbyhq.com/sarvam",
+    "connector": {
+      "kind": "ashby",
+      "board": "sarvam"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-25",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "Data Scientist - Evaluations, Chanakya",
+      "url": "https://jobs.ashbyhq.com/sarvam/7c42207a-bb56-413c-839f-9ad692df840e"
+    }
+  },
+  {
+    "id": "mindtickle",
+    "name": "Mindtickle",
+    "group": "Other",
+    "industry": "B2B software / sales enablement",
+    "careersUrl": "https://jobs.lever.co/mindtickle",
+    "connector": {
+      "kind": "lever",
+      "board": "mindtickle"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-25",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "AI Product Engineer",
+      "url": "https://jobs.lever.co/mindtickle/864ac315-d7c5-4cd5-ab44-0e33d08f48f1"
+    }
+  },
+  {
+    "id": "hevo-data",
+    "name": "Hevo Data",
+    "group": "Other",
+    "industry": "B2B software / data pipelines",
+    "careersUrl": "https://jobs.lever.co/hevodata",
+    "connector": {
+      "kind": "lever",
+      "board": "hevodata"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-25",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "Account Executive",
+      "url": "https://jobs.lever.co/hevodata/cfdb183c-e9f4-4877-8b8c-bd7a3b4a7fde"
+    }
+  },
+  {
+    "id": "observe-ai",
+    "name": "Observe.AI",
+    "group": "Other",
+    "industry": "AI / contact-centre software",
+    "careersUrl": "https://job-boards.greenhouse.io/observeai",
+    "connector": {
+      "kind": "greenhouse",
+      "board": "observeai"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-25",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "Director, Accounting",
+      "url": "https://www.observe.ai/position?gh_jid=5469707008"
+    }
+  },
+  {
+    "id": "spotdraft",
+    "name": "SpotDraft",
+    "group": "Other",
+    "industry": "B2B software / contract management",
+    "careersUrl": "https://jobs.ashbyhq.com/spotdraft",
+    "connector": {
+      "kind": "ashby",
+      "board": "spotdraft"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-25",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "Software Development Engineer III | Backend",
+      "url": "https://jobs.ashbyhq.com/spotdraft/62a79224-efa6-4a0d-8cfc-29ab3fc48f7d"
+    }
+  },
+  {
+    "id": "composio",
+    "name": "Composio",
+    "group": "Other",
+    "industry": "AI / agent integrations",
+    "careersUrl": "https://jobs.ashbyhq.com/composio",
+    "connector": {
+      "kind": "ashby",
+      "board": "composio"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-25",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "Member of Technical Staff - Enterprise Platform",
+      "url": "https://jobs.ashbyhq.com/composio/74cf1b48-86e9-4454-8c4e-cb2038ed0049"
+    }
+  },
+  {
+    "id": "moengage",
+    "name": "MoEngage",
+    "group": "Other",
+    "industry": "B2B software / customer engagement",
+    "careersUrl": "https://careers.kula.ai/moengage",
+    "connector": {
+      "kind": "kula",
+      "board": "moengage"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-25",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "Manager - Finance",
+      "url": "https://careers.kula.ai/moengage/54716-manager-finance"
+    }
+  },
+  {
+    "id": "lendingkart",
+    "name": "Lendingkart",
+    "group": "Fintech",
+    "industry": "Fintech / small-business lending",
+    "careersUrl": "https://jobs.smartrecruiters.com/lendingkart",
+    "connector": {
+      "kind": "smartrecruiters",
+      "board": "lendingkart"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-25",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "Backend Developer",
+      "url": "https://jobs.smartrecruiters.com/lendingkart"
+    }
+  },
+  {
+    "id": "cars24",
+    "name": "CARS24",
+    "group": "Consumer",
+    "industry": "Consumer / used-car marketplace",
+    "careersUrl": "https://jobs.smartrecruiters.com/cars24",
+    "connector": {
+      "kind": "smartrecruiters",
+      "board": "cars24"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-25",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Mumbai",
+      "title": "Retail Associate",
+      "url": "https://jobs.smartrecruiters.com/cars24"
+    }
+  },
+  {
+    "id": "unacademy",
+    "name": "Unacademy",
+    "group": "Consumer",
+    "industry": "Consumer / online learning",
+    "careersUrl": "https://jobs.smartrecruiters.com/unacademy",
+    "connector": {
+      "kind": "smartrecruiters",
+      "board": "unacademy"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-25",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "Business Development Executive",
+      "url": "https://jobs.smartrecruiters.com/unacademy"
+    }
+  },
+  {
+    "id": "nobroker",
+    "name": "NoBroker",
+    "group": "Consumer",
+    "industry": "Consumer / property rentals and home services",
+    "careersUrl": "https://jobs.smartrecruiters.com/nobroker",
+    "connector": {
+      "kind": "smartrecruiters",
+      "board": "nobroker"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-25",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "HR Recruiter- Talent Acquisition",
+      "url": "https://jobs.smartrecruiters.com/nobroker"
+    }
+  },
+  {
+    "id": "newton-school",
+    "name": "Newton School",
+    "group": "Consumer",
+    "industry": "Consumer / tech education",
+    "careersUrl": "https://jobs.smartrecruiters.com/newtonschool",
+    "connector": {
+      "kind": "smartrecruiters",
+      "board": "newtonschool"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-25",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "Relationship Manager",
+      "url": "https://jobs.smartrecruiters.com/newtonschool"
+    }
+  },
+  {
+    "id": "kenko",
+    "name": "Kenko",
+    "group": "Other",
+    "industry": "B2B software / healthcare onboarding",
+    "careersUrl": "https://jobs.lever.co/kenko",
+    "connector": {
+      "kind": "lever",
+      "board": "kenko"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-25",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "(Jr) Data Migration Specialist (Client Onboarding)",
+      "url": "https://jobs.lever.co/kenko/373980e8-dc2b-426b-8084-6a7174461ef0"
+    }
+  },
+  {
+    "id": "truefoundry",
+    "name": "TrueFoundry",
+    "group": "Other",
+    "industry": "AI / machine-learning platform",
+    "careersUrl": "https://job-boards.greenhouse.io/truefoundry",
+    "connector": {
+      "kind": "greenhouse",
+      "board": "truefoundry"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-25",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "Developer Relations Engineer",
+      "url": "https://app.careerpuck.com/job-board/truefoundry/job/5484575008?gh_jid=5484575008"
+    }
+  },
+  {
+    "id": "ema",
+    "name": "Ema",
+    "group": "Other",
+    "industry": "AI / enterprise AI agents",
+    "careersUrl": "https://jobs.ashbyhq.com/ema",
+    "connector": {
+      "kind": "ashby",
+      "board": "ema"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-25",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "Solutions Architect",
+      "url": "https://jobs.ashbyhq.com/ema/aefe11bd-3e23-401b-a08b-b75729a3c3e4"
+    }
+  },
+  {
+    "id": "tekion",
+    "name": "Tekion",
+    "group": "Other",
+    "industry": "B2B software / automotive retail",
+    "careersUrl": "https://jobs.ashbyhq.com/tekion",
+    "connector": {
+      "kind": "ashby",
+      "board": "tekion"
+    },
+    "aliases": [],
+    "tracks": ["Product", "Founder’s Office"],
+    "checkedOn": "2026-11-25",
+    "ycBacked": null,
+    "fundingStage": "Not verified",
+    "hiringEvidence": {
+      "city": "Bangalore",
+      "title": "Manager, Engineering - BE",
+      "url": "https://jobs.ashbyhq.com/Tekion/e7d565d0-ef7a-4f2a-91b6-d03ed7ea9c60"
+    }
   }
 ]

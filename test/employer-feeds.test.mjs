@@ -159,7 +159,9 @@ test("new watchlist records link a dated target-city vacancy to an official boar
     assert.equal(new URL(c.hiringEvidence.url).protocol, "https:");
     assert.equal(new URL(c.careersUrl).protocol, "https:");
     assert.match(c.checkedOn, /^\d{4}-\d\d-\d\d$/);
-    assert.match(c.industry, /^(Fintech|Consumer) \//);
+    // Fintech first, then consumer; other sectors are kept when they hire for
+    // the three roles, and rank lower.
+    assert.match(c.industry, /^(Fintech|Consumer|B2B software|AI) \//);
     if (c.connector) assert.ok(sourceURL(c.connector));
   }
 });
