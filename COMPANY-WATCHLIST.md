@@ -1,8 +1,10 @@
 # Company watchlist
 
-The catalog contains 112 employers and four remote-job searches. The 21 November update adds 30 fintech and consumer employers with a named opening on an employer careers page. Sixteen were verified in Bangalore, eleven in Mumbai, two in Singapore and one in Dubai. Open **Companies → Evidence** for the role, city, source and date. The machine-readable records are in [the company catalog](src/target-companies.json).
+The catalog contains 131 employers and four remote-job searches. The 21 November update adds 30 fintech and consumer employers with a named opening on an employer careers page. Sixteen were verified in Bangalore, eleven in Mumbai, two in Singapore and one in Dubai. Open **Companies → Evidence** for the role, city, source and date. The machine-readable records are in [the company catalog](src/target-companies.json).
 
-With automatic YC reading off, 84 employers have a connected feed and 28 need a manual visit. The following tables document the earlier 16 November check. The catalog includes the later corrections to employer boards.
+The 25 November update adds 19 employers whose own job board was read live and had a current role in Bangalore or Mumbai: apna (Workable); Headout, Smallest.ai, Sarvam AI, SpotDraft, Composio, Ema (Ashby); Mindtickle, Hevo Data, Kenko (Lever); Observe.AI, TrueFoundry (Greenhouse); MoEngage (Kula); Lendingkart, CARS24, Unacademy, NoBroker, Newton School (SmartRecruiters); Tekion (Ashby). Seven are fintech or consumer; the rest are software and AI companies kept because they hire product and founder's office roles in Bangalore. 254 Indian startups were checked: boards with no Indian roles, or belonging to a different company with the same name, were left out, as were 13 real boards with no Bangalore or Mumbai role that day.
+
+With automatic YC reading off, 103 employers have a connected feed and 28 need a manual visit. The following tables document the earlier 16 November check. The catalog includes the later corrections to employer boards.
 
 A fact is only recorded with a source. "Not verified" means no source was found, not that the answer is no.
 

@@ -90,7 +90,7 @@ Every scan reports how many sources were checked, how many failed and how many a
 
 ### Coverage
 
-The watchlist has 112 companies plus four remote-job searches (internships, product, founder’s office and strategy roles open to people in India). 84 companies are read automatically through their own job board (Greenhouse, Lever, Ashby, SmartRecruiters, Workable, Pinpoint, BambooHR, Rippling, Kula, Teamtailor, Recruitee, Personio). The rest need a manual check because their careers sites refuse automated reads, forbid them in their terms, or have no public job board; each one’s reason is on the Companies page. See [COMPANY-WATCHLIST.md](COMPANY-WATCHLIST.md).
+The watchlist has 131 companies plus four remote-job searches (internships, product, founder’s office and strategy roles open to people in India). 103 companies are read automatically through their own job board (Greenhouse, Lever, Ashby, SmartRecruiters, Workable, Pinpoint, BambooHR, Rippling, Kula, Teamtailor, Recruitee, Personio). The rest need a manual check because their careers sites refuse automated reads, forbid them in their terms, or have no public job board; each one’s reason is on the Companies page. See [COMPANY-WATCHLIST.md](COMPANY-WATCHLIST.md).
 
 ### Adding a job you found (for example on LinkedIn)
 
