@@ -79,6 +79,18 @@ test("job links are read for every supported board", () => {
       "https://acme.teamtailor.com/jobs/6789012-associate-product-manager",
       ["teamtailor", "acme.teamtailor.com", "6789012"],
     ],
+    [
+      "https://acme.recruitee.com/o/associate-product-manager",
+      ["recruitee", "acme", "associate-product-manager"],
+    ],
+    [
+      "https://acme.jobs.personio.com/job/1234567?language=en",
+      ["personio", "acme", "1234567"],
+    ],
+    [
+      "https://acme-gmbh.jobs.personio.de/job/7654321",
+      ["personio", "acme-gmbh.jobs.personio.de", "7654321"],
+    ],
   ];
   for (const [url, [kind, board, id]] of cases) {
     const link = jobLink(url);
@@ -250,13 +262,16 @@ test(
     await store.run(
       "INSERT INTO sources(id,kind,company,board) VALUES ('s1','teamtailor','Sarwa','careers.sarwa.co')",
     );
-    const rss = `<?xml version="1.0"?><rss version="2.0" xmlns:tt="https://teamtailor.com/locations"><channel><item><title>Associate Product Manager</title><description>Own the roadmap. 0-1 years of experience.</description><link>https://careers.sarwa.co/jobs/555-associate-product-manager</link><remoteStatus>none</remoteStatus><guid>g-555</guid><tt:locations><tt:location><tt:city>Dubai</tt:city><tt:country>United Arab Emirates</tt:country></tt:location></tt:locations></item></channel></rss>`;
+    const rss = `<?xml version="1.0"?><rss version="2.0" xmlns:tt="https://teamtailor.com/locations"><channel><title>Sarwa jobs</title><item><title>Associate Product Manager</title><description>Own the roadmap. 0-1 years of experience.</description><link>https://careers.sarwa.co/jobs/555-associate-product-manager</link><remoteStatus>none</remoteStatus><guid>g-555</guid><tt:locations><tt:location><tt:city>Dubai</tt:city><tt:country>United Arab Emirates</tt:country></tt:location></tt:locations></item></channel></rss>`;
     const r = await importJobLink(
       store,
       "https://careers.sarwa.co/en/jobs/555-associate-product-manager",
       {},
       async (url) => {
-        assert.equal(url, "https://careers.sarwa.co/jobs.rss");
+        // The site's robots rules are checked before its feed is read.
+        if (url === "https://careers.sarwa.co/robots.txt")
+          return ok("User-agent: *\nAllow: /\n");
+        assert.match(url, /^https:\/\/careers\.sarwa\.co\/jobs\.rss/);
         return ok(rss);
       },
     );

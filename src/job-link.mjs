@@ -24,6 +24,8 @@ export const linkBoards = [
   "Rippling",
   "Kula",
   "Teamtailor",
+  "Recruitee",
+  "Personio",
 ];
 
 const locale = /^[a-z]{2}(?:[-_][a-z]{2})?$/i;
@@ -72,6 +74,17 @@ export function jobLink(raw) {
       locale.test(seg[0] || "") && seg[2] === "jobs" ? seg.slice(1) : seg;
     if (s[1] === "jobs" && s[2])
       link = { kind: "rippling", board: s[0], id: s[2] };
+  } else if (host.endsWith(".recruitee.com")) {
+    if (seg[0] === "o" && seg[1])
+      link = { kind: "recruitee", board: host.split(".")[0], id: seg[1] };
+  } else if (/^[a-z0-9-]+\.jobs\.personio\.(?:com|de)$/.test(host)) {
+    const at = seg.indexOf("job");
+    if (at >= 0 && lead(seg[at + 1]))
+      link = {
+        kind: "personio",
+        board: host.endsWith(".com") ? host.split(".")[0] : host,
+        id: lead(seg[at + 1]),
+      };
   } else if (host === "careers.kula.ai" && seg.length >= 2)
     link = { kind: "kula", board: seg[0], id: lead(seg[1]) || seg[1] };
   else {
