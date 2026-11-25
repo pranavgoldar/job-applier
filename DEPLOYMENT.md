@@ -54,6 +54,8 @@ Keep preview deployments separate from production data if you enable them. The p
 
 The default cron is `0 3 * * *`: daily at 03:00 UTC, approximately 08:30–09:29 IST on Hobby. Current Hobby limits allow daily cron execution with up to 59 minutes of timing variation. More frequent cron expressions require a plan that permits them. The local interval field is disabled in the hosted UI; edit the deployed schedule in `vercel.json` when changing it.
 
+GitHub Actions also schedules scans at 12:47, 17:47 and 21:47 IST. In the repository’s **Settings → Secrets and variables → Actions**, create the repository secret `CRON_SECRET` with the same value as the production Vercel secret. After the workflow reaches the default branch, **Actions → Scan job boards → Run workflow** can check the connection. Each run reports a paused scan or the numbers checked, failed and still queued. GitHub can delay scheduled runs. The morning Vercel scan runs independently.
+
 Each cloud task handles one employer source. Work is bounded to approximately 220 seconds per invocation, below the configured 300-second limit. Three sources can run concurrently. Tasks not started before the budget expires stay queued; stale running discovery tasks are safely reclaimed after six minutes at a later trigger. Failed source attempts are recorded in source health; no failure marks vacancies closed. Manual discovery uses the same durable queue and Vercel `waitUntil`.
 
 Official references: [Vercel cron limits](https://vercel.com/docs/cron-jobs/usage-and-pricing), [function limits](https://vercel.com/docs/functions/limitations), [SQLite on Vercel](https://vercel.com/kb/guide/is-sqlite-supported-in-vercel). The app avoids relying on writable deployment files by using Turso and private Blob.
@@ -82,7 +84,7 @@ Push source changes to the production Git branch. Vercel deploys them automatica
 - Live production Turso/Blob credentials and Vercel hosting are not configured by this repository preparation. Tests verify their code paths without operating your accounts.
 - Hosted file uploads are capped at 3 MB; local uploads allow 8 MB. This keeps JSON/base64 requests under Vercel's 4.5 MB payload limit.
 - The full dashboard is designed for one private user and a bounded early-career job feed. A larger multi-user deployment needs per-user authorization and pagination.
-- Ten boards have collectors; unsupported employer sites remain manual. No alert-email integration or live automatic employer submission adapter is enabled.
+- Ten boards have collectors; unsupported employer sites remain manual. The Add job dialog accepts pasted alert text and links for manual review.
 - Real employer browser preparation depends on the optional extension and the actual form. CAPTCHA, MFA, assessments and final submission remain manual.
 
 ## Docker or always-on Node alternative

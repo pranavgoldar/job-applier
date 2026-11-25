@@ -36,7 +36,8 @@ export async function runCloudQueue(
     "UPDATE queue SET status='queued',started=NULL WHERE kind='discovery-source' AND status='running' AND started<?",
     new Date(Date.now() - 6 * 60000).toISOString(),
   );
-  let completed = 0;
+  let completed = 0,
+    failed = 0;
   const worker = async () => {
     while (Date.now() < deadline - 1500) {
       const task = await store.get(
@@ -65,6 +66,7 @@ export async function runCloudQueue(
           );
           return;
         }
+        failed++;
         await store.run(
           "UPDATE queue SET status='failed',finished=?,error=? WHERE id=?",
           now(),
@@ -78,6 +80,7 @@ export async function runCloudQueue(
   await store.set("workerHeartbeat", now());
   return {
     completed,
+    failed,
     queued: (
       await store.get(
         "SELECT COUNT(*) AS n FROM queue WHERE kind='discovery-source' AND status='queued'",

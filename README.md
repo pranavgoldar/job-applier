@@ -90,11 +90,11 @@ Every scan reports how many sources were checked, how many failed and how many a
 
 ### Coverage
 
-The watchlist has 82 companies plus four remote-job searches (internships, product, founder’s office and strategy roles open to people in India). 67 companies are read automatically through their own job board (Greenhouse, Lever, Ashby, SmartRecruiters, Workable, Pinpoint, BambooHR, Rippling, Kula, Teamtailor). 15 need a manual check because their careers sites refuse automated reads, forbid them in their terms, or have no public job board (Revolut, Remitly, Navi, Juspay, Alaan, Monee, NephroPlus, HitPay, XPay Checkout, Decentro, Volopay, Karbon Card, GoSats, GroMo, Infinity). The Companies page shows each company’s coverage and sourced evidence. See [COMPANY-WATCHLIST.md](COMPANY-WATCHLIST.md).
+The watchlist has 112 companies plus four remote-job searches (internships, product, founder’s office and strategy roles open to people in India). 84 companies are read automatically through their own job board (Greenhouse, Lever, Ashby, SmartRecruiters, Workable, Pinpoint, BambooHR, Rippling, Kula, Teamtailor, Recruitee, Personio). The rest need a manual check because their careers sites refuse automated reads, forbid them in their terms, or have no public job board; each one’s reason is on the Companies page. See [COMPANY-WATCHLIST.md](COMPANY-WATCHLIST.md).
 
 ### Adding a job you found (for example on LinkedIn)
 
-The app never reads LinkedIn: LinkedIn’s user agreement forbids automated reading, browser add-ons included. Instead, press **Add a job** and paste the address of the company’s own job page. On LinkedIn that is where **Apply** goes when it says “on company website”. Links to Greenhouse, Lever, Ashby, SmartRecruiters, Workable, Pinpoint, BambooHR, Rippling, Kula and Teamtailor job pages work.
+The app never reads LinkedIn: LinkedIn’s user agreement forbids automated reading, browser add-ons included. Instead, press **Add a job** and paste the address of the company’s own job page. On LinkedIn that is where **Apply** goes when it says “on company website”. Links to Greenhouse, Lever, Ashby, SmartRecruiters, Workable, Pinpoint, BambooHR, Rippling, Kula, Teamtailor, Recruitee and Personio job pages work.
 
 - The app reads the posting from the company’s public job board, saves it, and picks the resume.
 - The company joins the scan list, so its future roles show up without LinkedIn. Its other matching roles come in straight away.
